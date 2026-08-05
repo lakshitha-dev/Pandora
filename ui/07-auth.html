@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pandora Knowledge Guardian — Sign in with Google</title>
+<link rel="stylesheet" href="pandora.css">
+<style>
+  /* Routes: /login · /auth/callback · /app/welcome
+     Supabase Auth with Google OAuth. There is no password, and no separate
+     /signup — Google's first sign-in creates the account, so the two routes
+     collapse into one and role selection moves to a post-auth step. */
+
+  h1 { font-size: var(--t-2xl); font-weight: 660; margin-block-end: var(--s-2); }
+  .lede { color: var(--mist); font-size: var(--t-lg); max-inline-size: var(--measure); }
+  h2 { font-size: var(--t-lg); font-weight: 640; margin-block: var(--s-6) var(--s-3); }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: var(--s-4); align-items: start; }
+
+  .auth { padding: var(--s-5); border-radius: var(--r-lg); text-align: center;
+    background: linear-gradient(180deg,
+      color-mix(in oklab, var(--deep-2) 74%, transparent),
+      color-mix(in oklab, var(--deep) 60%, transparent));
+    border: 1px solid var(--line); }
+  .auth__sigil { display: grid; place-items: center; inline-size: 46px;
+    aspect-ratio: 1; border-radius: 14px; margin: 0 auto var(--s-4);
+    background: radial-gradient(circle at 32% 28%, #1d6b78, var(--deep));
+    border: 1px solid color-mix(in oklab, var(--cyan) 35%, transparent);
+    box-shadow: 0 0 22px color-mix(in oklab, var(--cyan) 20%, transparent); }
+  .auth h3 { font-size: var(--t-lg); font-weight: 650; margin-block-end: 5px; }
+  .auth .sub { font-size: var(--t-sm); color: var(--mist-dim); line-height: 1.6;
+    margin-block-end: var(--s-5); max-inline-size: 40ch; margin-inline: auto; }
+  .auth .fine { font-size: var(--t-xs); color: var(--mist-dim); line-height: 1.6;
+    margin-block-start: var(--s-4); max-inline-size: 38ch; margin-inline: auto; }
+  .auth .fine a { color: var(--teal); }
+
+  /* ---- Google Identity button. Deliberately NOT themed. ----
+     Google's brand guidelines fix the surface, border, text colour, logo and
+     wording. Dark variant: #131314 / #8E918F / #E3E3E3, 18px full-colour G,
+     40px minimum height, Roboto Medium. Restyling it into the Pandora palette
+     would breach the guidelines and, worse, make it unrecognisable — the whole
+     value of this button is that a user identifies it without reading it. */
+  .gsi {
+    display: inline-flex; align-items: center; justify-content: center;
+    gap: 10px; inline-size: 100%; max-inline-size: 300px;
+    min-block-size: 40px; padding-inline: 12px;
+    background: #131314; border: 1px solid #8E918F; border-radius: 20px;
+    color: #E3E3E3; font-family: Roboto, "Segoe UI", system-ui, sans-serif;
+    font-size: 14px; font-weight: 500; letter-spacing: .25px;
+    cursor: pointer; transition: background 150ms, box-shadow 150ms;
+  }
+  .gsi:hover { background: #1e1f20;
+    box-shadow: 0 1px 3px rgb(0 0 0 / .3); }
+  .gsi:focus-visible { outline: 3px solid #8ab4f8; outline-offset: 2px; }
+  .gsi:disabled { opacity: .62; cursor: not-allowed; }
+  .gsi__g { inline-size: 18px; block-size: 18px; flex: none; }
+  .gsi__spin { inline-size: 16px; block-size: 16px; flex: none; border-radius: 50%;
+    border: 2px solid rgb(227 227 227 / .35); border-block-start-color: #E3E3E3;
+    animation: spin .7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .form-msg { display: flex; align-items: flex-start; gap: var(--s-2);
+    padding: var(--s-3); border-radius: var(--r-md); margin-block-end: var(--s-4);
+    font-size: var(--t-sm); line-height: 1.55; text-align: start; }
+  .form-msg--err { background: color-mix(in oklab, var(--coral) 8%, transparent);
+    border: 1px solid color-mix(in oklab, var(--coral) 30%, transparent); color: var(--foam); }
+  .form-msg--warn { background: color-mix(in oklab, var(--amber) 8%, transparent);
+    border: 1px solid color-mix(in oklab, var(--amber) 30%, transparent); color: var(--foam); }
+  .form-msg code { font-size: 10.5px; }
+
+  /* Callback / session exchange */
+  .steps { display: grid; gap: var(--s-2); text-align: start;
+    max-inline-size: 300px; margin: var(--s-4) auto 0; }
+  .cbstep { display: flex; align-items: center; gap: var(--s-2);
+    font-size: var(--t-sm); color: var(--mist); }
+  .cbstep .m { inline-size: 15px; flex: none; text-align: center; }
+  .cbstep.is-done .m { color: var(--lume); }
+  .cbstep.is-now { color: var(--foam); }
+  .cbstep.is-now .m { color: var(--cyan); }
+  .cbstep.is-todo { opacity: .5; }
+
+  /* Role selection after first sign-in */
+  .who { display: flex; align-items: center; gap: var(--s-3);
+    padding: var(--s-3); border-radius: var(--r-md); text-align: start;
+    background: color-mix(in oklab, var(--abyss) 45%, transparent);
+    border: 1px solid var(--line); margin-block-end: var(--s-4); }
+  .avatar { inline-size: 34px; aspect-ratio: 1; border-radius: 50%; flex: none;
+    display: grid; place-items: center; font-weight: 700; font-size: var(--t-md);
+    background: linear-gradient(135deg, #4285F4, #34A853); color: #fff; }
+  .who b { display: block; font-size: var(--t-md); }
+  .who span { font-size: var(--t-xs); color: var(--mist-dim); font-family: var(--mono); }
+
+  .roles { display: grid; gap: var(--s-2); text-align: start; }
+  .role { display: grid; grid-template-columns: 26px 1fr; gap: var(--s-3);
+    padding: var(--s-3); border-radius: var(--r-md); cursor: pointer;
+    background: color-mix(in oklab, var(--abyss) 45%, transparent);
+    border: 1px solid var(--line);
+    transition: border-color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease); }
+  .role:hover { border-color: var(--line-2); }
+  .role:has(input:checked) {
+    border-color: color-mix(in oklab, var(--cyan) 50%, transparent);
+    background: color-mix(in oklab, var(--cyan) 7%, transparent); }
+  .role input { margin-block-start: 3px; accent-color: var(--cyan);
+    inline-size: 16px; block-size: 16px; }
+  .role b { display: block; font-size: var(--t-md); }
+  .role span { font-size: var(--t-sm); color: var(--mist); line-height: 1.55; }
+  .role .clr { display: inline-block; margin-block-start: 4px;
+    font-family: var(--mono); font-size: 9px; letter-spacing: .5px;
+    text-transform: uppercase; padding-inline: 6px; padding-block: 2px;
+    border-radius: 3px;
+    background: color-mix(in oklab, var(--hue, var(--teal)) 12%, transparent);
+    color: var(--hue, var(--teal));
+    border: 1px solid color-mix(in oklab, var(--hue, var(--teal)) 28%, transparent); }
+
+  .state-tag { display: inline-flex; align-items: center; gap: 5px;
+    font-family: var(--mono); font-size: 9px; font-weight: 700; letter-spacing: .6px;
+    text-transform: uppercase; padding-inline: 7px; padding-block: 3px;
+    border-radius: 4px; margin-block-end: var(--s-3);
+    background: color-mix(in oklab, var(--violet) 13%, transparent);
+    color: var(--violet);
+    border: 1px solid color-mix(in oklab, var(--violet) 30%, transparent); }
+
+  .why { max-inline-size: var(--measure); margin-block-start: var(--s-4);
+    padding-block-start: var(--s-3); border-block-start: 1px dashed var(--line-2);
+    font-size: var(--t-md); color: var(--mist-dim); }
+  .why b { display: block; margin-block-end: 4px; font-size: 9.5px;
+    letter-spacing: 1px; text-transform: uppercase; color: var(--teal); }
+  .why + .why { border-block-start: 0; margin-block-start: var(--s-3);
+    padding-block-start: 0; }
+  .why code { font-size: 11px; }
+  footer { margin-block-start: var(--s-7); padding-block-start: var(--s-4);
+    border-block-start: 1px solid var(--line); font-size: var(--t-sm);
+    color: var(--mist-dim); }
+</style>
+<script src="pandora.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="ambient" aria-hidden="true"></div>
+
+<div class="shell shell--narrow">
+<header>
+  <h1>Authentication — Google</h1>
+  <p class="lede">Supabase Auth with Google as the only provider. No password, no
+  separate signup route, and one screen that did not exist before: the callback
+  where the session is actually established.</p>
+</header>
+
+<main id="main">
+
+<h2>Sign in — idle and redirecting</h2>
+<div class="grid">
+
+  <div>
+    <span class="state-tag">route · /login · idle</span>
+    <div class="auth">
+      <div class="auth__sigil" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="#4ff0e0"
+          stroke-width="1.5" stroke-linecap="round">
+          <path d="M12 2v20M2 12h20"/><circle cx="12" cy="12" r="4.5" stroke-width="1.2"/>
+        </svg>
+      </div>
+      <h3>Pandora Knowledge Guardian</h3>
+      <p class="sub">Sign in to keep your report log and your access clearance
+      between sessions.</p>
+
+      <button class="gsi" type="button">
+        <svg class="gsi__g" viewBox="0 0 18 18" aria-hidden="true">
+          <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.49h4.84a4.14 4.14 0 0 1-1.8 2.71v2.26h2.92a8.78 8.78 0 0 0 2.68-6.62z"/>
+          <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.81.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.34A8.99 8.99 0 0 0 9 18z"/>
+          <path fill="#FBBC05" d="M3.97 10.72a5.41 5.41 0 0 1 0-3.44V4.94H.96a9 9 0 0 0 0 8.12l3.01-2.34z"/>
+          <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.59A9 9 0 0 0 .96 4.94l3.01 2.34C4.68 5.16 6.66 3.58 9 3.58z"/>
+        </svg>
+        Sign in with Google
+      </button>
+
+      <p class="fine">First time here? Signing in with Google creates your account —
+      there's nothing else to fill in.</p>
+      <p class="fine" style="margin-block-start:var(--s-3)">
+        Or <a href="02-command-center.html">continue without signing in</a>. The corpus
+        is already indexed and the console works either way.</p>
+    </div>
+    <div class="why"><b>Why there is no /signup</b>Google's first sign-in creates the
+    account, so a separate registration route would be a second button that does the
+    same thing. UI_SPEC's two auth routes collapse into one, and the role selection
+    that lived in the signup form moves to a post-auth step.</div>
+  </div>
+
+  <div>
+    <span class="state-tag">state · redirecting to google</span>
+    <div class="auth">
+      <div class="auth__sigil" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="#4ff0e0"
+          stroke-width="1.5" stroke-linecap="round">
+          <path d="M12 2v20M2 12h20"/><circle cx="12" cy="12" r="4.5" stroke-width="1.2"/>
+        </svg>
+      </div>
+      <h3>Pandora Knowledge Guardian</h3>
+      <p class="sub">Taking you to Google to confirm it's you.</p>
+
+      <button class="gsi" type="button" disabled aria-busy="true">
+        <span class="gsi__spin" aria-hidden="true"></span>
+        Redirecting to Google…
+      </button>
+
+      <p class="fine">If nothing happens within a few seconds,
+        <a href="#">start again</a>.</p>
+    </div>
+    <div class="why"><b>Disabled the instant it's clicked</b>A second click would
+    start a second OAuth flow and the two callbacks race — the later one overwrites
+    the earlier session and the PKCE verifier no longer matches, which surfaces to
+    the user as a mysterious "invalid grant". Disabling on click is the fix.</div>
+  </div>
+</div>
+
+<h2>Callback — where the session is actually created</h2>
+<div class="grid">
+  <div>
+    <span class="state-tag">route · /auth/callback</span>
+    <div class="auth">
+      <div class="auth__sigil" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="#4ff0e0"
+          stroke-width="1.5" stroke-linecap="round">
+          <path d="M12 2v20M2 12h20"/><circle cx="12" cy="12" r="4.5" stroke-width="1.2"/>
+        </svg>
+      </div>
+      <h3>Signing you in</h3>
+      <p class="sub">This takes about a second. Don't close the tab.</p>
+      <div class="steps" role="status" aria-live="polite">
+        <div class="cbstep is-done"><span class="m" aria-hidden="true">✓</span>
+          Returned from Google</div>
+        <div class="cbstep is-done"><span class="m" aria-hidden="true">✓</span>
+          Authorisation code received</div>
+        <div class="cbstep is-now"><span class="m" aria-hidden="true">◐</span>
+          Exchanging code for a session</div>
+        <div class="cbstep is-todo"><span class="m" aria-hidden="true">○</span>
+          Loading your clearance and report log</div>
+      </div>
+    </div>
+    <div class="why"><b>Why this screen exists at all</b>With a password form the
+    session is created by the same request that submits it. With OAuth the browser
+    comes back from Google carrying a code that still has to be exchanged. That
+    exchange can fail on its own, so it needs a screen — otherwise the user stares at
+    a blank page and refreshes, which consumes the single-use code and guarantees the
+    failure.</div>
+  </div>
+
+  <div>
+    <span class="state-tag">state · cancelled at google</span>
+    <div class="auth">
+      <h3 style="margin-block-start:0">Sign-in cancelled</h3>
+      <p class="sub">No account was created and nothing was shared.</p>
+      <div class="form-msg form-msg--warn" role="status">
+        <span aria-hidden="true" style="color:var(--amber)">⊘</span>
+        <div>You closed the Google window before finishing, or chose not to continue.</div>
+      </div>
+      <button class="gsi" type="button">
+        <svg class="gsi__g" viewBox="0 0 18 18" aria-hidden="true">
+          <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.49h4.84a4.14 4.14 0 0 1-1.8 2.71v2.26h2.92a8.78 8.78 0 0 0 2.68-6.62z"/>
+          <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.81.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.34A8.99 8.99 0 0 0 9 18z"/>
+          <path fill="#FBBC05" d="M3.97 10.72a5.41 5.41 0 0 1 0-3.44V4.94H.96a9 9 0 0 0 0 8.12l3.01-2.34z"/>
+          <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.59A9 9 0 0 0 .96 4.94l3.01 2.34C4.68 5.16 6.66 3.58 9 3.58z"/>
+        </svg>
+        Try again
+      </button>
+      <p class="fine">Or <a href="02-command-center.html">use the console without an
+        account</a>.</p>
+    </div>
+    <div class="why"><b>Cancelling is not an error</b>Amber, not coral, and it says
+    plainly that nothing was created or shared. A user who backed out deliberately
+    should not be shown a failure — and the reassurance about data matters more on an
+    OAuth screen than a password one, because the user just saw a permissions prompt.</div>
+  </div>
+</div>
+
+<h2>The two failures worth distinguishing</h2>
+<div class="grid">
+  <div>
+    <span class="state-tag">state · provider error</span>
+    <div class="auth">
+      <h3 style="margin-block-start:0">Couldn't complete sign-in</h3>
+      <p class="sub">Google returned an error before a session was created.</p>
+      <div class="form-msg form-msg--err" role="alert">
+        <span aria-hidden="true" style="color:var(--coral)">✕</span>
+        <div><b>Google declined the request.</b> This usually means the redirect URL
+          isn't on the provider's allow-list.
+          <div class="mono dim" style="margin-block-start:6px;font-size:10.5px">
+            error=redirect_uri_mismatch · state ok · no session created</div></div>
+      </div>
+      <button class="btn btn--ghost btn--sm">Try again</button>
+      <p class="fine">If this keeps happening it's a configuration problem, not
+        something you can fix by retrying.</p>
+    </div>
+    <div class="why"><b>Show the provider's error code</b>OAuth failures are almost
+    always configuration — a redirect URI that doesn't match, or a consent screen not
+    published. Surfacing <code>redirect_uri_mismatch</code> turns a twenty-minute hunt
+    into a ten-second fix, and it is not sensitive: it names our own callback URL
+    back to us.</div>
+  </div>
+
+  <div>
+    <span class="state-tag">state · network / exchange failed</span>
+    <div class="auth">
+      <h3 style="margin-block-start:0">Couldn't reach the server</h3>
+      <p class="sub">Google confirmed you, but we couldn't finish on our side.</p>
+      <div class="form-msg form-msg--warn" role="alert">
+        <span aria-hidden="true" style="color:var(--amber)">⚠</span>
+        <div><b>The code exchange didn't complete.</b> Your Google account is fine and
+          nothing was changed. Check the connection and start again.</div>
+      </div>
+      <button class="btn btn--ghost btn--sm">Start again</button>
+      <p class="fine">Retrying restarts the whole flow — the previous code is
+        single-use and has already been spent.</p>
+    </div>
+    <div class="why"><b>Different from a provider error</b>The user did nothing wrong
+    and Google did nothing wrong, so it is amber and it explicitly reassures them
+    about their Google account. It also warns that retry restarts the flow rather than
+    resuming it, which prevents the refresh-the-callback loop that burns the code.</div>
+  </div>
+</div>
+
+<h2>First sign-in — choosing clearance</h2>
+<div class="grid">
+  <div>
+    <span class="state-tag">route · /app/welcome · first sign-in only</span>
+    <div class="auth" style="text-align:start">
+      <div class="who">
+        <span class="avatar" aria-hidden="true">L</span>
+        <div class="flex-1">
+          <b>Lakshitha Wijerathne</b>
+          <span>lakshitha@awareef.pandora</span>
+        </div>
+        <span class="badge is-verified" style="flex:none">
+          <span aria-hidden="true">✓</span> Google</span>
+      </div>
+
+      <h3 style="font-size:var(--t-md)">How should answers be written for you?</h3>
+      <p class="sub" style="text-align:start;margin-inline:0;margin-block-end:var(--s-4)">
+        This sets your access clearance as well as the writing style. You can change
+        it any time.</p>
+
+      <div class="roles">
+        <label class="role"><input type="radio" name="role" checked>
+          <span><b>Guardian</b>
+            <span>Operational and imperative. Full protocol detail, immediate actions,
+            command roles.</span>
+            <span class="clr" style="--hue:var(--cyan)">public + community + guardian</span>
+          </span></label>
+        <label class="role"><input type="radio" name="role">
+          <span><b>Researcher</b>
+            <span>Technical and precise. Measurements, survey effort, evidence grades,
+            methodology caveats.</span>
+            <span class="clr" style="--hue:var(--violet)">public + community + guardian</span>
+          </span></label>
+        <label class="role"><input type="radio" name="role">
+          <span><b>Healer</b>
+            <span>Includes clinical protocols, red flags and contraindications from the
+            MED records.</span>
+            <span class="clr" style="--hue:var(--lume)">public + community + healer</span>
+          </span></label>
+        <label class="role"><input type="radio" name="role">
+          <span><b>Citizen</b>
+            <span>Plain language, condensed. Public alerts using the corpus's own
+            communication template.</span>
+            <span class="clr" style="--hue:var(--amber)">public only</span>
+          </span></label>
+      </div>
+
+      <a class="btn btn--primary" href="02-command-center.html"
+        style="inline-size:100%;margin-block-start:var(--s-4)">Open the console</a>
+    </div>
+  </div>
+
+  <div>
+    <div class="why" style="border-block-start:0;margin-block-start:0;padding-block-start:0">
+      <b>Why clearance is picked here, not in the console</b>Role is not a display
+      preference — it filters what retrieval is allowed to return, under POL-005. A
+      Citizen is not cleared for healer-limited clinical detail. That has to be
+      resolved before the first query, so it belongs on the way in rather than in a
+      settings page nobody opens.</div>
+    <div class="why"><b>Each option states its clearance explicitly</b>Showing
+      <code>public only</code> against Citizen means a user who later sees "2 sources
+      withheld" already understands why. Hiding the mapping would make the withheld
+      notice feel like a malfunction.</div>
+    <div class="why"><b>Only on first sign-in</b>Returning users go straight to the
+      console with their stored clearance. A returning-user prompt is a step that can
+      fail in a demo for no benefit.</div>
+    <div class="why"><b>Auth stays off the critical path</b>SOLUTION.md §12 keeps it
+      there deliberately, and the idle screen offers "continue without signing in" for
+      exactly that reason. A login wall between a judge and the console is pure
+      downside — Google OAuth needs network, a published consent screen, and a
+      matching redirect URI, none of which are guaranteed in a judging room.</div>
+  </div>
+</div>
+
+<h2>What this changes elsewhere</h2>
+<div class="scroller"><table class="tbl">
+  <thead><tr><th>Area</th><th>Was (email + password)</th><th>Now (Google)</th></tr></thead>
+  <tbody>
+    <tr><td>Routes</td><td><code>/login</code> + <code>/signup</code></td>
+      <td><code>/login</code> + <code>/auth/callback</code> + <code>/app/welcome</code></td></tr>
+    <tr><td>Fields</td><td>Email, password, role select</td><td>None — one button</td></tr>
+    <tr><td>Role selection</td><td>In the signup form</td><td>Post-auth, first sign-in only</td></tr>
+    <tr><td>Failure modes</td><td>Invalid credentials · network</td>
+      <td>Cancelled · provider error · exchange failed</td></tr>
+    <tr><td>Account chip</td><td>Email text</td><td>Google avatar + name + email</td></tr>
+    <tr><td>Provider config</td><td>None</td>
+      <td>Google client ID and secret in Supabase; redirect URI allow-listed for both
+        localhost and the deployed origin</td></tr>
+    <tr><td>Docs to update</td><td colspan="2"><code>TECH_STACK.md</code> and
+      <code>PROJECT.md</code> both still say Supabase <em>email/password</em></td></tr>
+  </tbody>
+</table></div>
+
+<div class="why"><b>The one configuration trap</b>The redirect URI must be
+allow-listed for <em>every</em> origin you sign in from. A build that works on
+<code>localhost:3000</code> and fails on the deployed URL is almost always this, and
+it surfaces as <code>redirect_uri_mismatch</code> — which is why that error code is
+shown to the user rather than swallowed.</div>
+
+</main>
+
+<footer>
+  Authentication · Supabase Auth + Google OAuth ·
+  Google button follows Google Identity brand guidelines and is intentionally not
+  themed ·
+  <a href="index.html">all screens</a> ·
+  <a href="00-landing.html">landing</a> ·
+  <a href="02-command-center.html">console</a>
+</footer>
+</div>
+</body>
+</html>

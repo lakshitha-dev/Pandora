@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pandora Knowledge Guardian — Guardian Command Center</title>
+<link rel="stylesheet" href="pandora.css">
+<style>
+/* ============================================================================
+   GUARDIAN COMMAND CENTER
+   Implements SOLUTION.md §8.4 layout, §2.1 SITREP contract, §7.2 orchestration
+   rail, §8.5 map panel, §8.6 role toggle.
+
+   Token values are theme-1-abyss-bioluminescent.html verbatim — that file is the
+   source theme — with one correction: its tertiary ink #4d7385 measured 3.66:1 on
+   the panel surface and failed WCAG AA while carrying page locators and relevance
+   scores. Raised to #7c9caf (6.45:1). Every other theme-1 token passed as shipped.
+
+   Content is real: every record ID, page, measurement and excerpt below comes
+   from Pandora_RAG_Knowledge_2026.pdf as ingested (188 chunks, 15 chapters).
+   ========================================================================== */
+
+:root{
+  /* ---- Surfaces (§8.2) ---- */
+  --abyss:#03080f;                       /* page background            */
+  --deep:#061320;                        /* panels, cards — ink datum  */
+  --deep-2:#0a1e30;                      /* raised surface             */
+  --glass:rgba(255,255,255,.04);
+  --line:#0f2c42;                        /* hairline                   */
+  --line-2:#17435f;                      /* hover border               */
+
+  /* ---- Bioluminescence ---- */
+  --cyan:#4ff0e0;      /* primary · active agent · citations  10.59:1 */
+  --teal:#2bb8c9;      /* secondary · relevance bars           5.61:1 */
+  --violet:#8b7fe8;    /* agentic accent (corrected)           5.82:1 */
+  --amber:#ffc86b;     /* W2 advisory · partial                8.10:1 */
+  --coral:#ff7a5c;     /* W3/W4 emergency                      5.15:1 */
+  --lume:#a8f5c8;      /* verified evidence                   13.9:1  */
+
+  /* ---- Ink ---- */
+  --foam:#e8f6f8;      /* primary text                        15.7:1  */
+  --mist:#8fb3c0;      /* secondary text                       6.97:1 */
+  --mist-dim:#7c9caf;  /* metadata — 4.72:1, AA floor, never below    */
+
+  --t-xs:10.5px; --t-sm:12px; --t-md:13.5px; --t-base:15px; --t-lg:18px;
+  --s-1:4px; --s-2:8px; --s-3:12px; --s-4:16px; --s-5:24px; --s-6:32px;
+  --r-sm:8px; --r-md:14px; --r-lg:20px;
+  --dur-fast:150ms; --dur-base:240ms; --ease:cubic-bezier(.4,0,.2,1);
+
+  --sans:"Segoe UI Variable Display","Segoe UI",Inter,system-ui,sans-serif;
+  --mono:"JetBrains Mono","Cascadia Code","SF Mono",ui-monospace,Consolas,monospace;
+  --measure:68ch;   /* prose cap — inside the 45–75ch readability band */
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:var(--sans);background:var(--abyss);color:var(--foam);
+  font-size:var(--t-base);-webkit-font-smoothing:antialiased}
+
+.skip{position:absolute;left:-9999px;top:8px;z-index:99;padding:10px 16px;
+  border-radius:var(--r-sm);background:var(--cyan);color:#04141a;
+  font-weight:650;text-decoration:none}
+.skip:focus{left:8px}
+
+/* ---------- Ambient: plankton drift, restrained ---------- */
+.ambient{position:fixed;inset:0;pointer-events:none;z-index:0}
+.ambient::before,.ambient::after{content:"";position:absolute;border-radius:50%;
+  filter:blur(70px);opacity:.26;animation:drift 32s ease-in-out infinite;
+  will-change:transform}
+.ambient::before{width:50vw;height:50vw;top:-19vw;left:-9vw;
+  background:radial-gradient(circle,#0d5f6e 0%,transparent 68%)}
+.ambient::after{width:44vw;height:44vw;bottom:-20vw;right:-7vw;
+  background:radial-gradient(circle,#2b3f7d 0%,transparent 70%);animation-delay:-16s}
+@keyframes drift{0%,100%{transform:translate3d(0,0,0) scale(1)}
+  50%{transform:translate3d(3vw,4vh,0) scale(1.09)}}
+.plankton{position:fixed;inset:0;pointer-events:none;z-index:1;overflow:hidden}
+.p{position:absolute;border-radius:50%;background:var(--lume);
+  box-shadow:0 0 7px 2px rgba(168,245,200,.55);animation:rise linear infinite}
+@keyframes rise{from{transform:translateY(0);opacity:0}
+  8%{opacity:.75} 85%{opacity:.4} to{transform:translateY(-110vh) translateX(4vw);opacity:0}}
+body.is-hidden .plankton i,body.is-hidden .ambient::before,body.is-hidden .ambient::after{
+  animation-play-state:paused}
+@media (prefers-reduced-motion:reduce){
+  .plankton{display:none}
+  .ambient::before,.ambient::after{animation:none}
+  *{transition-duration:1ms!important;animation-duration:1ms!important}
+}
+
+.shell{position:relative;z-index:2;max-width:1560px;margin:0 auto;padding:18px 22px 52px}
+
+/* ---------- Top bar ---------- */
+header{display:flex;align-items:center;gap:var(--s-4);flex-wrap:wrap;
+  padding:13px 18px;margin-bottom:16px;
+  background:linear-gradient(180deg,rgba(10,30,48,.86),rgba(6,19,32,.72));
+  border:1px solid var(--line);border-radius:var(--r-lg);backdrop-filter:blur(14px)}
+.brand{display:flex;align-items:center;gap:12px;margin-right:auto}
+.sigil{width:40px;height:40px;flex:none;display:grid;place-items:center;border-radius:12px;
+  background:radial-gradient(circle at 32% 28%,#1d6b78,#061320);
+  border:1px solid rgba(79,240,224,.35);
+  box-shadow:0 0 20px rgba(79,240,224,.2),inset 0 0 13px rgba(79,240,224,.1)}
+.brand h1{font-size:16px;font-weight:650;letter-spacing:.2px}
+.brand p{font-size:11px;color:var(--mist-dim);letter-spacing:.9px;
+  text-transform:uppercase;margin-top:2px}
+.kb-pill{display:flex;align-items:center;gap:var(--s-2);font-size:var(--t-sm);
+  color:var(--mist);padding:9px 13px;border-radius:999px;
+  background:rgba(43,184,201,.08);border:1px solid rgba(43,184,201,.26)}
+.pulse{width:7px;height:7px;border-radius:50%;background:var(--lume);
+  box-shadow:0 0 9px var(--lume);animation:beat 2.6s ease-in-out infinite}
+@keyframes beat{0%,100%{opacity:1}50%{opacity:.35}}
+.newbtn{font:inherit;font-size:var(--t-sm);font-weight:600;color:var(--mist);
+  background:var(--deep-2);border:1px solid var(--line);border-radius:999px;
+  padding:9px 15px;min-height:38px;cursor:pointer;
+  transition:color var(--dur-fast) var(--ease),border-color var(--dur-fast) var(--ease)}
+.newbtn:hover{color:var(--foam);border-color:var(--line-2)}
+
+/* ---------- §8.4 three columns ---------- */
+.grid{display:grid;grid-template-columns:300px minmax(0,1fr) 320px;
+  gap:16px;align-items:start}
+@media(max-width:1400px){.grid{grid-template-columns:280px minmax(0,1fr)}
+  .rail{grid-column:1/-1}}
+@media(max-width:1000px){.grid{grid-template-columns:1fr}}
+
+.panel{background:linear-gradient(180deg,rgba(10,30,48,.74),rgba(6,19,32,.6));
+  border:1px solid var(--line);border-radius:var(--r-lg);backdrop-filter:blur(12px);
+  margin-bottom:16px}
+.panel-h{display:flex;align-items:center;gap:9px;padding:15px 17px 11px;
+  font-size:10.5px;font-weight:700;letter-spacing:1.3px;text-transform:uppercase;
+  color:var(--teal)}
+.panel-h .n{width:18px;height:18px;flex:none;display:grid;place-items:center;
+  border-radius:6px;background:rgba(43,184,201,.14);
+  border:1px solid rgba(43,184,201,.32);font-size:9.5px;color:var(--cyan);letter-spacing:0}
+.panel-b{padding:0 17px 17px}
+
+/* ---------- LEFT: knowledge ---------- */
+.drop{border:1.5px dashed rgba(79,240,224,.3);border-radius:var(--r-md);
+  padding:18px 13px;text-align:center;cursor:pointer;background:rgba(79,240,224,.03);
+  transition:border-color var(--dur-fast) var(--ease),background var(--dur-fast) var(--ease)}
+.drop:hover,.drop:focus-visible,.drop.over{border-color:var(--cyan);
+  background:rgba(79,240,224,.08)}
+.drop b{display:block;font-size:var(--t-md);font-weight:600}
+.drop span{font-size:11px;color:var(--mist-dim);display:block;margin-top:4px;line-height:1.5}
+.doc{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:10px;
+  margin-top:var(--s-3);background:rgba(3,8,15,.5);border:1px solid var(--line);
+  font-size:var(--t-sm)}
+.doc .ic{width:25px;height:25px;flex:none;border-radius:6px;display:grid;
+  place-items:center;font-size:8.5px;font-weight:700;background:rgba(255,122,92,.14);
+  color:#FF9B82;border:1px solid rgba(255,122,92,.3)}
+.doc .meta{min-width:0;flex:1}
+.doc .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:520}
+.doc .sub{font-size:var(--t-xs);color:var(--mist-dim);font-family:var(--mono)}
+.doc .ok{color:var(--lume)}
+.corpus-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:var(--s-3)}
+.cs{padding:9px 6px;border-radius:9px;text-align:center;background:rgba(3,8,15,.5);
+  border:1px solid var(--line)}
+.cs b{display:block;font-family:var(--mono);font-size:14px;color:var(--cyan)}
+.cs span{font-size:9px;letter-spacing:.5px;text-transform:uppercase;color:var(--mist-dim)}
+.hoisted{margin-top:var(--s-3);padding:10px 11px;border-radius:9px;
+  background:rgba(139,127,232,.07);border:1px solid rgba(139,127,232,.24);
+  font-size:11px;line-height:1.55;color:var(--mist)}
+.hoisted b{color:var(--violet);display:block;margin-bottom:3px;font-size:9.5px;
+  letter-spacing:.8px;text-transform:uppercase}
+
+/* ---------- §8.5 Map panel ---------- */
+.map-wrap{position:relative;border-radius:var(--r-md);overflow:hidden;
+  background:radial-gradient(ellipse at 50% 45%,#0a1e30 0%,#03080f 78%);
+  border:1px solid var(--line)}
+.map-wrap svg{display:block;width:100%;height:auto}
+.zone{fill:rgba(43,184,201,.09);stroke:rgba(43,184,201,.5);stroke-width:1.1;
+  cursor:pointer;transition:fill var(--dur-base) var(--ease),stroke var(--dur-base) var(--ease)}
+.zone:hover{fill:rgba(43,184,201,.2);stroke:var(--teal)}
+.zone.lit-w2{fill:rgba(255,200,107,.26);stroke:var(--amber);stroke-width:1.7}
+.zone.lit-w3{fill:rgba(255,122,92,.3);stroke:var(--coral);stroke-width:2;
+  animation:zonebeat 2.6s ease-in-out infinite}
+@keyframes zonebeat{0%,100%{opacity:1}50%{opacity:.62}}
+.zlabel{font-family:var(--mono);font-size:6.4px;fill:var(--mist-dim);pointer-events:none}
+.zlabel.on{fill:var(--amber);font-weight:700}
+.map-legend{display:flex;flex-wrap:wrap;gap:6px;margin-top:var(--s-2);
+  font-size:9.5px;color:var(--mist-dim)}
+.map-legend span{display:inline-flex;align-items:center;gap:4px}
+.dotm{width:7px;height:7px;border-radius:2px;display:inline-block}
+.map-read{margin-top:var(--s-2);font-size:11px;color:var(--mist);line-height:1.55}
+
+/* ---------- CENTRE: ask ---------- */
+.ask{padding:17px}
+label.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+textarea{width:100%;min-height:84px;resize:vertical;font:inherit;font-size:var(--t-base);
+  line-height:1.6;color:var(--foam);background:rgba(3,8,15,.62);
+  border:1px solid var(--line);border-radius:var(--r-md);padding:13px 15px;
+  transition:border-color var(--dur-fast) var(--ease),box-shadow var(--dur-fast) var(--ease)}
+textarea::placeholder{color:var(--mist-dim)}
+textarea:focus{outline:none;border-color:rgba(79,240,224,.55);
+  box-shadow:0 0 0 4px rgba(79,240,224,.1)}
+.ask-row{display:flex;align-items:center;gap:9px;margin-top:11px;flex-wrap:wrap}
+.btn{font:inherit;font-size:var(--t-md);font-weight:600;cursor:pointer;border-radius:11px;
+  padding:11px 19px;border:1px solid transparent;min-height:44px;
+  display:inline-flex;align-items:center;gap:7px;
+  transition:transform var(--dur-fast) var(--ease),box-shadow var(--dur-fast) var(--ease)}
+.btn-primary{color:#04141a;background:linear-gradient(135deg,var(--cyan),var(--teal));
+  box-shadow:0 6px 22px rgba(79,240,224,.26)}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 9px 28px rgba(79,240,224,.38)}
+.btn-ghost{color:var(--mist);background:rgba(3,8,15,.5);border-color:var(--line)}
+.btn-ghost:hover{color:var(--foam);border-color:var(--line-2)}
+.hint{font-size:11px;color:var(--mist-dim);margin-left:auto;font-family:var(--mono)}
+kbd{font-family:var(--mono);font-size:var(--t-xs);padding:2px 5px;border-radius:4px;
+  background:var(--deep-2);border:1px solid var(--line);color:var(--mist)}
+.suggest{margin-top:13px;padding-top:13px;border-top:1px solid var(--line)}
+.suggest p{font-size:9.5px;letter-spacing:1.1px;text-transform:uppercase;
+  color:var(--mist-dim);margin-bottom:8px}
+.suggest .row{display:flex;flex-wrap:wrap;gap:6px}
+.sq{font:inherit;text-align:left;font-size:11.5px;line-height:1.4;cursor:pointer;
+  padding:8px 11px;border-radius:9px;color:var(--mist);min-height:36px;
+  background:rgba(43,184,201,.06);border:1px solid rgba(43,184,201,.2);
+  transition:background var(--dur-fast) var(--ease)}
+.sq:hover{background:rgba(43,184,201,.15);color:var(--foam);border-color:rgba(43,184,201,.45)}
+
+/* ---------- §8.4 Triage banner: renders first, cited, shape+word+colour ---------- */
+.triage{display:flex;align-items:center;gap:13px;padding:14px 17px;
+  border-radius:var(--r-lg);margin-bottom:16px;border:1px solid;position:relative;
+  overflow:hidden}
+.triage.w2{background:rgba(255,200,107,.09);border-color:rgba(255,200,107,.42)}
+.triage.w3{background:rgba(255,122,92,.1);border-color:rgba(255,122,92,.45)}
+.triage .shape{width:34px;height:34px;flex:none;display:grid;place-items:center}
+.triage .shape svg{width:34px;height:34px}
+.triage .lv{font-family:var(--mono);font-size:var(--t-xs);letter-spacing:1.2px;
+  font-weight:700;display:block}
+.triage.w2 .lv{color:var(--amber)}
+.triage.w3 .lv{color:var(--coral)}
+.triage .word{font-size:var(--t-lg);font-weight:700;letter-spacing:.4px;
+  display:block;line-height:1.2}
+.triage .why{font-size:var(--t-sm);color:var(--mist);margin-top:3px;line-height:1.5;
+  max-width:60ch}
+.triage .why .src{font-family:var(--mono);font-size:var(--t-xs);color:var(--teal)}
+
+/* ---------- §8.6 Role toggle, in the report header ---------- */
+.rep-head{display:flex;align-items:center;gap:var(--s-3);padding:15px 17px 0;
+  flex-wrap:wrap}
+.rep-head .who{font-size:var(--t-md);font-weight:650}
+.rep-head .when{font-size:11px;color:var(--mist-dim);font-family:var(--mono);margin-top:2px}
+.roles{display:flex;gap:3px;padding:3px;background:rgba(3,8,15,.6);
+  border:1px solid var(--line);border-radius:999px;margin-left:auto}
+.roles button{font:inherit;font-size:11.5px;font-weight:560;color:var(--mist);
+  background:none;border:0;padding:8px 13px;border-radius:999px;cursor:pointer;
+  min-height:36px;transition:color var(--dur-fast) var(--ease)}
+.roles button:hover{color:var(--foam)}
+.roles button[aria-pressed="true"]{color:#04141a;
+  background:linear-gradient(135deg,var(--cyan),var(--teal));
+  box-shadow:0 0 14px rgba(79,240,224,.34)}
+.frozen{font-size:9.5px;color:var(--mist-dim);font-family:var(--mono);
+  width:100%;margin-top:6px}
+
+/* ---------- §2.1 SITREP sections, each owned by an agent ---------- */
+.sitrep{padding:var(--s-4) 17px 17px}
+.sec{border-left:3px solid var(--line-2);padding:0 0 0 14px;margin-bottom:var(--s-5);
+  position:relative;transition:border-color var(--dur-base) var(--ease)}
+.sec[data-agent="marine"]{border-left-color:var(--lume)}
+.sec[data-agent="invest"]{border-left-color:var(--cyan)}
+.sec[data-agent="respond"]{border-left-color:var(--coral)}
+.sec[data-agent="orch"]{border-left-color:var(--violet)}
+.sec.filling{animation:secglow 1.4s ease-in-out infinite}
+@keyframes secglow{0%,100%{box-shadow:-3px 0 0 0 transparent}
+  50%{box-shadow:-3px 0 14px 0 rgba(79,240,224,.5)}}
+.sec-h{display:flex;align-items:center;gap:var(--s-2);margin-bottom:var(--s-2);
+  flex-wrap:wrap}
+.sec-h .t{font-size:10.5px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;
+  color:var(--teal)}
+.owner{display:inline-flex;align-items:center;gap:5px;font-size:9.5px;font-weight:650;
+  letter-spacing:.4px;padding:3px 8px;border-radius:999px;font-family:var(--mono)}
+.owner.marine{background:rgba(168,245,200,.12);color:var(--lume);
+  border:1px solid rgba(168,245,200,.32)}
+.owner.invest{background:rgba(79,240,224,.12);color:var(--cyan);
+  border:1px solid rgba(79,240,224,.32)}
+.owner.respond{background:rgba(255,122,92,.12);color:var(--coral);
+  border:1px solid rgba(255,122,92,.32)}
+.owner.orch{background:rgba(139,127,232,.12);color:var(--violet);
+  border:1px solid rgba(139,127,232,.32)}
+.sec-body{font-size:14.4px;line-height:1.75;color:#D5E8EC;max-width:var(--measure)}
+.sec-body p{margin-bottom:10px}
+.sec-body ol,.sec-body ul{padding-left:19px;margin-bottom:10px}
+.sec-body li{margin-bottom:7px}
+.sec-body li::marker{color:var(--teal)}
+
+/* Empty section state — §2.1 rule 3: empty is visible and reasoned. */
+.empty{padding:12px 14px;border-radius:var(--r-md);background:rgba(3,8,15,.45);
+  border:1px dashed var(--line-2);font-size:var(--t-md);color:var(--mist);line-height:1.6}
+.empty b{color:var(--amber);display:block;font-size:9.5px;letter-spacing:.9px;
+  text-transform:uppercase;margin-bottom:4px}
+
+/* Protocol vs inference — §15.2 rule 8, structural */
+.prot{border-left:2px solid var(--lume);padding-left:12px;margin-bottom:12px}
+.infer{border-left:2px dashed var(--amber);padding:9px 12px 2px;margin-bottom:12px;
+  background:rgba(255,200,107,.04);border-radius:0 var(--r-sm) var(--r-sm) 0}
+.kind{font-size:9px;font-weight:700;letter-spacing:1.1px;text-transform:uppercase;
+  display:block;margin-bottom:5px}
+.prot .kind{color:var(--lume)}
+.infer .kind{color:var(--amber)}
+
+/* Citation chip: baseline, 24px visual, 44px hit target */
+.cite{display:inline-flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:9.5px;font-weight:700;min-width:38px;height:19px;
+  padding:0 6px;margin:0 2px;border-radius:5px;cursor:pointer;
+  background:rgba(79,240,224,.15);color:var(--cyan);
+  border:1px solid rgba(79,240,224,.34);vertical-align:baseline;position:relative;
+  transition:background var(--dur-fast) var(--ease),color var(--dur-fast) var(--ease)}
+.cite::after{content:"";position:absolute;inset:-13px -8px}
+.cite:hover,.cite:focus-visible,.cite.hot{background:var(--cyan);color:#04141a;
+  box-shadow:0 0 12px rgba(79,240,224,.5)}
+
+/* Species rows */
+.sp{display:grid;grid-template-columns:auto 1fr;gap:8px var(--s-3);padding:10px 0;
+  border-bottom:1px dashed var(--line)}
+.sp:last-child{border-bottom:0}
+.sp .id{font-family:var(--mono);font-size:9.5px;font-weight:700;color:var(--lume);
+  padding:3px 7px;border-radius:5px;height:fit-content;white-space:nowrap;
+  background:rgba(168,245,200,.12);border:1px solid rgba(168,245,200,.3)}
+.sp .nm{font-size:var(--t-md);font-weight:620;color:var(--foam)}
+.sp .de{font-size:var(--t-sm);color:var(--mist);margin-top:2px;line-height:1.55}
+
+/* Conflict panel — §4.6 Contested state */
+.contra{border-radius:var(--r-md);overflow:hidden;background:rgba(255,122,92,.05);
+  border:1px solid rgba(255,122,92,.32);margin-top:var(--s-3)}
+.contra-h{display:flex;align-items:center;gap:8px;padding:11px 14px;
+  background:rgba(255,122,92,.1);border-bottom:1px solid rgba(255,122,92,.24);
+  font-size:10.5px;font-weight:700;letter-spacing:1.1px;text-transform:uppercase;
+  color:var(--coral)}
+.contra-b{padding:13px 14px}
+.pos{display:grid;grid-template-columns:auto 1fr;gap:9px var(--s-3);
+  padding-bottom:11px;margin-bottom:11px;border-bottom:1px dashed rgba(255,122,92,.22)}
+.pos:last-of-type{border-bottom:0;margin-bottom:0;padding-bottom:0}
+.pos .rid{font-family:var(--mono);font-size:9.5px;font-weight:700;color:var(--coral);
+  padding:3px 7px;border-radius:5px;height:fit-content;white-space:nowrap;
+  background:rgba(255,122,92,.12);border:1px solid rgba(255,122,92,.3)}
+.pos .cl{font-size:13.2px;line-height:1.6;color:var(--foam)}
+.pos .rel{font-size:11px;color:var(--mist-dim);margin-top:3px;font-style:italic}
+.contra-out{margin-top:12px;padding-top:11px;border-top:1px solid rgba(255,122,92,.24);
+  font-size:12.6px;line-height:1.62;color:var(--mist)}
+.contra-out b{color:var(--coral);display:block;font-size:9.5px;letter-spacing:.9px;
+  text-transform:uppercase;margin-bottom:4px}
+
+/* Confidence — always states its reason */
+.conf{display:flex;align-items:center;gap:var(--s-3);flex-wrap:wrap;
+  padding:12px 14px;border-radius:var(--r-md);background:rgba(3,8,15,.45);
+  border:1px solid var(--line)}
+.conf .lvl{font-size:var(--t-md);font-weight:700;color:var(--amber)}
+.arc{width:52px;height:52px;flex:none}
+.conf .reason{font-size:var(--t-sm);color:var(--mist);line-height:1.55;flex:1;
+  min-width:200px}
+.conf .reason b{color:var(--foam)}
+
+/* Sources */
+.src{padding:12px;border-radius:var(--r-md);margin-bottom:9px;cursor:pointer;
+  background:rgba(3,8,15,.45);border:1px solid var(--line);
+  transition:border-color var(--dur-base) var(--ease)}
+.src:hover{border-color:rgba(43,184,201,.5)}
+.src.hot{border-color:var(--cyan);background:rgba(79,240,224,.07);
+  box-shadow:0 0 0 1px rgba(79,240,224,.28),0 0 22px rgba(79,240,224,.1)}
+.src-top{display:flex;align-items:flex-start;gap:8px;margin-bottom:7px}
+.src-n{width:38px;height:19px;flex:none;border-radius:5px;display:grid;place-items:center;
+  font-family:var(--mono);font-size:9px;font-weight:700;background:rgba(79,240,224,.14);
+  color:var(--cyan);border:1px solid rgba(79,240,224,.3)}
+.src-nm{font-size:var(--t-sm);font-weight:600;min-width:0;flex:1;line-height:1.42}
+.src-loc{font-size:var(--t-xs);color:var(--mist-dim);font-family:var(--mono);
+  display:block;margin-top:2px;font-weight:400}
+.ev{display:inline-flex;align-items:center;gap:4px;font-size:9px;font-weight:700;
+  letter-spacing:.5px;text-transform:uppercase;padding:3px 6px;border-radius:4px;
+  margin-bottom:7px}
+.ev-v{background:rgba(168,245,200,.12);color:var(--lume);border:1px solid rgba(168,245,200,.3)}
+.ev-p{background:rgba(255,200,107,.11);color:var(--amber);border:1px solid rgba(255,200,107,.3)}
+.ev-d{background:rgba(255,122,92,.11);color:var(--coral);border:1px solid rgba(255,122,92,.32)}
+.ev-t{background:rgba(43,184,201,.11);color:var(--teal);border:1px solid rgba(43,184,201,.3)}
+.excerpt{font-size:11.6px;line-height:1.58;color:var(--mist);padding:9px 11px;
+  border-radius:8px;margin-bottom:9px;background:rgba(3,8,15,.6);
+  border-left:2px solid rgba(43,184,201,.5)}
+.excerpt mark{background:rgba(79,240,224,.2);color:var(--cyan);padding:0 2px;border-radius:3px}
+.score{display:flex;align-items:center;gap:8px}
+.score .bar{flex:1;height:4px;border-radius:2px;background:rgba(3,8,15,.75);overflow:hidden}
+.score .bar i{display:block;height:100%;border-radius:2px;
+  background:linear-gradient(90deg,var(--teal),var(--cyan))}
+.score .v{font-family:var(--mono);font-size:var(--t-xs);color:var(--teal);font-weight:600}
+.score .tag{font-size:8.5px;letter-spacing:.5px;text-transform:uppercase;
+  color:var(--mist-dim);padding:3px 5px;border-radius:4px;background:var(--deep-2);
+  font-family:var(--mono)}
+.withheld{margin-top:var(--s-3);padding:10px 11px;border-radius:9px;
+  background:rgba(139,127,232,.07);border:1px dashed rgba(139,127,232,.3);
+  font-size:11px;line-height:1.55;color:var(--mist)}
+.withheld b{color:var(--violet);display:block;margin-bottom:3px;font-size:9.5px;
+  letter-spacing:.8px;text-transform:uppercase}
+
+/* ---------- §7.2 Orchestration rail ---------- */
+.orbs{display:flex;flex-direction:column;gap:var(--s-2)}
+.orb{display:flex;align-items:center;gap:11px;padding:11px 12px;border-radius:var(--r-md);
+  background:rgba(3,8,15,.45);border:1px solid var(--line);
+  transition:border-color var(--dur-base) var(--ease)}
+.orb .ball{width:30px;height:30px;flex:none;border-radius:50%;display:grid;
+  place-items:center;font-size:14px;border:1.5px solid var(--line-2);
+  background:rgba(3,8,15,.7);transition:all var(--dur-base) var(--ease)}
+.orb .info{min-width:0;flex:1}
+.orb .nm{font-size:11.5px;font-weight:620;white-space:nowrap;overflow:hidden;
+  text-overflow:ellipsis}
+.orb .owns{font-size:9.5px;color:var(--mist-dim);font-family:var(--mono);margin-top:1px;
+  display:flex;align-items:center;gap:4px}
+.orb .owns::before{content:"↳";opacity:.7}
+.orb .ms{font-family:var(--mono);font-size:9.5px;color:var(--mist-dim);flex:none}
+.orb.done .ball{border-color:rgba(168,245,200,.6);background:rgba(168,245,200,.12)}
+.orb.done{border-color:rgba(168,245,200,.3)}
+.orb.active .ball{border-color:var(--cyan);background:rgba(79,240,224,.2);
+  box-shadow:0 0 18px rgba(79,240,224,.5);animation:breathe 2.4s ease-in-out infinite}
+@keyframes breathe{0%,100%{box-shadow:0 0 12px rgba(79,240,224,.35)}
+  50%{box-shadow:0 0 24px rgba(79,240,224,.7)}}
+.orb.partial .ball{border-color:var(--amber);background:rgba(255,200,107,.14)}
+.orb.partial .ms{color:var(--amber)}
+.orb.m.done .ball{border-color:rgba(168,245,200,.6)}
+
+.gate{margin-top:var(--s-4)}
+.gate-h{font-size:9.5px;letter-spacing:1.1px;text-transform:uppercase;
+  color:var(--mist-dim);margin-bottom:var(--s-2);display:flex;justify-content:space-between}
+.gate-h b{color:var(--lume);font-family:var(--mono)}
+.rule{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:10.5px;
+  color:var(--mist);line-height:1.4}
+.rule .tick{width:14px;height:14px;flex:none;border-radius:4px;display:grid;
+  place-items:center;font-size:8px;font-weight:700;background:rgba(168,245,200,.14);
+  color:var(--lume);border:1px solid rgba(168,245,200,.35)}
+.rule .tick.f{background:rgba(255,200,107,.14);color:var(--amber);
+  border-color:rgba(255,200,107,.4)}
+.rule .n{font-family:var(--mono);font-size:9px;color:var(--mist-dim);flex:none}
+
+.timeline{margin-top:var(--s-4);border-top:1px solid var(--line);padding-top:var(--s-3);
+  max-height:230px;overflow-y:auto}
+.tl{display:flex;gap:8px;padding:4px 0;font-size:10.5px;line-height:1.45}
+.tl .t{font-family:var(--mono);font-size:9px;color:var(--mist-dim);flex:none;width:38px}
+.tl .m{color:var(--mist);min-width:0}
+.tl .m b{color:var(--cyan);font-weight:600}
+.tl.warn .m b{color:var(--amber)}
+
+footer{text-align:center;margin-top:26px;font-size:11px;color:var(--mist-dim);line-height:1.8}
+footer a{color:var(--teal)}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:var(--line-2)}
+:focus-visible{outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px}
+</style>
+<script src="pandora.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#sitrep">Skip to the situation report</a>
+<div class="ambient" aria-hidden="true"></div>
+<div class="plankton" id="plankton" aria-hidden="true"></div>
+
+<div class="shell">
+
+<header>
+  <div class="brand">
+    <div class="sigil" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="#4ff0e0"
+        stroke-width="1.6" stroke-linecap="round">
+        <path d="M12 2v20M2 12h20"/><circle cx="12" cy="12" r="4.5" stroke-width="1.3"/>
+        <path d="M5.5 5.5l3 3M18.5 5.5l-3 3M5.5 18.5l3-3M18.5 18.5l-3-3" stroke-width="1.1"/>
+      </svg>
+    </div>
+    <div>
+      <h1>Pandora Knowledge Guardian</h1>
+      <p>Guardian Command Center</p>
+    </div>
+  </div>
+  <div class="kb-pill"><span class="pulse" aria-hidden="true"></span>
+    188 chunks · 135 records · 15 chapters</div>
+  <button class="newbtn" id="reset">＋ New Investigation</button>
+</header>
+
+<div class="grid">
+
+  <!-- ═══════════ LEFT · KNOWLEDGE & MAP ═══════════ -->
+  <div>
+    <section class="panel" aria-labelledby="kb-h">
+      <div class="panel-h" id="kb-h"><span class="n" aria-hidden="true">1</span> Knowledge Base</div>
+      <div class="panel-b">
+        <div class="drop" id="drop" tabindex="0" role="button"
+          aria-label="Upload field documents: PDF, TXT, CSV or DOCX">
+          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#2bb8c9"
+            stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+            <path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>
+          <b>Drop field documents</b>
+          <span>PDF · TXT · CSV · DOCX</span>
+        </div>
+
+        <div class="doc">
+          <span class="ic" aria-hidden="true">PDF</span>
+          <span class="meta"><span class="nm">Pandora_RAG_Knowledge_2026.pdf</span>
+            <span class="sub">56 pp · preloaded</span></span>
+          <span class="ok" aria-label="Indexed">✓</span>
+        </div>
+
+        <div class="corpus-stats">
+          <div class="cs"><b>188</b><span>chunks</span></div>
+          <div class="cs"><b>135</b><span>records</span></div>
+          <div class="cs"><b>15</b><span>chapters</span></div>
+        </div>
+
+        <div class="hoisted">
+          <b>958 boilerplate sentences hoisted</b>
+          Text repeated verbatim across records is stored once as 9 shared
+          protocols. All ten REG records shared an identical assessment
+          paragraph — which used to return ten near-identical hits per query.
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="map-h">
+      <div class="panel-h" id="map-h"><span class="n" aria-hidden="true">2</span> Living Network</div>
+      <div class="panel-b">
+        <div class="map-wrap">
+          <svg viewBox="0 0 260 210" role="img"
+            aria-label="Stylized map of Pandora's ten regions. Luminous Shelf is currently lit at W2 Advisory.">
+            <!-- faint bioluminescent contours -->
+            <g stroke="rgba(43,184,201,.12)" fill="none" stroke-width=".6">
+              <ellipse cx="130" cy="105" rx="112" ry="88"/>
+              <ellipse cx="130" cy="105" rx="86" ry="66"/>
+              <ellipse cx="130" cy="105" rx="58" ry="44"/>
+            </g>
+            <!-- REG-01 Luminous Shelf (lit) -->
+            <path class="zone lit-w2" id="z1"
+              d="M42 128 q22-16 48-10 t40 14 q6 16-14 22 t-52 4 q-26-6-22-30z"/>
+            <text class="zlabel on" x="60" y="146">REG-01</text>
+            <!-- REG-02 Emerald Canopy -->
+            <path class="zone" d="M104 42 q30-14 54 2 t18 30 q-14 14-40 10 t-34-16 q-8-16 2-26z"/>
+            <text class="zlabel" x="126" y="66">REG-02</text>
+            <!-- REG-03 Cloudspine Highlands -->
+            <path class="zone" d="M186 34 q24-8 40 10 t4 30 q-18 10-34-2 t-16-26z"/>
+            <text class="zlabel" x="196" y="58">REG-03</text>
+            <!-- REG-04 Silverreed Wetlands -->
+            <path class="zone" d="M96 96 q28-8 44 6 t8 26 q-18 10-38 2 t-20-22z"/>
+            <text class="zlabel" x="112" y="118">REG-04</text>
+            <!-- REG-05 Obsidian Reach -->
+            <path class="zone" d="M170 96 q30-6 44 12 t2 28 q-20 8-38-4 t-14-26z"/>
+            <text class="zlabel" x="182" y="120">REG-05</text>
+            <!-- REG-06 Whispering Dunes -->
+            <path class="zone" d="M28 62 q24-10 42 4 t6 24 q-18 10-36 0 t-16-22z"/>
+            <text class="zlabel" x="40" y="84">REG-06</text>
+            <!-- REG-07 Deep Current Expanse -->
+            <path class="zone" d="M112 156 q34-10 56 6 t10 26 q-24 10-50 0 t-20-26z"/>
+            <text class="zlabel" x="132" y="180">REG-07</text>
+            <!-- REG-08 Mistroot Basin -->
+            <path class="zone" d="M204 140 q22-6 34 10 t0 22 q-16 8-30-2 t-8-24z"/>
+            <text class="zlabel" x="212" y="162">REG-08</text>
+            <!-- REG-09 Aurora Mangroves -->
+            <path class="zone" d="M50 168 q26-8 42 6 t6 22 q-20 8-38-2 t-14-22z"/>
+            <text class="zlabel" x="62" y="188">REG-09</text>
+            <!-- REG-10 Sunfall Archipelago -->
+            <path class="zone" d="M16 110 q20-6 30 8 t2 20 q-16 6-28-4 t-8-20z"/>
+            <text class="zlabel" x="24" y="130">REG-10</text>
+          </svg>
+        </div>
+        <div class="map-legend">
+          <span><i class="dotm" style="background:var(--coral)"></i> W3/W4</span>
+          <span><i class="dotm" style="background:var(--amber)"></i> W2</span>
+          <span><i class="dotm" style="background:var(--teal)"></i> W1 / idle</span>
+        </div>
+        <p class="map-read"><b style="color:var(--amber)">REG-01 Luminous Shelf</b>
+          lit at W2. One region affected — spread has not crossed settlements, which
+          is what separates W2 from W4.</p>
+      </div>
+    </section>
+  </div>
+
+  <!-- ═══════════ CENTRE · SITREP ═══════════ -->
+  <div>
+    <section class="panel" aria-labelledby="ask-h">
+      <div class="panel-h" id="ask-h"><span class="n" aria-hidden="true">3</span> Describe the situation</div>
+      <div class="ask">
+        <label class="sr" for="q">Describe the situation</label>
+        <textarea id="q">The water near Awa Reef has turned bright turquoise and the fish are leaving the shallows. What is happening, which species are at risk, and what should we do first?</textarea>
+        <div class="ask-row">
+          <button class="btn btn-primary" id="run">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" aria-hidden="true">
+              <path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            Assemble Situation Report
+          </button>
+          <span class="hint"><kbd>Ctrl</kbd>+<kbd>↵</kbd></span>
+        </div>
+        <div class="suggest">
+          <p>Suggested guardian queries</p>
+          <div class="row">
+            <button class="sq">Possible causes of unusual ocean water change?</button>
+            <button class="sq">Which species are most vulnerable to contamination?</button>
+            <button class="sq">Immediate actions after detecting coral damage</button>
+            <button class="sq">Compare contamination vs. underwater volcanic response</button>
+            <button class="sq">Which areas need emergency attention first?</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- §8.4 triage banner: renders before generation completes -->
+    <div class="triage w2" role="status">
+      <span class="shape" aria-hidden="true">
+        <svg viewBox="0 0 34 34" fill="none" stroke="#ffc86b" stroke-width="2"
+          stroke-linecap="round"><path d="M17 4 L32 30 H2 Z"/>
+          <path d="M17 14v7M17 25h.01" stroke-width="2.4"/></svg>
+      </span>
+      <div>
+        <span class="lv">W2</span>
+        <span class="word">ADVISORY</span>
+        <p class="why">Unusual colour with localised fish avoidance, no reported
+          illness or mortality — matches W2 indicators, not W3.
+          <span class="src">[§4.5 Water Incident Classification · p.12]</span></p>
+      </div>
+    </div>
+
+    <section class="panel" id="sitrep" aria-labelledby="rep-h">
+      <div class="rep-head">
+        <div>
+          <div class="who" id="rep-h">Situation Report</div>
+          <div class="when">8 chunks · 5 families · 3 agents · 5.4 s</div>
+        </div>
+        <div class="roles" role="group" aria-label="Report audience">
+          <button aria-pressed="true">Guardian</button>
+          <button aria-pressed="false">Researcher</button>
+          <button aria-pressed="false">Citizen</button>
+        </div>
+        <p class="frozen">Re-renders from the same frozen evidence set — no re-query,
+          identical record IDs across all three roles.</p>
+      </div>
+
+      <div class="sitrep">
+
+        <!-- 2 · AFFECTED SPECIES -->
+        <section class="sec" data-agent="marine">
+          <div class="sec-h"><span class="t">Affected Species</span>
+            <span class="owner marine">🐋 Marine-Life Protector</span></div>
+          <div class="sec-body">
+            <div class="sp"><span class="id">FAU-001</span>
+              <span><span class="nm">Tideglass Grazer</span>
+                <span class="de">Marine herbivore of seagrass lagoons. Documented
+                pressure: <b>juveniles vulnerable to turbidity</b>. Protected during
+                spawning <span class="cite" data-c="4" tabindex="0">FAU-001</span></span></span></div>
+            <div class="sp"><span class="id">FAU-026</span>
+              <span><span class="nm">Ironjaw Shellfish</span>
+                <span class="de">Filters water; documented pressure is
+                <b>toxin accumulation</b>, guidance is harvest testing. §8.3 requires
+                shellfish be avoided after blooms because they concentrate toxins
+                even when water appears clear
+                <span class="cite" data-c="5" tabindex="0">§8.3</span></span></span></div>
+            <div class="sp"><span class="id">FAU-002</span>
+              <span><span class="nm">Ribbonfin Skimmer</span>
+                <span class="de">Surface fish of warm reef channels; controls plankton
+                swarms and is <b>sensitive to oil films</b>. No harvest during Bloom
+                Tide <span class="cite" data-c="6" tabindex="0">FAU-002</span></span></span></div>
+          </div>
+        </section>
+
+        <!-- 3 · LIKELY CAUSES -->
+        <section class="sec" data-agent="invest">
+          <div class="sec-h"><span class="t">Likely Causes</span>
+            <span class="owner invest">🌊 Incident Investigator</span></div>
+          <div class="sec-body">
+            <div class="empty">
+              <b>Cause not established</b>
+              INC-001 lists four competing hypotheses — mineral sediment, plankton
+              bloom, chemical release, light reflection — and states these are
+              <b>hypotheses, not confirmed findings</b>
+              <span class="cite" data-c="1" tabindex="0">INC-001</span>. Three field
+              records disagree and the only laboratory result cannot adjudicate.
+            </div>
+
+            <div class="contra">
+              <div class="contra-h"><span aria-hidden="true">⚠</span>
+                3 records disagree — no winner selected</div>
+              <div class="contra-b">
+                <div class="pos"><span class="rid">FN-A</span>
+                  <span><span class="cl">Colour began after three calm hot days,
+                    strongest near the surface. Author suggests a plankton bloom and
+                    notes no chemical odour.</span>
+                  <span class="rel">2026-06-02 · observational, author's own interpretation</span></span></div>
+                <div class="pos"><span class="rid">FN-B</span>
+                  <span><span class="cl">Maintenance on an upstream pigment workshop
+                    two days before the change; a damaged waste container was
+                    observed.</span>
+                  <span class="rel">2026-06-03 · did <b>not</b> confirm material entered the water</span></span></div>
+                <div class="pos"><span class="rid">LAB-C</span>
+                  <span><span class="cl">Elevated harmless carbonate particles and
+                    moderate plankton density. Concludes both natural and human
+                    contributions remain possible.</span>
+                  <span class="rel">2026-06-05 · chain-of-custody form incomplete — reliability reduced</span></span></div>
+                <div class="contra-out">
+                  <b>Why this stays unresolved</b>
+                  A natural and a human cause each have exactly one supporting record,
+                  and the only laboratory result has a broken chain of custody, so it
+                  cannot break the tie. Naming a cause now would overstate the
+                  evidence and, under POL-010, would assign blame before investigation
+                  is complete. Recommended: resample upstream and downstream at matched
+                  depths with complete chain-of-custody documentation per checklist A.1
+                  <span class="cite" data-c="3" tabindex="0">LAB-C</span>.
+                </div>
+              </div>
+            </div>
+
+            <div class="infer" style="margin-top:var(--s-3)">
+              <span class="kind">Model inference — verify before acting</span>
+              <p>Station WS-01 at Awa Reef North fell from DO 7.1 mg/L on 2026-05-03
+              to 5.4 mg/L on 2026-06-02 with a mild green tint and fewer grazers
+              <span class="cite" data-c="2" tabindex="0">WS-01</span>. That trend is
+              consistent with FN-A's bloom hypothesis, since §4.1 links low oxygen to
+              algae and organic load — but <b>the corpus never connects these two
+              records</b>. The link is ours, and §4.1 also warns a rapid change must
+              be verified at multiple depths first.</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- 4 · RECOMMENDED ACTIONS -->
+        <section class="sec" data-agent="respond">
+          <div class="sec-h"><span class="t">Recommended Actions</span>
+            <span class="owner respond">🚨 Emergency Responder</span></div>
+          <div class="sec-body">
+            <div class="prot">
+              <span class="kind">From the record — documented protocol</span>
+              <ol>
+                <li>Restrict drinking water and suspend shellfish harvest
+                  <span class="cite" data-c="1" tabindex="0">INC-001</span></li>
+                <li>Sample at three depths; inspect upstream and wind direction
+                  <span class="cite" data-c="1" tabindex="0">INC-001</span></li>
+                <li>Establish an exclusion boundary, log every entrant, preserve
+                  samples under documented chain of custody
+                  <span class="cite" data-c="1" tabindex="0">INC-001</span></li>
+                <li>Provide alternate drinking water and investigate the source — the
+                  W2 Advisory response
+                  <span class="cite" data-c="7" tabindex="0">§4.5</span></li>
+                <li>Notify drinking-water, fishery, clinic and accommodation operators
+                  where exposure is plausible; set a review time and the criteria for
+                  lifting restrictions
+                  <span class="cite" data-c="8" tabindex="0">A.1</span></li>
+              </ol>
+              <p><b>Public alert</b> — using the corpus's own KC-01 template: <i>"At
+              06:40 at Awa Reef North we observed bright turquoise water and fish
+              moving offshore. The cause is <b>not yet confirmed</b>. People should
+              use alternate drinking water and avoid shellfish harvest. Report
+              symptoms through the Council of Tides. The next update will be issued at
+              18:00."</i> <span class="cite" data-c="9" tabindex="0">KC-01</span></p>
+            </div>
+          </div>
+        </section>
+
+        <!-- 6 · CONFIDENCE -->
+        <section class="sec" data-agent="orch">
+          <div class="sec-h"><span class="t">Confidence</span>
+            <span class="owner orch">⚙️ Orchestrator · GroundingGate</span></div>
+          <div class="sec-body">
+            <div class="conf">
+              <svg class="arc" viewBox="0 0 36 36" role="img" aria-label="Confidence: moderate, 0.68">
+                <circle cx="18" cy="18" r="15.6" fill="none" stroke="#0f2c42" stroke-width="3.4"/>
+                <circle cx="18" cy="18" r="15.6" fill="none" stroke="#ffc86b" stroke-width="3.4"
+                  stroke-linecap="round" stroke-dasharray="98 98" stroke-dashoffset="31"
+                  transform="rotate(-90 18 18)"/>
+                <text x="18" y="21.5" text-anchor="middle" font-size="9"
+                  font-family="JetBrains Mono, monospace" fill="#ffc86b" font-weight="700">.68</text>
+              </svg>
+              <div>
+                <span class="lvl">Moderate</span>
+                <p class="reason"><b>8 sources · 1 unresolved conflict ·
+                  chain of custody incomplete.</b> 11 of 11 factual claims resolve to
+                  a retrieved record. Confidence is capped at moderate because the
+                  cause is contested, not because retrieval was weak.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </section>
+
+    <!-- 5 · SOURCES -->
+    <section class="panel" aria-labelledby="src-h">
+      <div class="panel-h" id="src-h"><span class="n" aria-hidden="true">4</span>
+        Sources · union across all sections</div>
+      <div class="panel-b">
+        <article class="src" data-c="1" tabindex="0">
+          <div class="src-top"><span class="src-n">INC-001</span>
+            <span class="src-nm">Turquoise Water Event
+              <span class="src-loc">ch.12 · p.40 · REG-01</span></span></div>
+          <span class="ev ev-p"><span aria-hidden="true">~</span> Provisional interpretation</span>
+          <div class="excerpt">"Reported signs: <mark>water turns bright turquoise</mark>;
+            <mark>fish move offshore</mark>. Initial risk level: HIGH. Plausible causes:
+            mineral sediment, plankton bloom, chemical release, light reflection.
+            <mark>These are hypotheses, not confirmed findings.</mark>"</div>
+          <div class="score"><span class="tag">lex+dense</span>
+            <span class="bar" aria-hidden="true"><i style="width:100%"></i></span>
+            <span class="v">1.00</span></div>
+        </article>
+
+        <article class="src" data-c="2" tabindex="0">
+          <div class="src-top"><span class="src-n">WS-01</span>
+            <span class="src-nm">Awa Reef North monitoring
+              <span class="src-loc">§14.1 · p.46–47</span></span></div>
+          <span class="ev ev-v"><span aria-hidden="true">✓</span> Verified observation</span>
+          <div class="excerpt">"2026-05-03 · 28.2 °C · DO 7.1 · pH 8.12 · clear, normal
+            grazing — 2026-06-02 · <mark>29.7 °C</mark> · <mark>DO 5.4</mark> · pH 8.05 ·
+            <mark>mild green tint; fewer grazers</mark>"</div>
+          <div class="score"><span class="tag">dense</span>
+            <span class="bar" aria-hidden="true"><i style="width:91%"></i></span>
+            <span class="v">0.91</span></div>
+        </article>
+
+        <article class="src" data-c="3" tabindex="0">
+          <div class="src-top"><span class="src-n">LAB-C</span>
+            <span class="src-nm">Laboratory Note
+              <span class="src-loc">§14.3 · p.48 · added by cluster fill</span></span></div>
+          <span class="ev ev-d"><span aria-hidden="true">!</span> Disputed report</span>
+          <div class="excerpt">"Elevated harmless carbonate particles and moderate
+            plankton density, but the sample
+            <mark>chain-of-custody form was incomplete</mark>. Both natural and human
+            contributions remain possible."</div>
+          <div class="score"><span class="tag">cluster</span>
+            <span class="bar" aria-hidden="true"><i style="width:74%"></i></span>
+            <span class="v">0.74</span></div>
+        </article>
+
+        <article class="src" data-c="4" tabindex="0">
+          <div class="src-top"><span class="src-n">FAU-001</span>
+            <span class="src-nm">Tideglass Grazer
+              <span class="src-loc">ch.5 · p.12 · seagrass lagoons</span></span></div>
+          <span class="ev ev-v"><span aria-hidden="true">✓</span> Verified observation</span>
+          <div class="excerpt">"…primary documented pressure is
+            <mark>juveniles vulnerable to turbidity</mark>. Current guidance is
+            <mark>protected during spawning</mark>."</div>
+          <div class="score"><span class="tag">lex+dense</span>
+            <span class="bar" aria-hidden="true"><i style="width:87%"></i></span>
+            <span class="v">0.87</span></div>
+        </article>
+
+        <article class="src" data-c="7" tabindex="0">
+          <div class="src-top"><span class="src-n">§4.5</span>
+            <span class="src-nm">Water Incident Classification
+              <span class="src-loc">ch.4 · p.12</span></span></div>
+          <span class="ev ev-t"><span aria-hidden="true">§</span> Documented protocol</span>
+          <div class="excerpt">"<mark>W2 Advisory</mark> — Minor symptoms, localized
+            <mark>fish avoidance</mark>, moderate parameter shift → Restrict sensitive
+            use, provide alternate drinking water, investigate source."</div>
+          <div class="score"><span class="tag">lex+dense</span>
+            <span class="bar" aria-hidden="true"><i style="width:96%"></i></span>
+            <span class="v">0.96</span></div>
+        </article>
+
+        <div class="withheld">
+          <b>2 sources withheld — access class</b>
+          MED-002 Bloom Inhalation Syndrome and §6.21 Medicinal Plant Safety are
+          healer-limited under POL-005. Switch role to Healer to include them.
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ═══════════ RIGHT · ORCHESTRATION RAIL ═══════════ -->
+  <section class="panel rail" aria-labelledby="rail-h">
+    <div class="panel-h" id="rail-h"><span class="n" aria-hidden="true">5</span> Orchestration</div>
+    <div class="panel-b">
+
+      <div class="orbs" id="orbs">
+        <div class="orb done m" data-owns="Affected Species">
+          <span class="ball" aria-hidden="true">🐋</span>
+          <span class="info"><span class="nm">Marine-Life Protector</span>
+            <span class="owns">Affected Species · 3 species</span></span>
+          <span class="ms">2.6s</span>
+        </div>
+        <div class="orb done" data-owns="Likely Causes">
+          <span class="ball" aria-hidden="true">🌊</span>
+          <span class="info"><span class="nm">Incident Investigator</span>
+            <span class="owns">Likely Causes · conflict found</span></span>
+          <span class="ms">3.4s</span>
+        </div>
+        <div class="orb done" data-owns="Recommended Actions">
+          <span class="ball" aria-hidden="true">🚨</span>
+          <span class="info"><span class="nm">Emergency Responder</span>
+            <span class="owns">Recommended Actions · 6 claims</span></span>
+          <span class="ms">2.9s</span>
+        </div>
+      </div>
+
+      <div class="gate">
+        <div class="gate-h"><span>GroundingGate · §15.2</span><b>8/8</b></div>
+        <div class="rule"><span class="tick" aria-hidden="true">✓</span>
+          <span class="n">1</span><span>Record IDs cited on every claim</span></div>
+        <div class="rule"><span class="tick" aria-hidden="true">✓</span>
+          <span class="n">2</span><span>Causes kept as hypotheses</span></div>
+        <div class="rule"><span class="tick" aria-hidden="true">✓</span>
+          <span class="n">3</span><span>No cross-record merging</span></div>
+        <div class="rule"><span class="tick" aria-hidden="true">✓</span>
+          <span class="n">4</span><span>Time and location preserved</span></div>
+        <div class="rule"><span class="tick" aria-hidden="true">✓</span>
+          <span class="n">5</span><span>Health red flags — n/a, none cited</span></div>
+        <div class="rule"><span class="tick" aria-hidden="true">✓</span>
+          <span class="n">6</span><span>Absence stated where absent</span></div>
+        <div class="rule"><span class="tick" aria-hidden="true">✓</span>
+          <span class="n">7</span><span>Conflict summarised, not merged</span></div>
+        <div class="rule"><span class="tick" aria-hidden="true">✓</span>
+          <span class="n">8</span><span>Protocol separated from inference</span></div>
+      </div>
+
+      <div class="timeline" id="timeline" role="log" aria-live="polite"
+        aria-label="Orchestration trace">
+        <div class="tl"><span class="t">0.00s</span><span class="m">
+          <b>query.received</b> — situation described, 31 words</span></div>
+        <div class="tl"><span class="t">0.31s</span><span class="m">
+          <b>query.rewritten</b> — 3 variants + turquoise/turbidity expansion</span></div>
+        <div class="tl"><span class="t">0.44s</span><span class="m">
+          <b>priority.classified</b> — W2 Advisory [§4.5] · banner rendered</span></div>
+        <div class="tl"><span class="t">0.47s</span><span class="m">
+          <b>map.zone_lit</b> — REG-01 Luminous Shelf → W2</span></div>
+        <div class="tl"><span class="t">0.52s</span><span class="m">
+          <b>route.decided</b> — incident indicators → sitrep → 3 in parallel</span></div>
+        <div class="tl"><span class="t">1.18s</span><span class="m">
+          <b>retrieval.completed</b> — 40 candidates → 4 dupes dropped → top 6</span></div>
+        <div class="tl warn"><span class="t">1.24s</span><span class="m">
+          <b>cluster.filled</b> — FN-A selected → FN-B, LAB-C pulled in</span></div>
+        <div class="tl"><span class="t">1.31s</span><span class="m">
+          <b>agents.dispatched</b> — 🐋 🌊 🚨 ignite simultaneously</span></div>
+        <div class="tl"><span class="t">3.92s</span><span class="m">
+          <b>section.completed</b> — 🐋 Affected Species · 3 species, 4 sources</span></div>
+        <div class="tl warn"><span class="t">4.21s</span><span class="m">
+          <b>conflict.detected</b> — FN-A / FN-B / LAB-C disagree on cause</span></div>
+        <div class="tl"><span class="t">4.28s</span><span class="m">
+          <b>section.completed</b> — 🚨 Recommended Actions · 6 claims</span></div>
+        <div class="tl warn"><span class="t">4.71s</span><span class="m">
+          <b>section.unavailable</b> — 🌊 Likely Causes: cause not established</span></div>
+        <div class="tl"><span class="t">5.19s</span><span class="m">
+          <b>validation.result</b> — 8/8 rules passed · groundedness 100%</span></div>
+        <div class="tl"><span class="t">5.40s</span><span class="m">
+          <b>report.completed</b> — 5.4 s · 5 LLM calls · 8 sources</span></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<footer>
+  Guardian Command Center · implements SOLUTION.md §2.1, §7.2, §8.2, §8.4–8.6<br>
+  Palette is <a href="../theme-1-abyss-bioluminescent.html">theme-1</a> verbatim,
+  except tertiary ink lifted to <code style="color:var(--mist-dim)">#7c9caf</code>
+  (6.45:1) — theme-1's <code>#4d7385</code> measured 3.66:1 and failed AA ·
+  <a href="01-design-system.html">design system</a> ·
+  <a href="03-answer-states.html">answer states</a>
+</footer>
+</div>
+
+<script>
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+
+/* ---- Citation ⇄ source spotlight ---- */
+function spotlight(id, on) {
+  document.querySelectorAll(`.cite[data-c="${id}"]`)
+    .forEach(e => e.classList.toggle('hot', on));
+  document.querySelector(`.src[data-c="${id}"]`)?.classList.toggle('hot', on);
+}
+document.querySelectorAll('.cite').forEach(c => {
+  const id = c.dataset.c;
+  const reveal = () => {
+    const card = document.querySelector(`.src[data-c="${id}"]`);
+    if (!card) return;
+    card.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'center' });
+    card.classList.add('hot');
+    setTimeout(() => card.classList.remove('hot'), 1700);
+  };
+  c.addEventListener('mouseenter', () => spotlight(id, true));
+  c.addEventListener('mouseleave', () => spotlight(id, false));
+  c.addEventListener('focus', () => spotlight(id, true));
+  c.addEventListener('blur', () => spotlight(id, false));
+  c.addEventListener('click', reveal);
+  c.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); reveal(); }
+  });
+});
+document.querySelectorAll('.src').forEach(s => {
+  const id = s.dataset.c;
+  ['mouseenter', 'focus'].forEach(ev => s.addEventListener(ev, () => spotlight(id, true)));
+  ['mouseleave', 'blur'].forEach(ev => s.addEventListener(ev, () => spotlight(id, false)));
+});
+
+/* ---- Role toggle: re-render only, never re-query (§8.6) ---- */
+document.querySelectorAll('.roles').forEach(group => {
+  group.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+    group.querySelectorAll('[aria-pressed]')
+      .forEach(x => x.setAttribute('aria-pressed', 'false'));
+    b.setAttribute('aria-pressed', 'true');
+  }));
+});
+
+/* ---- Suggested query fills the box ---- */
+const q = document.getElementById('q');
+document.querySelectorAll('.sq').forEach(b => b.addEventListener('click', () => {
+  q.value = b.textContent.trim();
+  q.focus();
+}));
+
+/* ---- Three orbs ignite SIMULTANEOUSLY, sections complete out of order ----
+   Out-of-order completion is the proof of genuine concurrency (§7.2). */
+const orbs = [...document.querySelectorAll('.orb')];
+const secs = [...document.querySelectorAll('.sec')];
+function assemble() {
+  orbs.forEach(o => { o.classList.remove('done', 'partial'); o.classList.add('active'); });
+  secs.forEach(s => s.classList.add('filling'));
+  const finishOrder = [0, 2, 1];       // marine, responder, investigator
+  const delays = reduced ? [80, 140, 200] : [2600, 2900, 3400];
+  finishOrder.forEach((idx, i) => setTimeout(() => {
+    orbs[idx].classList.remove('active');
+    orbs[idx].classList.add('done');
+    secs[idx]?.classList.remove('filling');
+  }, delays[i]));
+  setTimeout(() => secs.forEach(s => s.classList.remove('filling')),
+    (reduced ? 240 : 3600));
+}
+document.getElementById('run').addEventListener('click', assemble);
+q.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); assemble(); }
+});
+document.getElementById('reset').addEventListener('click', () => {
+  q.value = ''; q.focus();
+});
+
+/* ---- Map zone hover reporting ---- */
+const REGIONS = {
+  z1: 'REG-01 Luminous Shelf — W2 Advisory, 1 active incident',
+};
+document.querySelectorAll('.zone').forEach(z => {
+  z.addEventListener('mouseenter', () => {
+    const msg = REGIONS[z.id];
+    if (msg) z.setAttribute('aria-label', msg);
+  });
+});
+
+/* ---- Dropzone affordance ---- */
+const drop = document.getElementById('drop');
+['dragenter', 'dragover'].forEach(ev =>
+  drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
+['dragleave', 'drop'].forEach(ev =>
+  drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('over'); }));
+</script>
+</body>
+</html>
