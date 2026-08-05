@@ -54,16 +54,18 @@ class AgentClient:
     # --- plumbing ---
 
     async def _request(
-        self, method: str, path: str, *, timeout: float, json: Any | None = None
+        self, method: str, path: str, *, timeout_seconds: float, json: Any | None = None
     ) -> httpx.Response:
         if self._client is None:
             raise errors.agent_service_unavailable("The agent client is not initialised.")
         try:
-            response = await self._client.request(method, path, json=json, timeout=timeout)
+            response = await self._client.request(
+                method, path, json=json, timeout=timeout_seconds
+            )
         except httpx.TimeoutException as exc:
-            logger.warning("agent timeout %s %s after %ss", method, path, timeout)
+            logger.warning("agent timeout %s %s after %ss", method, path, timeout_seconds)
             raise errors.agent_service_timeout(
-                f"The agent service did not respond within {timeout:.0f}s."
+                f"The agent service did not respond within {timeout_seconds:.0f}s."
             ) from exc
         except httpx.HTTPError as exc:
             logger.warning("agent unreachable %s %s: %s", method, path, exc)
@@ -101,7 +103,7 @@ class AgentClient:
         response = await self._request(
             "POST",
             "/rag/ingest",
-            timeout=self._settings.agent_ingest_timeout_seconds,
+            timeout_seconds=self._settings.agent_ingest_timeout_seconds,
             json=payload.model_dump(mode="json"),
         )
         return RagIngestResponse.model_validate(response.json())
@@ -114,7 +116,7 @@ class AgentClient:
         response = await self._request(
             "POST",
             "/rag/query",
-            timeout=self._settings.agent_query_timeout_seconds,
+            timeout_seconds=self._settings.agent_query_timeout_seconds,
             json=request.model_dump(mode="json"),
         )
         return RagQueryResponse.model_validate(response.json())
@@ -127,7 +129,7 @@ class AgentClient:
         response = await self._request(
             "POST",
             "/agent/run",
-            timeout=self._settings.agent_query_timeout_seconds,
+            timeout_seconds=self._settings.agent_query_timeout_seconds,
             json=request.model_dump(mode="json"),
         )
         return AgentRunResponse.model_validate(response.json())

@@ -1,0 +1,13 @@
+# Secrets — never commit. Azure AI Search F0 is API-key-only; a leaked key is a live key.
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/

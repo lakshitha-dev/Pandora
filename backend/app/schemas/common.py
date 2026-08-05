@@ -4,7 +4,7 @@ Every model here mirrors docs/API_CONTRACT.md. The contract is the source of
 truth; these are its implementation.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Annotated, Any, Literal
 from uuid import UUID
 
@@ -14,8 +14,8 @@ from pydantic import BaseModel, Field, PlainSerializer
 def _iso_utc(value: datetime) -> str:
     """ISO 8601 UTC with a trailing Z — `2026-08-05T14:23:00Z`, as the contract states."""
     if value.tzinfo is None:
-        value = value.replace(tzinfo=timezone.utc)
-    return value.astimezone(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
+        value = value.replace(tzinfo=UTC)
+    return value.astimezone(UTC).isoformat(timespec="seconds").replace("+00:00", "Z")
 
 
 UtcDatetime = Annotated[datetime, PlainSerializer(_iso_utc, return_type=str)]
