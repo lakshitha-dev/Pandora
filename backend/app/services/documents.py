@@ -7,7 +7,7 @@ browser never waits on embedding.
 import uuid
 from datetime import UTC
 
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import errors
@@ -48,11 +48,17 @@ def resolve_content_type(file_name: str, declared: str | None, settings: Setting
     )
 
 
+# The preloaded corpus belongs to no user and every guardian can see it, so
+# visibility is "mine, or preloaded" rather than ownership alone.
+def _visible_to(user_id: uuid.UUID):
+    return or_(Document.user_id == user_id, Document.is_preloaded.is_(True))
+
+
 async def count_indexed_documents(
     session: AsyncSession, user_id: uuid.UUID, document_ids: list[uuid.UUID] | None = None
 ) -> int:
     stmt = select(func.count(Document.id)).where(
-        Document.user_id == user_id, Document.status == "indexed"
+        _visible_to(user_id), Document.status == "indexed"
     )
     if document_ids:
         stmt = stmt.where(Document.id.in_(document_ids))
@@ -62,7 +68,7 @@ async def count_indexed_documents(
 async def get_document(
     session: AsyncSession, user_id: uuid.UUID, document_id: uuid.UUID
 ) -> Document:
-    stmt = select(Document).where(Document.id == document_id, Document.user_id == user_id)
+    stmt = select(Document).where(Document.id == document_id, _visible_to(user_id))
     document = (await session.execute(stmt)).scalar_one_or_none()
     if document is None:
         # A document owned by someone else is indistinguishable from one that
@@ -79,7 +85,7 @@ async def list_documents(
     limit: int = 50,
     offset: int = 0,
 ) -> tuple[list[Document], int]:
-    filters = [Document.user_id == user_id]
+    filters = [_visible_to(user_id)]
     if status:
         filters.append(Document.status == status)
 
@@ -129,6 +135,10 @@ async def delete_document(
 ) -> None:
     """Delete crosses two stores: the Postgres row and the Azure AI Search vectors."""
     document = await get_document(session, user_id, document_id)
+    if document.is_preloaded:
+        # The preloaded corpus is the demo. Deleting it would empty the index
+        # every other question depends on.
+        raise errors.corpus_document_immutable()
     if document.status == "indexing":
         raise errors.document_already_indexing(document_id)
 
@@ -177,6 +187,7 @@ async def ingest_document(
             if result.status == "indexed":
                 document.status = "indexed"
                 document.chunk_count = result.chunk_count
+                document.record_count = result.record_count
                 document.page_count = result.page_count
                 document.indexed_at = utcnow()
                 document.error_message = None

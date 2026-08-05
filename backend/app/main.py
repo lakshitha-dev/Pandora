@@ -9,6 +9,7 @@ entrypoint.
 
 import asyncio
 import sys
+import uuid
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -40,9 +41,55 @@ def _use_selector_event_loop_on_windows() -> None:
 _use_selector_event_loop_on_windows()
 
 
+async def _bootstrap_dev_database() -> None:
+    """Create tables and seed the corpus row on a non-Postgres URL.
+
+    Alembic owns the schema on Postgres and its migrations use JSONB, which
+    SQLite cannot run. This exists only so a laptop with no Postgres can still
+    serve the app end to end; on Postgres it is skipped entirely.
+    """
+    settings = get_settings()
+    if "postgresql" in settings.postgres_connection_string:
+        return
+
+    from sqlalchemy import select
+
+    from app.db.base import Base, utcnow
+    from app.db.models import CORPUS_DOCUMENT_ID, Document
+    from app.db.session import get_engine, session_scope
+
+    engine = get_engine()
+    async with engine.begin() as connection:
+        await connection.run_sync(Base.metadata.create_all)
+
+    async for session in session_scope():
+        exists = await session.scalar(
+            select(Document.id).where(Document.id == CORPUS_DOCUMENT_ID)
+        )
+        if exists is None:
+            session.add(
+                Document(
+                    id=CORPUS_DOCUMENT_ID,
+                    user_id=uuid.UUID(int=0),
+                    file_name="Pandora_RAG_Knowledge_2026.pdf",
+                    content_type="application/pdf",
+                    size_bytes=501366,
+                    page_count=56,
+                    chunk_count=195,
+                    record_count=149,
+                    status="indexed",
+                    is_preloaded=True,
+                    uploaded_at=utcnow(),
+                    indexed_at=utcnow(),
+                )
+            )
+    logger.warning("CONFIG: dev database bootstrapped (not Postgres — Alembic skipped).")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):  # noqa: ANN201
     settings = get_settings()
+    await _bootstrap_dev_database()
     client = AgentClient(settings)
     await client.start()
     app.state.agent_client = client

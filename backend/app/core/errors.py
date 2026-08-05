@@ -66,11 +66,20 @@ def document_not_found(document_id: Any) -> AppError:
     )
 
 
-def action_not_found(action_id: Any) -> AppError:
+def report_not_found(answer_id: Any) -> AppError:
     return AppError(
         status.HTTP_404_NOT_FOUND,
-        "action_not_found",
-        f"No agent action exists with id {action_id}",
+        "report_not_found",
+        f"No situation report exists with id {answer_id}",
+    )
+
+
+def corpus_document_immutable() -> AppError:
+    """The preloaded corpus cannot be deleted. It's the demo."""
+    return AppError(
+        status.HTTP_403_FORBIDDEN,
+        "corpus_document_immutable",
+        "The preloaded Pandora corpus cannot be deleted.",
     )
 
 
@@ -82,19 +91,13 @@ def document_already_indexing(document_id: Any) -> AppError:
     )
 
 
-def action_already_resolved(action_id: Any) -> AppError:
-    return AppError(
-        status.HTTP_409_CONFLICT,
-        "action_already_resolved",
-        f"Agent action {action_id} has already been resolved.",
-    )
-
-
-def no_documents_indexed() -> AppError:
+def corpus_not_indexed() -> AppError:
+    """The index is empty — say so rather than let the model answer from
+    pretrained knowledge, which on a fictional corpus is always a hallucination."""
     return AppError(
         status.HTTP_422_UNPROCESSABLE_ENTITY,
-        "no_documents_indexed",
-        "No indexed documents to search. Upload a document before asking a question.",
+        "corpus_not_indexed",
+        "The Pandora knowledge corpus is not indexed yet. Seed the corpus before asking a question.",
     )
 
 

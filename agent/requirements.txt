@@ -5,7 +5,7 @@ python-multipart==0.0.20
 
 # The orchestration trace. Wow feature 1 is three sections filling at once,
 # which only exists if events reach the browser as they happen.
-sse-starlette==3.4.1
+sse-starlette==2.2.1
 
 # ─── Config & validation ─────────────────────────────────────────────────
 pydantic==2.10.4

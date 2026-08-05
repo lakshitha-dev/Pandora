@@ -9,6 +9,7 @@ import { LeftSidebar } from "@/components/pandora/left-sidebar"
 import { CenterPanel } from "@/components/pandora/center-panel"
 import { RightPanel } from "@/components/pandora/right-panel"
 import { SAMPLE_ANSWER, type Answer, type Role } from "@/components/pandora/data"
+import { askQuestion, toAnswer } from "@/lib/api"
 
 export default function Page() {
   const [role, setRole] = useState<Role>("guardian")
@@ -19,26 +20,37 @@ export default function Page() {
   const [input, setInput] = useState("")
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [sourcesOpen, setSourcesOpen] = useState(true)
+  const [conversationId, setConversationId] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
   const timers = useRef<ReturnType<typeof setTimeout>[]>([])
 
-  const runQuery = useCallback((q: string) => {
+  const runQuery = useCallback(async (q: string) => {
     timers.current.forEach(clearTimeout)
     timers.current = []
     setQuery(q)
     setAnswer(null)
+    setError(null)
     setProcessing(true)
     setStep(0)
     setInput("")
+    // The step rail advances on its own while the real request is in flight;
+    // it is replaced by the SSE trace once /ask/stream is wired in.
     ;[0, 1, 2].forEach((s) => {
       timers.current.push(setTimeout(() => setStep(s), s * 700))
     })
-    timers.current.push(
-      setTimeout(() => {
-        setProcessing(false)
-        setAnswer({ ...SAMPLE_ANSWER, question: q })
-      }, 2400),
-    )
-  }, [])
+
+    try {
+      const response = await askQuestion(q, conversationId)
+      setConversationId(response.conversation_id)
+      setAnswer(toAnswer(response, q))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "The request failed.")
+    } finally {
+      timers.current.forEach(clearTimeout)
+      timers.current = []
+      setProcessing(false)
+    }
+  }, [conversationId])
 
   const handleSubmit = () => {
     if (!input.trim()) return
@@ -53,6 +65,8 @@ export default function Page() {
     setProcessing(false)
     setStep(0)
     setInput("")
+    setConversationId(null)
+    setError(null)
   }
 
   return (
@@ -75,6 +89,14 @@ export default function Page() {
 
           {/* Center */}
           <main className="flex min-w-0 flex-1 flex-col">
+            {error && (
+              <div
+                role="alert"
+                className="border-b border-amber-500/40 bg-amber-500/10 px-5 py-3 text-sm text-amber-200"
+              >
+                {error}
+              </div>
+            )}
             <CenterPanel
               role={role}
               query={query}

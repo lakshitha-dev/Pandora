@@ -19,13 +19,13 @@ class Settings(BaseSettings):
     )
 
     # --- App ---
-    app_name: str = "SME Business Intelligence Assistant — Gateway"
+    app_name: str = "Pandora Knowledge Guardian — Gateway"
     version: str = "0.1.0"
     log_level: str = "INFO"
 
     # --- Database ---
     postgres_connection_string: str = (
-        "postgresql+psycopg://postgres:postgres@localhost:5432/sme_assistant"
+        "postgresql+psycopg://postgres:postgres@localhost:5432/pandora"
     )
     db_echo: bool = False
 
@@ -44,6 +44,10 @@ class Settings(BaseSettings):
     agent_query_timeout_seconds: float = 30.0
     agent_ingest_timeout_seconds: float = 60.0
     agent_health_timeout_seconds: float = 3.0
+    # The orchestrator dispatches three specialists and validates before it
+    # answers; its own budget is measured in minutes. A 30 s ceiling here would
+    # cut off every sitrep just before it finished.
+    agent_sitrep_timeout_seconds: float = 200.0
 
     # --- CORS ---
     cors_origins: str = "http://localhost:3000,http://127.0.0.1:3000"

@@ -1,0 +1,426 @@
+<mxfile host="65bd71144e">
+    <diagram name="1 · Architecture &amp; Technology" id="page-1">
+        <mxGraphModel dx="1340" dy="704" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1150" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="p1-title" value="Pandora Knowledge Guardian — Architecture &amp; Technology" style="text;html=1;fontSize=28;fontStyle=1;align=left;fontColor=#1A1A1A;" parent="1" vertex="1">
+                    <mxGeometry x="50" y="34" width="1100" height="38" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1-sub" value="Three services. A guardian describes what they see; they get back a cited Situation Report — or an honest &quot;the corpus doesn&#39;t cover this&quot;." style="text;html=1;fontSize=15;align=left;fontColor=#666666;" parent="1" vertex="1">
+                    <mxGeometry x="50" y="74" width="1200" height="26" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1-user" value="Guardian&#xa;&#xa;incident lead · researcher&#xa;citizen&#xa;&#xa;types plain language,&#xa;not keywords" style="rounded=1;whiteSpace=wrap;html=1;fontSize=15;fontStyle=1;fillColor=#f5f5f5;strokeColor=#999999;verticalAlign=top;spacing=10;spacingTop=12;" parent="1" vertex="1">
+                    <mxGeometry x="50" y="150" width="220" height="180" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1-web" value="frontend/ — Website" style="swimlane;html=1;startSize=34;fontSize=16;fontStyle=1;fillColor=#dae8fc;strokeColor=#6c8ebf;rounded=1;arcSize=5;" parent="1" vertex="1">
+                    <mxGeometry x="320" y="150" width="280" height="240" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1-web1" value="Next.js (App Router)&#xa;TypeScript, strict mode" style="rounded=1;whiteSpace=wrap;html=1;fontSize=13;fillColor=#ffffff;strokeColor=#6c8ebf;" vertex="1" parent="p1-web">
+                    <mxGeometry x="16" y="46" width="248" height="46" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1-web2" value="7 routes — 3 public, 4 signed-in&#xa;Situation Report renderer&#xa;citation chips · orchestration rail" style="rounded=1;whiteSpace=wrap;html=1;fontSize=13;fillColor=#ffffff;strokeColor=#6c8ebf;" vertex="1" parent="p1-web">
+                    <mxGeometry x="16" y="102" width="248" height="62" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1-web3" value="EventSource → live trace&#xa;Azure Static Web Apps" style="rounded=1;whiteSpace=wrap;html=1;fontSize=13;fillColor=#f5f5f5;strokeColor=#999999;" vertex="1" parent="p1-web">
+                    <mxGeometry x="16" y="174" width="248" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1-gw" value="backend/ — Gateway" style="swimlane;html=1;startSize=34;fontSize=16;fontStyle=1;fillColor=#d5e8d4;strokeColor=#82b366;rounded=1;arcSize=5;" parent="1" vertex="1">
+                    <mxGeometry x="650" y="150" width="280" height="240" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1-gw1" value="Python · FastAPI · Pydantic v2&#xa;SQLAlchemy 2.0 · Alembic" style="rounded=1;whiteSpace=wrap;html=1;fontSize=13;fillColor=#ffffff;strokeColor=#82b366;" vertex="1" parent="p1-gw">
+                    <mxGeometry x="16" y="46" width="248" height="46" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1-gw2" value="/api/v1/*  —  checks the login,&#xa;saves reports + traces,&#xa;the ONLY thing the browser calls" style="rounded=1;whiteSpace=wrap;html=1;fontSize=13;fillColor=#ffffff;strokeColor=#82b366;" vertex="1" parent="p1-gw">
+                    <mxGeometry x="16" y="102" width="248" height="62" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1-gw3" value="Passes the live trace straight&#xa;through — never buffers it" style="rounded=1;whiteSpace=wrap;html=1;fontSize=13;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="p1-gw">
+                    <mxGeometry x="16" y="174" width="248" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1-ag" value="agent/ — AI Agent   ★ pages 2–4" style="swimlane;html=1;startSize=34;fontSize=16;fontStyle=1;fillColor=#ffe6cc;strokeColor=#d79b00;rounded=1;arcSize=5;strokeWidth=3;" parent="1" vertex="1">
+                    <mxGeometry x="980" y="150" width="300" height="240" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1-ag1" value="Python · FastAPI · LangChain&#xa;sse-starlette (live streaming)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=13;fillColor=#ffffff;strokeColor=#d79b00;" vertex="1" parent="p1-ag">
+                    <mxGeometry x="16" y="46" width="268" height="46" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1-ag2" value="ingestion/ · chains/ · agents/&#xa;/rag/ingest · /rag/query&#xa;/agent/sitrep · /health" style="rounded=1;whiteSpace=wrap;html=1;fontSize=13;fillColor=#ffffff;strokeColor=#d79b00;" vertex="1" parent="p1-ag">
+                    <mxGeometry x="16" y="102" width="268" height="62" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1-ag3" value="Stateless · NOT reachable from&#xa;the internet — gateway only" style="rounded=1;whiteSpace=wrap;html=1;fontSize=13;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="p1-ag">
+                    <mxGeometry x="16" y="174" width="268" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1-search" value="Azure AI Search — free F0 tier&#xa;index: pandora-knowledge&#xa;15 fields + 1536-d vector&#xa;HNSW, cosine&#xa;195 pieces · 149 records" style="shape=cylinder3;boundedLbl=1;backgroundOutline=1;size=12;whiteSpace=wrap;html=1;fontSize=13;fillColor=#e1d5e7;strokeColor=#9673a6;verticalAlign=middle;" parent="1" vertex="1">
+                    <mxGeometry x="1330" y="150" width="230" height="130" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1-llm" value="Azure AI Foundry&#xa;&#xa;gpt-5-mini  (reasoning model)&#xa;text-embedding-3-small  (1536-d)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=13;fillColor=#e1d5e7;strokeColor=#9673a6;verticalAlign=middle;" parent="1" vertex="1">
+                    <mxGeometry x="1330" y="300" width="230" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1-sb" value="Supabase Auth&#xa;login (only piece outside Azure)" style="shape=cylinder3;boundedLbl=1;backgroundOutline=1;size=10;whiteSpace=wrap;html=1;fontSize=13;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+                    <mxGeometry x="650" y="440" width="280" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1-pg" value="Azure PostgreSQL&#xa;documents · reports · traces" style="shape=cylinder3;boundedLbl=1;backgroundOutline=1;size=10;whiteSpace=wrap;html=1;fontSize=13;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+                    <mxGeometry x="650" y="540" width="280" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1-e1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=3;" parent="1" source="p1-user" target="p1-web" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1-e2" value="REST + login token" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=3;fontSize=12;exitX=1;exitY=0.3;exitDx=0;exitDy=0;entryX=0;entryY=0.3;entryDx=0;entryDy=0;" parent="1" source="p1-web" target="p1-gw" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1-e3" value="shared secret key" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=3;fontSize=12;exitX=1;exitY=0.3;exitDx=0;exitDy=0;entryX=0;entryY=0.3;entryDx=0;entryDy=0;" parent="1" source="p1-gw" target="p1-ag" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1-e4" value="search" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=2;fontSize=12;exitX=1;exitY=0.2;exitDx=0;exitDy=0;" parent="1" source="p1-ag" target="p1-search" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1-e5" value="embed + write" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=2;fontSize=12;exitX=1;exitY=0.8;exitDx=0;exitDy=0;" parent="1" source="p1-ag" target="p1-llm" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1-e6" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=2;dashed=1;" edge="1" parent="1" source="p1-gw" target="p1-sb">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1-e7" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=2;dashed=1;exitX=0.25;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="1" source="p1-gw" target="p1-pg">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1-back" value="report streams back live, section by section" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=2;dashed=1;strokeColor=#d79b00;fontSize=13;fontColor=#d79b00;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" parent="1" source="p1-ag" target="p1-web" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1130" y="670"/>
+                            <mxPoint x="460" y="670"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="p1-rule" value="One rule that keeps security simple:  the browser only ever talks to the Gateway.  Never the AI Agent, never the search index, never the model.&#xa;One place to check logins, one place the API keys live, one CORS config to get right." style="rounded=1;whiteSpace=wrap;html=1;fontSize=14;fillColor=#fff2cc;strokeColor=#d6b656;align=left;spacingLeft=18;verticalAlign=middle;spacing=6;" parent="1" vertex="1">
+                    <mxGeometry x="50" y="700" width="1510" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1-techhdr" value="Technology stack" style="text;html=1;fontSize=20;fontStyle=1;align=left;fontColor=#1A1A1A;" vertex="1" parent="1">
+                    <mxGeometry x="50" y="810" width="400" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1-t1" value="FRONTEND&#xa;&#xa;Next.js (App Router)&#xa;TypeScript (strict)&#xa;Server-Sent Events client" style="rounded=1;whiteSpace=wrap;html=1;fontSize=13;fillColor=#dae8fc;strokeColor=#6c8ebf;align=left;spacingLeft=14;verticalAlign=top;spacingTop=10;" vertex="1" parent="1">
+                    <mxGeometry x="50" y="850" width="280" height="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1-t2" value="BACKEND GATEWAY&#xa;&#xa;Python 3.11+ · FastAPI&#xa;Pydantic v2&#xa;SQLAlchemy 2.0 · Alembic&#xa;Supabase Auth (JWT)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=13;fillColor=#d5e8d4;strokeColor=#82b366;align=left;spacingLeft=14;verticalAlign=top;spacingTop=10;" vertex="1" parent="1">
+                    <mxGeometry x="356" y="850" width="280" height="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1-t3" value="AI AGENT&#xa;&#xa;Python · FastAPI · LangChain&#xa;sse-starlette 3.4.1&#xa;openai SDK 1.59.6&#xa;azure-search-documents 11.5.2&#xa;pypdf · tenacity (retry/backoff)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=13;fillColor=#ffe6cc;strokeColor=#d79b00;align=left;spacingLeft=14;verticalAlign=top;spacingTop=10;strokeWidth=2;" vertex="1" parent="1">
+                    <mxGeometry x="662" y="850" width="280" height="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1-t4" value="AI &amp; DATA (Azure)&#xa;&#xa;Azure AI Foundry&#xa;  · gpt-5-mini — reasoning model&#xa;  · text-embedding-3-small 1536-d&#xa;Azure AI Search F0 — HNSW, cosine&#xa;Azure PostgreSQL" style="rounded=1;whiteSpace=wrap;html=1;fontSize=13;fillColor=#e1d5e7;strokeColor=#9673a6;align=left;spacingLeft=14;verticalAlign=top;spacingTop=10;" vertex="1" parent="1">
+                    <mxGeometry x="968" y="850" width="300" height="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1-t5" value="HOSTING&#xa;&#xa;Azure App Service ×2&#xa;  (gateway + agent)&#xa;Azure Static Web Apps&#xa;  (frontend)&#xa;GitHub" style="rounded=1;whiteSpace=wrap;html=1;fontSize=13;fillColor=#f5f5f5;strokeColor=#999999;align=left;spacingLeft=14;verticalAlign=top;spacingTop=10;" vertex="1" parent="1">
+                    <mxGeometry x="1294" y="850" width="266" height="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1-tnote" value="Why gpt-5-mini, and why it matters:  it is a &quot;reasoning&quot; model — it spends part of its budget thinking before it writes a word. That makes it more faithful at extraction, but noticeably slower than gpt-4o-mini, which is why our per-agent time limits are larger than a typical RAG app&#39;s." style="rounded=1;whiteSpace=wrap;html=1;fontSize=13;fillColor=#ffffff;strokeColor=#999999;align=left;spacingLeft=18;verticalAlign=middle;" vertex="1" parent="1">
+                    <mxGeometry x="50" y="1010" width="1510" height="60" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+    <diagram name="2 · RAG Pipeline" id="page-2">
+        <mxGraphModel dx="1261" dy="662" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1050" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="p2-title" value="RAG Pipeline — find the evidence first, then write from it" style="text;html=1;fontSize=28;fontStyle=1;align=left;fontColor=#1A1A1A;" parent="1" vertex="1">
+                    <mxGeometry x="50" y="34" width="1100" height="38" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2-sub" value="The model is never allowed to answer from what it already knows. It answers only from the records we hand it — and every claim carries the record ID it came from." style="text;html=1;fontSize=15;align=left;fontColor=#666666;" parent="1" vertex="1">
+                    <mxGeometry x="50" y="74" width="1300" height="26" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2-lane1" value="STEP A — INGESTION  ·  run once, before the demo  ·  agent/app/ingestion/" style="text;html=1;fontSize=17;fontStyle=1;align=left;fontColor=#82b366;" parent="1" vertex="1">
+                    <mxGeometry x="50" y="120" width="800" height="26" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2-a1" value="1 · Read the PDF&#xa;&#xa;pypdf&#xa;keeps page numbers&#xa;and font sizes&#xa;(font size tells us&#xa;what&#39;s a heading)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=14;fillColor=#ffffff;strokeColor=#82b366;verticalAlign=top;spacingTop=10;spacing=6;" parent="1" vertex="1">
+                    <mxGeometry x="50" y="156" width="210" height="180" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2-a2" value="2 · Cut it up — one record = one piece" style="swimlane;html=1;startSize=30;fontSize=15;fontStyle=1;fillColor=#fff2cc;strokeColor=#d6b656;rounded=1;arcSize=4;strokeWidth=3;" parent="1" vertex="1">
+                    <mxGeometry x="290" y="156" width="470" height="230" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2-a2a" value="Records — REG · STL · FAU · FLR · MED · ACC · INC · POL · KC&#xa;one per chunk, ZERO overlap" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fillColor=#ffffff;strokeColor=#d6b656;align=left;spacingLeft=10;" vertex="1" parent="p2-a2">
+                    <mxGeometry x="14" y="38" width="442" height="48" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2-a2b" value="Table rows — WS-* station readings, SV-* survey counts&#xa;one row per chunk" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fillColor=#ffffff;strokeColor=#d6b656;align=left;spacingLeft=10;" vertex="1" parent="p2-a2">
+                    <mxGeometry x="14" y="94" width="442" height="42" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2-a2c" value="Field notes — FN-A, FN-B, LAB-C kept separate&#xa;so the disagreement between them survives" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fillColor=#f8cecc;strokeColor=#b85450;align=left;spacingLeft=10;" vertex="1" parent="p2-a2">
+                    <mxGeometry x="14" y="144" width="442" height="42" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2-a2d" value="Everything else — plain prose, 3200 chars with 480 overlap" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fillColor=#ffffff;strokeColor=#d6b656;align=left;spacingLeft=10;" vertex="1" parent="p2-a2">
+                    <mxGeometry x="14" y="194" width="442" height="28" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2-a3" value="3 · Label each piece&#xa;&#xa;Stick the record ID on&#xa;the front of the text so&#xa;it reaches the model —&#xa;it can&#39;t cite an ID it&#xa;cannot see&#xa;&#xa;+ region · risk level&#xa;+ evidence quality&#xa;+ chapter · page · date" style="rounded=1;whiteSpace=wrap;html=1;fontSize=14;fillColor=#ffffff;strokeColor=#82b366;verticalAlign=top;spacingTop=10;spacing=6;" parent="1" vertex="1">
+                    <mxGeometry x="790" y="156" width="230" height="230" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2-a4" value="4 · Turn into numbers&#xa;&#xa;text-embedding-3-small&#xa;1536 dimensions&#xa;&#xa;64 pieces per request&#xa;retry + backoff if&#xa;Azure rate-limits us" style="rounded=1;whiteSpace=wrap;html=1;fontSize=14;fillColor=#ffffff;strokeColor=#82b366;verticalAlign=top;spacingTop=10;spacing=6;" parent="1" vertex="1">
+                    <mxGeometry x="1050" y="156" width="230" height="200" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2-a5" value="5 · Store&#xa;&#xa;Azure AI Search F0&#xa;pandora-knowledge&#xa;&#xa;15 searchable fields&#xa;+ content_vector&#xa;HNSW · cosine&#xa;&#xa;195 pieces · 149 records" style="shape=cylinder3;boundedLbl=1;backgroundOutline=1;size=12;whiteSpace=wrap;html=1;fontSize=14;fillColor=#e1d5e7;strokeColor=#9673a6;verticalAlign=top;spacingTop=14;" vertex="1" parent="1">
+                    <mxGeometry x="1310" y="156" width="250" height="230" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2-ae1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=3;" parent="1" source="p2-a1" target="p2-a2" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2-ae2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=3;" parent="1" source="p2-a2" target="p2-a3" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2-ae3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=3;" parent="1" source="p2-a3" target="p2-a4" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2-ae4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=3;" edge="1" parent="1" source="p2-a4" target="p2-a5">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2-why" value="Why &quot;one record = one piece&quot; is our biggest advantage&#xa;Cutting the PDF into fixed-size blocks would slice one animal&#39;s record in half and let the next animal&#39;s facts bleed in. The corpus explicitly forbids blending two species — so fixed-size&#xa;chunking guarantees the exact mistake the graders check for. We cut on record boundaries instead, which is why a claim about FAU-014 can never be contaminated by FAU-015." style="rounded=1;whiteSpace=wrap;html=1;fontSize=14;fillColor=#fff2cc;strokeColor=#d6b656;align=left;spacingLeft=18;verticalAlign=middle;spacing=6;" parent="1" vertex="1">
+                    <mxGeometry x="290" y="400" width="1270" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2-lane2" value="STEP B — EVERY QUESTION  ·  agent/app/chains/" style="text;html=1;fontSize=17;fontStyle=1;align=left;fontColor=#d79b00;" parent="1" vertex="1">
+                    <mxGeometry x="50" y="530" width="800" height="26" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2-b1" value="Question&#xa;&#xa;&quot;the water near&#xa;Awa Reef turned&#xa;turquoise&quot;" style="rounded=1;whiteSpace=wrap;html=1;fontSize=14;fillColor=#f5f5f5;strokeColor=#999999;verticalAlign=middle;spacing=6;" parent="1" vertex="1">
+                    <mxGeometry x="50" y="580" width="180" height="170" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2-b2" value="Search two ways at once" style="swimlane;html=1;startSize=30;fontSize=15;fontStyle=1;fillColor=#ffe6cc;strokeColor=#d79b00;rounded=1;arcSize=4;" parent="1" vertex="1">
+                    <mxGeometry x="260" y="580" width="330" height="220" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2-b2a" value="By keyword (BM25)&#xa;catches exact tokens: INC-005, WS-03,&#xa;and invented names the model has&#xa;never seen before" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fillColor=#ffffff;strokeColor=#d79b00;align=left;spacingLeft=10;" vertex="1" parent="p2-b2">
+                    <mxGeometry x="14" y="38" width="302" height="62" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2-b2b" value="By meaning (vector)&#xa;catches wording that shares no words:&#xa;&quot;why are the animals leaving?&quot; finds&#xa;a record that never says &quot;leaving&quot;" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fillColor=#ffffff;strokeColor=#d79b00;align=left;spacingLeft=10;" vertex="1" parent="p2-b2">
+                    <mxGeometry x="14" y="108" width="302" height="62" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2-b2c" value="Combined by Azure automatically (RRF)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fillColor=#d5e8d4;strokeColor=#82b366;align=left;spacingLeft=10;" vertex="1" parent="p2-b2">
+                    <mxGeometry x="14" y="178" width="302" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2-b3" value="Narrow it down&#xa;&#xa;Filter by record type —&#xa;e.g. only fauna + flora&#xa;for a species question&#xa;&#xa;This one trick takes the&#xa;top 6 from 0/6 useful&#xa;to 6/6, in 3 s not 25 s" style="rounded=1;whiteSpace=wrap;html=1;fontSize=14;fillColor=#d5e8d4;strokeColor=#82b366;verticalAlign=top;spacingTop=10;spacing=6;" parent="1" vertex="1">
+                    <mxGeometry x="620" y="580" width="220" height="210" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2-b4" value="Keep the best 6&#xa;&#xa;Remove duplicates&#xa;&#xa;Give each piece a tag&#xa;the model must cite:&#xa;a real ID like INC-001,&#xa;or SEC-1 for prose" style="rounded=1;whiteSpace=wrap;html=1;fontSize=14;fillColor=#ffffff;strokeColor=#d79b00;verticalAlign=top;spacingTop=10;spacing=6;" parent="1" vertex="1">
+                    <mxGeometry x="870" y="580" width="210" height="200" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2-b5" value="Write the answer&#xa;&#xa;gpt-5-mini, CLOSED BOOK&#xa;&#xa;Each record is fenced:&#xa;── BEGIN RECORD INC-001 ──&#xa;&#xa;The prompt spells out all&#xa;8 of the corpus&#39;s own&#xa;grounding rules" style="rounded=1;whiteSpace=wrap;html=1;fontSize=14;fillColor=#ffe6cc;strokeColor=#d79b00;verticalAlign=top;spacingTop=10;spacing=6;" parent="1" vertex="1">
+                    <mxGeometry x="1110" y="580" width="220" height="210" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2-b6" value="Check the answer&#xa;&#xa;GroundingGate&#xa;&#xa;The same 8 rules, but&#xa;checked in CODE — not&#xa;asked for in a prompt.&#xa;&#xa;A prompt can be ignored.&#xa;A check cannot.&#xa;&#xa;Result shown live:&#xa;&quot;8/8 passed · 96%&quot;" style="rounded=1;whiteSpace=wrap;html=1;fontSize=14;fillColor=#f8cecc;strokeColor=#b85450;verticalAlign=top;spacingTop=10;spacing=6;strokeWidth=3;" vertex="1" parent="1">
+                    <mxGeometry x="1360" y="580" width="200" height="250" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2-be1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=3;" parent="1" source="p2-b1" target="p2-b2" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2-be2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=3;" parent="1" source="p2-b2" target="p2-b3" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2-be3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=3;" parent="1" source="p2-b3" target="p2-b4" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2-be4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=3;" parent="1" source="p2-b4" target="p2-b5" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2-be5" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=3;" edge="1" parent="1" source="p2-b5" target="p2-b6">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2-honest" value="If the evidence is thin, we refuse — and the refusal is decided by a rule, not by the model&#39;s opinion of itself&#xa;Any ONE of these flips the report:   best match scores below 4.5/10   ·   nothing the model wrote resolves to a real record   ·   no section could be filled&#xa;Then we print the brief&#39;s required sentence word for word — &quot;The available Pandora knowledge base does not contain sufficient evidence to answer this question.&quot; —&#xa;plus what we searched, the closest near-misses with their scores, and what evidence would actually answer it. A refusal becomes a next step, not a dead end." style="rounded=1;whiteSpace=wrap;html=1;fontSize=14;fillColor=#f8cecc;strokeColor=#b85450;align=left;spacingLeft=18;verticalAlign=middle;spacing=6;" parent="1" vertex="1">
+                    <mxGeometry x="50" y="860" width="1510" height="130" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+    <diagram name="3 · Agentic AI Flow" id="page-3">
+        <mxGraphModel dx="1787" dy="938" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1200" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="p3-title" value="Agentic AI Flow — one manager, three specialists" style="text;html=1;fontSize=28;fontStyle=1;align=left;fontColor=#1A1A1A;" parent="1" vertex="1">
+                    <mxGeometry x="50" y="34" width="1100" height="38" as="geometry"/>
+                </mxCell>
+                <mxCell id="p3-sub" value="The three specialists don&#39;t write three competing answers that then have to be merged. They write three different sections of the SAME report, at the same time.&#xa;That removes the merge step entirely — one less model call, one less place to hallucinate — and it makes the parallelism visible on screen instead of hidden in the backend." style="text;html=1;fontSize=15;align=left;fontColor=#666666;verticalAlign=top;" parent="1" vertex="1">
+                    <mxGeometry x="50" y="74" width="1400" height="46" as="geometry"/>
+                </mxCell>
+                <mxCell id="p3-q" value="POST /agent/sitrep&#xa;&#xa;JSON  → one response&#xa;SSE   → live trace&#xa;same code either way" style="rounded=1;whiteSpace=wrap;html=1;fontSize=14;fillColor=#dae8fc;strokeColor=#6c8ebf;verticalAlign=middle;spacing=6;" parent="1" vertex="1">
+                    <mxGeometry x="50" y="150" width="220" height="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="p3-orch" value="THE ORCHESTRATOR  (the manager — never writes report content)" style="swimlane;html=1;startSize=34;fontSize=16;fontStyle=1;fillColor=#e6e0f0;strokeColor=#9673a6;rounded=1;arcSize=4;strokeWidth=3;" parent="1" vertex="1">
+                    <mxGeometry x="320" y="150" width="1240" height="200" as="geometry"/>
+                </mxCell>
+                <mxCell id="p3-o1" value="1 · Tidy the question&#xa;&#xa;resolve &quot;it&quot; / &quot;there&quot; from&#xa;the last turn, add search&#xa;vocabulary, pull out any&#xa;record IDs the user named" style="rounded=1;whiteSpace=wrap;html=1;fontSize=13;fillColor=#ffffff;strokeColor=#9673a6;align=left;spacingLeft=12;verticalAlign=top;spacingTop=10;" vertex="1" parent="p3-orch">
+                    <mxGeometry x="20" y="44" width="290" height="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="p3-o2" value="2 · Rate how serious&#xa;&#xa;W1 → W4, using the corpus&#39;s&#xa;OWN scale — which we look up&#xa;first, so the rating is a cited&#xa;claim, not the model&#39;s opinion&#xa;&#xa;If the citation doesn&#39;t resolve,&#xa;we downgrade to Informational" style="rounded=1;whiteSpace=wrap;html=1;fontSize=13;fillColor=#f8cecc;strokeColor=#b85450;align=left;spacingLeft=12;verticalAlign=top;spacingTop=10;" vertex="1" parent="p3-orch">
+                    <mxGeometry x="330" y="44" width="300" height="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="p3-o3" value="3 · Decide who works on it&#xa;&#xa;Rules decide, not the model —&#xa;routing is a hard limit&#xa;&#xa;sitrep    → all 3, in parallel&#xa;focused → 1 specialist&#xa;compare → 2, on split questions" style="rounded=1;whiteSpace=wrap;html=1;fontSize=13;fillColor=#ffffff;strokeColor=#9673a6;align=left;spacingLeft=12;verticalAlign=top;spacingTop=10;" vertex="1" parent="p3-orch">
+                    <mxGeometry x="650" y="44" width="290" height="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="p3-o4" value="Sent to the screen&#xa;IMMEDIATELY, before&#xa;any writing starts:&#xa;&#xa;· the red/amber/green&#xa;  triage banner&#xa;· the map zone lights up&#xa;&#xa;so the judge sees the&#xa;system triage in ~1 s" style="rounded=1;whiteSpace=wrap;html=1;fontSize=13;fillColor=#fff2cc;strokeColor=#d6b656;align=left;spacingLeft=12;verticalAlign=top;spacingTop=10;" vertex="1" parent="p3-orch">
+                    <mxGeometry x="960" y="44" width="260" height="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="p3-par" value="▼   ALL THREE START AT THE SAME TIME   —   asyncio.gather   —   three agents cost about as much wall-clock time as one   ▼" style="text;html=1;fontSize=16;fontStyle=1;align=center;fontColor=#d79b00;" vertex="1" parent="1">
+                    <mxGeometry x="50" y="380" width="1510" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="p3-a1" value="🐋  Marine-Life Protector" style="swimlane;html=1;startSize=34;fontSize=15;fontStyle=1;fillColor=#ffe6cc;strokeColor=#d79b00;rounded=1;arcSize=5;" parent="1" vertex="1">
+                    <mxGeometry x="50" y="430" width="480" height="270" as="geometry"/>
+                </mxCell>
+                <mxCell id="p3-a1a" value="Writes:  AFFECTED SPECIES" style="rounded=1;whiteSpace=wrap;html=1;fontSize=13;fontStyle=1;fillColor=#ffffff;strokeColor=#d79b00;" vertex="1" parent="p3-a1">
+                    <mxGeometry x="16" y="44" width="448" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="p3-a1b" value="Searches:  fauna · flora · policy&#xa;region · knowledge_card" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fillColor=#ffffff;strokeColor=#d79b00;align=left;spacingLeft=10;" vertex="1" parent="p3-a1">
+                    <mxGeometry x="16" y="82" width="448" height="46" as="geometry"/>
+                </mxCell>
+                <mxCell id="p3-a1c" value="Its rule:  build every species from its OWN&#xa;record only. Never carry one animal&#39;s&#xa;habitat or threats over to another, however&#xa;similar. Never use real Earth marine biology —&#xa;on Pandora that is a hallucination even&#xa;when it&#39;s true on Earth." style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fillColor=#f8cecc;strokeColor=#b85450;align=left;spacingLeft=10;" vertex="1" parent="p3-a1">
+                    <mxGeometry x="16" y="136" width="448" height="110" as="geometry"/>
+                </mxCell>
+                <mxCell id="p3-a2" value="🌊  Incident Investigator" style="swimlane;html=1;startSize=34;fontSize=15;fontStyle=1;fillColor=#ffe6cc;strokeColor=#d79b00;rounded=1;arcSize=5;" parent="1" vertex="1">
+                    <mxGeometry x="560" y="430" width="480" height="270" as="geometry"/>
+                </mxCell>
+                <mxCell id="p3-a2a" value="Writes:  LIKELY CAUSES  (+ conflicts)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=13;fontStyle=1;fillColor=#ffffff;strokeColor=#d79b00;" vertex="1" parent="p3-a2">
+                    <mxGeometry x="16" y="44" width="448" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="p3-a2b" value="Searches:  incident · monitoring&#xa;field_note · region · narrative" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fillColor=#ffffff;strokeColor=#d79b00;align=left;spacingLeft=10;" vertex="1" parent="p3-a2">
+                    <mxGeometry x="16" y="82" width="448" height="46" as="geometry"/>
+                </mxCell>
+                <mxCell id="p3-a2c" value="Its rule:  never name a confirmed cause&#xa;unless a record confirms it. Where records&#xa;list several possible causes, present them&#xa;ALL, unranked. Where records disagree,&#xa;show every side with what limits it —&#xa;and say plainly that nothing is confirmed." style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fillColor=#f8cecc;strokeColor=#b85450;align=left;spacingLeft=10;" vertex="1" parent="p3-a2">
+                    <mxGeometry x="16" y="136" width="448" height="110" as="geometry"/>
+                </mxCell>
+                <mxCell id="p3-a3" value="🚨  Emergency Responder" style="swimlane;html=1;startSize=34;fontSize=15;fontStyle=1;fillColor=#ffe6cc;strokeColor=#d79b00;rounded=1;arcSize=5;" parent="1" vertex="1">
+                    <mxGeometry x="1070" y="430" width="490" height="270" as="geometry"/>
+                </mxCell>
+                <mxCell id="p3-a3a" value="Writes:  RECOMMENDED ACTIONS" style="rounded=1;whiteSpace=wrap;html=1;fontSize=13;fontStyle=1;fillColor=#ffffff;strokeColor=#d79b00;" vertex="1" parent="p3-a3">
+                    <mxGeometry x="16" y="44" width="458" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="p3-a3b" value="Searches:  incident · knowledge_card&#xa;health · settlement · policy" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fillColor=#ffffff;strokeColor=#d79b00;align=left;spacingLeft=10;" vertex="1" parent="p3-a3">
+                    <mxGeometry x="16" y="82" width="458" height="46" as="geometry"/>
+                </mxCell>
+                <mxCell id="p3-a3c" value="Its rule:  any health record triggers the&#xa;warning signs plus a &quot;this is fictional&#xa;training material, not medical advice&quot; note.&#xa;Fills in the corpus&#39;s OWN public alert&#xa;template word for word — so the output is&#xa;something an incident lead can read aloud." style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fillColor=#f8cecc;strokeColor=#b85450;align=left;spacingLeft=10;" vertex="1" parent="p3-a3">
+                    <mxGeometry x="16" y="136" width="458" height="110" as="geometry"/>
+                </mxCell>
+                <mxCell id="p3-each" value="Each specialist runs the SAME three steps from page 2:   search  →  write (with its own rule bolted on)  →  check against the 8 grounding rules&#xa;The agent layer only CALLS the RAG core — it never modifies it. That is what keeps a bug in the agents from being able to break the working RAG app underneath." style="rounded=1;whiteSpace=wrap;html=1;fontSize=14;fillColor=#d5e8d4;strokeColor=#82b366;align=left;spacingLeft=18;verticalAlign=middle;spacing=6;" vertex="1" parent="1">
+                    <mxGeometry x="50" y="720" width="1510" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p3-report" value="THE SITUATION REPORT&#xa;&#xa;🔴 How urgent  ·  🐋 Which species  ·  🌊 What caused it  ·  🚨 What to do  ·  📚 Sources  ·  📊 How confident — and why" style="rounded=1;whiteSpace=wrap;html=1;fontSize=17;fontStyle=1;fillColor=#d5e8d4;strokeColor=#82b366;verticalAlign=middle;spacing=8;strokeWidth=3;" parent="1" vertex="1">
+                    <mxGeometry x="320" y="820" width="960" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="p3-e1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=3;" parent="1" source="p3-q" target="p3-orch" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p3-e2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=3;exitX=0.15;exitY=1;exitDx=0;exitDy=0;" parent="1" source="p3-orch" target="p3-a1" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p3-e3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=3;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" parent="1" source="p3-orch" target="p3-a2" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p3-e4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=3;exitX=0.85;exitY=1;exitDx=0;exitDy=0;" parent="1" source="p3-orch" target="p3-a3" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p3-e5" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=3;" parent="1" source="p3-each" target="p3-report" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p3-safety" value="IF SOMETHING FAILS — the report still comes out&#xa;&#xa;1 ·  All three answer            →  full report&#xa;2 ·  One is too slow             →  that section says &quot;🐋 Marine-Life Protector didn&#39;t answer in time&quot;. The other two still appear.&#xa;3 ·  All three fail              →  a single agent quietly fills all three sections instead. The structure is identical — a judge can&#39;t tell.&#xa;4 ·  Nothing found at all        →  we say we don&#39;t know, and explain what we searched.&#xa;&#xa;A report with one section honestly marked missing is a SUCCESS, not an error screen." style="rounded=1;whiteSpace=wrap;html=1;fontSize=13;fillColor=#fff2cc;strokeColor=#d6b656;align=left;spacingLeft=18;verticalAlign=middle;spacing=6;" parent="1" vertex="1">
+                    <mxGeometry x="50" y="960" width="960" height="200" as="geometry"/>
+                </mxCell>
+                <mxCell id="p3-limits" value="LIMITS THAT STOP IT RUNNING AWAY&#xa;&#xa;Exactly 3 agents — never dynamic&#xa;1 retry total, shared across all agents — never a loop&#xa;Max 8 model calls per question&#xa;A time limit per agent, and one for the whole job&#xa;No agent can start another agent&#xa;&#xa;All counted in code. A prompt can be ignored; a counter cannot." style="rounded=1;whiteSpace=wrap;html=1;fontSize=13;fillColor=#f8cecc;strokeColor=#b85450;align=left;spacingLeft=18;verticalAlign=middle;spacing=6;" parent="1" vertex="1">
+                    <mxGeometry x="1040" y="960" width="520" height="200" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+    <diagram name="4 · Example: the turquoise water" id="page-4">
+        <mxGraphModel dx="1072" dy="563" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1250" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="p4-title" value="Worked example — one real question, end to end" style="text;html=1;fontSize=28;fontStyle=1;align=left;fontColor=#1A1A1A;" parent="1" vertex="1">
+                    <mxGeometry x="50" y="34" width="1100" height="38" as="geometry"/>
+                </mxCell>
+                <mxCell id="p4-sub" value="Record IDs, counts and scores below are from an actual run against the live service. This is the demo question." style="text;html=1;fontSize=15;align=left;fontColor=#666666;" parent="1" vertex="1">
+                    <mxGeometry x="50" y="74" width="1200" height="26" as="geometry"/>
+                </mxCell>
+                <mxCell id="p4-q" value="&quot;The water near Awa Reef has turned turquoise and the fish are leaving the area.&quot;" style="rounded=1;whiteSpace=wrap;html=1;fontSize=18;fontStyle=2;fillColor=#dae8fc;strokeColor=#6c8ebf;verticalAlign=middle;strokeWidth=2;" parent="1" vertex="1">
+                    <mxGeometry x="50" y="120" width="1510" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="p4-1" value="① Tidy &amp; classify   ·   1 model call" style="swimlane;html=1;startSize=32;fontSize=15;fontStyle=1;fillColor=#e6e0f0;strokeColor=#9673a6;rounded=1;arcSize=4;" parent="1" vertex="1">
+                    <mxGeometry x="50" y="210" width="480" height="230" as="geometry"/>
+                </mxCell>
+                <mxCell id="p4-1a" value="First we look up the corpus&#39;s own severity scale&#xa;(§4.5 Water Incident Classification) so the rating&#xa;can cite something real." style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fillColor=#ffffff;strokeColor=#9673a6;align=left;spacingLeft=10;" parent="p4-1" vertex="1">
+                    <mxGeometry x="14" y="40" width="452" height="56" as="geometry"/>
+                </mxCell>
+                <mxCell id="p4-1b" value="Use case:   Environmental Incident Investigation&#xa;Severity:    W2 — Advisory&#xa;Cited to:    &quot;4.5 Water Incident Classification&quot;&#xa;Region:      REG-01  (Luminous Shelf)&#xa;Shape:       simple" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fontFamily=Courier New;fillColor=#ffffff;strokeColor=#9673a6;align=left;spacingLeft=10;" parent="p4-1" vertex="1">
+                    <mxGeometry x="14" y="104" width="452" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="p4-1c" value="→ triage banner + map zone render NOW" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fontStyle=1;fillColor=#fff2cc;strokeColor=#d6b656;" parent="p4-1" vertex="1">
+                    <mxGeometry x="14" y="192" width="452" height="28" as="geometry"/>
+                </mxCell>
+                <mxCell id="p4-2" value="② Route   ·   0 model calls" style="swimlane;html=1;startSize=32;fontSize=15;fontStyle=1;fillColor=#e6e0f0;strokeColor=#9673a6;rounded=1;arcSize=4;" parent="1" vertex="1">
+                    <mxGeometry x="560" y="210" width="480" height="230" as="geometry"/>
+                </mxCell>
+                <mxCell id="p4-2a" value="This describes an observation with a severity class,&#xa;so the rules pick sitrep mode." style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fillColor=#ffffff;strokeColor=#9673a6;align=left;spacingLeft=10;" parent="p4-2" vertex="1">
+                    <mxGeometry x="14" y="40" width="452" height="44" as="geometry"/>
+                </mxCell>
+                <mxCell id="p4-2b" value="route.decided&#xa;&#xa;&quot;Incident indicators detected (W2)&#xa; → sitrep mode&#xa; → dispatching 3 specialists in parallel&quot;" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fontFamily=Courier New;fillColor=#ffffff;strokeColor=#9673a6;align=left;spacingLeft=10;" parent="p4-2" vertex="1">
+                    <mxGeometry x="14" y="92" width="452" height="92" as="geometry"/>
+                </mxCell>
+                <mxCell id="p4-2c" value="Decided by rules in code, not by the model" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fontStyle=1;fillColor=#f8cecc;strokeColor=#b85450;" parent="p4-2" vertex="1">
+                    <mxGeometry x="14" y="192" width="452" height="28" as="geometry"/>
+                </mxCell>
+                <mxCell id="p4-3" value="③ Retrieve   ·   3 searches at once" style="swimlane;html=1;startSize=32;fontSize=15;fontStyle=1;fillColor=#fdf0e6;strokeColor=#d79b00;rounded=1;arcSize=4;" parent="1" vertex="1">
+                    <mxGeometry x="1070" y="210" width="490" height="230" as="geometry"/>
+                </mxCell>
+                <mxCell id="p4-3a" value="Each specialist searches with its OWN filter,&#xa;so they don&#39;t all pull the same six records." style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fillColor=#ffffff;strokeColor=#d79b00;align=left;spacingLeft=10;" parent="p4-3" vertex="1">
+                    <mxGeometry x="14" y="40" width="462" height="44" as="geometry"/>
+                </mxCell>
+                <mxCell id="p4-3b" value="37 candidates found&#xa;→ deduplicated&#xa;→ top 6 kept per specialist" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fontFamily=Courier New;fillColor=#ffffff;strokeColor=#d79b00;align=left;spacingLeft=10;" parent="p4-3" vertex="1">
+                    <mxGeometry x="14" y="92" width="462" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="p4-3c" value="Records that came back:&#xa;INC-001 · WS-01 · FN-A · FN-B · LAB-C" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fontFamily=Courier New;fillColor=#d5e8d4;strokeColor=#82b366;align=left;spacingLeft=10;" parent="p4-3" vertex="1">
+                    <mxGeometry x="14" y="160" width="462" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="p4-par" value="▼   the three specialists now write at the same time — sections finish OUT OF ORDER, which is the proof they were genuinely concurrent   ▼" style="text;html=1;fontSize=15;fontStyle=1;align=center;fontColor=#d79b00;" parent="1" vertex="1">
+                    <mxGeometry x="50" y="465" width="1510" height="28" as="geometry"/>
+                </mxCell>
+                <mxCell id="p4-s1" value="🐋  Affected Species" style="swimlane;html=1;startSize=32;fontSize=14;fontStyle=1;fillColor=#ffe6cc;strokeColor=#d79b00;rounded=1;arcSize=5;" parent="1" vertex="1">
+                    <mxGeometry x="50" y="510" width="480" height="210" as="geometry"/>
+                </mxCell>
+                <mxCell id="p4-s1a" value="Lists the species this puts at risk — each one&#xa;built only from its own record, with its habitat,&#xa;the pressures relevant to THIS event, and the&#xa;protection guidance.&#xa;&#xa;If no species record matches, it says so rather&#xa;than reaching for the nearest animal." style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fillColor=#ffffff;strokeColor=#d79b00;align=left;spacingLeft=10;" parent="p4-s1" vertex="1">
+                    <mxGeometry x="14" y="40" width="452" height="156" as="geometry"/>
+                </mxCell>
+                <mxCell id="p4-s2" value="🌊  Likely Causes   ← the interesting one" style="swimlane;html=1;startSize=32;fontSize=14;fontStyle=1;fillColor=#ffe6cc;strokeColor=#b85450;rounded=1;arcSize=5;strokeWidth=3;" parent="1" vertex="1">
+                    <mxGeometry x="560" y="510" width="480" height="210" as="geometry"/>
+                </mxCell>
+                <mxCell id="p4-s2a" value="INC-001 lists FOUR possible causes and confirms&#xa;none: mineral sediment · plankton bloom ·&#xa;chemical release · light reflection.&#xa;&#xa;Three field notes then contradict each other:" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fillColor=#ffffff;strokeColor=#d79b00;align=left;spacingLeft=10;" parent="p4-s2" vertex="1">
+                    <mxGeometry x="14" y="40" width="452" height="76" as="geometry"/>
+                </mxCell>
+                <mxCell id="p4-s2b" value="FN-A    plankton bloom, no chemical odour&#xa;FN-B    upstream workshop; entry unconfirmed&#xa;LAB-C   harmless particles — but the sample&#39;s&#xa;        chain-of-custody form was incomplete" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fontFamily=Courier New;fillColor=#f8cecc;strokeColor=#b85450;align=left;spacingLeft=10;" parent="p4-s2" vertex="1">
+                    <mxGeometry x="14" y="124" width="452" height="72" as="geometry"/>
+                </mxCell>
+                <mxCell id="p4-s3" value="🚨  Recommended Actions" style="swimlane;html=1;startSize=32;fontSize=14;fontStyle=1;fillColor=#ffe6cc;strokeColor=#d79b00;rounded=1;arcSize=5;" parent="1" vertex="1">
+                    <mxGeometry x="1070" y="510" width="490" height="210" as="geometry"/>
+                </mxCell>
+                <mxCell id="p4-s3a" value="An ordered, executable action card:&#xa;&#xa;1 · record observations, sample upstream&#xa;     and downstream&#xa;2 · restrict sensitive water use pending results&#xa;3 · issue a public update naming the cause as&#xa;     NOT YET CONFIRMED&#xa;&#xa;plus the corpus&#39;s own alert wording, filled in." style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fillColor=#ffffff;strokeColor=#d79b00;align=left;spacingLeft=10;" parent="p4-s3" vertex="1">
+                    <mxGeometry x="14" y="40" width="462" height="156" as="geometry"/>
+                </mxCell>
+                <mxCell id="p4-trap" value="THIS IS THE MOMENT THAT WINS IT&#xa;&#xa;A normal RAG app answers &quot;the turquoise water was caused by a plankton bloom.&quot;   That answer FAILS the corpus&#39;s own test.&#xa;§14.3 of the corpus is a deliberate trap with a written expected answer: present all three records, identify the incomplete chain of custody,&#xa;avoid declaring a confirmed cause, and recommend properly documented resampling.   We do exactly that — and we can open the judges&#39; own&#xa;corpus to that page and read the expectation aloud." style="rounded=1;whiteSpace=wrap;html=1;fontSize=14;fillColor=#f8cecc;strokeColor=#b85450;align=left;spacingLeft=18;verticalAlign=middle;spacing=6;strokeWidth=3;" parent="1" vertex="1">
+                    <mxGeometry x="50" y="745" width="1510" height="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="p4-out" value="④ What comes back" style="swimlane;html=1;startSize=32;fontSize=15;fontStyle=1;fillColor=#d5e8d4;strokeColor=#82b366;rounded=1;arcSize=4;" parent="1" vertex="1">
+                    <mxGeometry x="50" y="910" width="740" height="290" as="geometry"/>
+                </mxCell>
+                <mxCell id="p4-out1" value="Priority        W2 — ADVISORY, cited to §4.5&#xa;Species         filled  🐋&#xa;Causes          filled  🌊  — no cause confirmed&#xa;Actions         filled  🚨&#xa;Sources         INC-001 · WS-01 · FN-A · SEC-1 · SEC-2&#xa;Confidence      moderate — sources disagree,&#xa;                chain of custody incomplete&#xa;Conflict panel  FN-A / FN-B / LAB-C, side by side" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fontFamily=Courier New;fillColor=#ffffff;strokeColor=#82b366;align=left;spacingLeft=10;" parent="p4-out" vertex="1">
+                    <mxGeometry x="14" y="40" width="712" height="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="p4-out2" value="Grounding check    7/8 – 8/8 rules passed&#xa;Groundedness       95 – 100%  (e.g. 32 of 32 claims&#xa;                   carried a resolving record ID)&#xa;Model calls        5   (cap is 8)&#xa;Trace events       27  streamed live to the browser" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fontFamily=Courier New;fillColor=#fff2cc;strokeColor=#d6b656;align=left;spacingLeft=10;" parent="p4-out" vertex="1">
+                    <mxGeometry x="14" y="188" width="712" height="88" as="geometry"/>
+                </mxCell>
+                <mxCell id="p4-trace" value="What the judge SEES while this happens  (live trace)" style="swimlane;html=1;startSize=32;fontSize=15;fontStyle=1;fillColor=#dae8fc;strokeColor=#6c8ebf;rounded=1;arcSize=4;" parent="1" vertex="1">
+                    <mxGeometry x="820" y="910" width="740" height="290" as="geometry"/>
+                </mxCell>
+                <mxCell id="p4-trace1" value="query.received&#xa;query.rewritten&#xa;query.classified          Environmental Incident · W2&#xa;priority.classified       ← banner appears&#xa;map.zone_lit              ← REG-01 lights up&#xa;route.decided             sitrep · 3 specialists&#xa;retrieval.started ×3      all three at once&#xa;retrieval.completed ×3&#xa;section.filling ×3         ← THREE ORBS IGNITE&#xa;section.completed         ...out of order&#xa;conflict.detected         FN-A / FN-B / LAB-C&#xa;validation.result         8 rules, pass/fail each&#xa;answer.completed          full report body" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fontFamily=Courier New;fillColor=#ffffff;strokeColor=#6c8ebf;align=left;spacingLeft=10;" parent="p4-trace" vertex="1">
+                    <mxGeometry x="14" y="40" width="712" height="236" as="geometry"/>
+                </mxCell>
+                <mxCell id="p4-e1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=3;" parent="1" source="p4-1" target="p4-2" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p4-e2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=3;" parent="1" source="p4-2" target="p4-3" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

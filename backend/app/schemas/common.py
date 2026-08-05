@@ -20,10 +20,17 @@ def _iso_utc(value: datetime) -> str:
 
 UtcDatetime = Annotated[datetime, PlainSerializer(_iso_utc, return_type=str)]
 
-Confidence = Literal["high", "medium", "low", "insufficient"]
+# `moderate`, not `medium` — the contract's wording. The agent emits "medium",
+# so services/mapping.py normalises on the way out. One place, not scattered.
+Confidence = Literal["high", "moderate", "low", "insufficient"]
 DocumentStatus = Literal["pending", "indexing", "indexed", "failed"]
-ActionType = Literal["flag_invoice", "draft_email", "create_task"]
-ActionStatus = Literal["proposed", "approved", "rejected", "completed"]
+PriorityClass = Literal["W1", "W2", "W3", "W4", "informational"]
+RoleLens = Literal["guardian", "researcher", "citizen"]
+SectionStatus = Literal["filled", "empty", "timed_out", "not_applicable"]
+SectionTypeName = Literal["affected_species", "likely_causes", "recommended_actions"]
+OwningAgent = Literal[
+    "marine_life_protector", "incident_investigator", "emergency_responder", "orchestrator"
+]
 
 
 class ErrorDetail(BaseModel):
@@ -39,24 +46,33 @@ class ErrorEnvelope(BaseModel):
 
 
 class Citation(BaseModel):
-    """A source card. `document_name` is joined on by the backend, not the agent."""
+    """A source card (§1.1). `document_name` is joined on by the backend, not the agent.
+
+    `record_id` is what the report text actually cites — markers in the content
+    are record IDs (`[INC-005]`), not integers, so a marker the model invented
+    cannot resolve. `marker` survives only as a stable integer for ordering.
+    """
 
     marker: int
     document_id: UUID
     document_name: str
-    page: int | None = None
+    chunk_id: str | None = None
+    record_id: str = ""
+    record_type: str = ""
+    title: str = ""
+    chapter: str = ""
     section: str | None = None
+    page: int | None = None
+    region_id: str | None = None
     excerpt: str
     relevance_score: float = Field(ge=0.0, le=1.0)
-
-
-class ActionCitation(BaseModel):
-    """The trimmed citation carried on a persisted action (§1.4)."""
-
-    document_id: UUID
-    document_name: str
-    page: int | None = None
-    excerpt: str
+    rerank_score: float | None = None
+    # The corpus's own five-value taxonomy, carried verbatim — the corpus
+    # instructs that RAG applications preserve these labels.
+    evidence_quality: str = ""
+    risk_level: str | None = None
+    record_date: str | None = None
+    section_types: list[str] = Field(default_factory=list)
 
 
 class Paged(BaseModel):

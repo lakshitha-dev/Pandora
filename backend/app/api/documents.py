@@ -110,6 +110,7 @@ async def get_document(document_id: uuid.UUID, session: DbSession, user: UserDep
     summary="Delete a document and its vectors",
     responses={
         401: {"model": ErrorEnvelope},
+        403: {"model": ErrorEnvelope, "description": "corpus_document_immutable"},
         404: {"model": ErrorEnvelope},
         409: {"model": ErrorEnvelope, "description": "document_already_indexing"},
     },

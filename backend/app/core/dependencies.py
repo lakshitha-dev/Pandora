@@ -57,3 +57,24 @@ async def current_user(
 
 
 UserDep = Annotated[CurrentUser, Depends(current_user)]
+
+
+async def current_user_from_query(
+    settings: SettingsDep,
+    access_token: str | None = None,
+) -> CurrentUser:
+    """Auth for `GET /api/v1/ask/stream` only.
+
+    `EventSource` cannot set request headers, so the JWT arrives as a query
+    param on this one endpoint. It is validated identically — same secret, same
+    audience, same expiry — and `AUTH_DISABLED` is honoured the same way, so
+    this is a different transport for the token, not a weaker check.
+    """
+    if settings.auth_disabled:
+        return dev_user(settings)
+    if not access_token:
+        raise errors.unauthenticated("Missing access_token query parameter.")
+    return verify_token(access_token, settings)
+
+
+StreamUserDep = Annotated[CurrentUser, Depends(current_user_from_query)]
