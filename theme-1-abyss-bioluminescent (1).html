@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pandora Knowledge Guardian — Abyss Bioluminescent</title>
+<style>
+/* ============================================================
+   THEME 1 — "ABYSS BIOLUMINESCENT"
+   Deep-ocean dark UI. Bioluminescent cyan/teal accents.
+   Best for: the "wow" demo shot. Reads instantly as Pandora.
+   ============================================================ */
+
+:root{
+  /* --- Depth ramp: darkest = deepest water --- */
+  --abyss-0:#03080f;      /* page floor            */
+  --abyss-1:#061320;      /* panel                 */
+  --abyss-2:#0a1e30;      /* raised panel          */
+  --abyss-3:#0f2c42;      /* border / hairline     */
+
+  /* --- Bioluminescence: only 3 glow colours, used sparingly --- */
+  --glow-cyan:#4ff0e0;    /* primary: system / AI  */
+  --glow-teal:#2bb8c9;    /* secondary: retrieval  */
+  --glow-lume:#a8f5c8;    /* tertiary: verified    */
+  --glow-violet:#8b7fe8;  /* human / user          */
+  --alert:#ff7a5c;        /* risk, insufficient    */
+  --warn:#ffc86b;
+
+  --ink-1:#e8f6f8;        /* primary text          */
+  --ink-2:#8fb3c0;        /* secondary text        */
+  --ink-3:#4d7385;        /* tertiary / meta       */
+
+  --r-sm:8px; --r-md:14px; --r-lg:22px;
+  --sans:"Segoe UI Variable Display","Segoe UI",Inter,system-ui,-apple-system,sans-serif;
+  --mono:"Cascadia Code","SF Mono",ui-monospace,Consolas,monospace;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:var(--sans);
+  background:var(--abyss-0);
+  color:var(--ink-1);
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+
+/* ---------- Ambient ocean: 3 layered radial "light shafts" ---------- */
+.ambient{position:fixed;inset:0;pointer-events:none;z-index:0}
+.ambient::before,.ambient::after{
+  content:"";position:absolute;border-radius:50%;filter:blur(90px);opacity:.32;
+  animation:drift 26s ease-in-out infinite;
+}
+.ambient::before{width:60vw;height:60vw;top:-22vw;left:-12vw;
+  background:radial-gradient(circle,#0d5f6e 0%,transparent 68%)}
+.ambient::after{width:52vw;height:52vw;bottom:-24vw;right:-10vw;
+  background:radial-gradient(circle,#28407a 0%,transparent 70%);animation-delay:-13s}
+@keyframes drift{
+  0%,100%{transform:translate3d(0,0,0) scale(1)}
+  50%{transform:translate3d(3vw,4vh,0) scale(1.12)}
+}
+/* Drifting spores — the single most "Pandora" cheap effect you can ship */
+.spores{position:fixed;inset:0;pointer-events:none;z-index:1;overflow:hidden}
+.spore{
+  position:absolute;width:3px;height:3px;border-radius:50%;
+  background:var(--glow-lume);
+  box-shadow:0 0 8px 2px rgba(168,245,200,.7);
+  animation:rise linear infinite;
+}
+@keyframes rise{
+  from{transform:translateY(0) translateX(0);opacity:0}
+  8%{opacity:.85}
+  85%{opacity:.5}
+  to{transform:translateY(-110vh) translateX(6vw);opacity:0}
+}
+@media (prefers-reduced-motion:reduce){
+  .spore,.ambient::before,.ambient::after{animation:none}
+  .spores{display:none}
+}
+
+/* ---------- Shell ---------- */
+.shell{position:relative;z-index:2;max-width:1400px;margin:0 auto;padding:22px 28px 60px}
+
+/* ---------- Top bar ---------- */
+header{
+  display:flex;align-items:center;gap:18px;flex-wrap:wrap;
+  padding:14px 20px;margin-bottom:22px;
+  background:linear-gradient(180deg,rgba(10,30,48,.85),rgba(6,19,32,.7));
+  border:1px solid var(--abyss-3);border-radius:var(--r-lg);
+  backdrop-filter:blur(14px);
+}
+.brand{display:flex;align-items:center;gap:13px;margin-right:auto}
+.sigil{
+  width:42px;height:42px;flex:none;display:grid;place-items:center;
+  border-radius:13px;
+  background:radial-gradient(circle at 32% 28%,#1d6b78,#061320);
+  border:1px solid rgba(79,240,224,.35);
+  box-shadow:0 0 22px rgba(79,240,224,.25),inset 0 0 14px rgba(79,240,224,.12);
+}
+.sigil svg{width:22px;height:22px}
+.brand h1{font-size:16.5px;font-weight:650;letter-spacing:.2px}
+.brand p{font-size:11.5px;color:var(--ink-3);letter-spacing:.9px;text-transform:uppercase;margin-top:2px}
+
+/* Role switcher — maps to "Role-based answers" bonus feature */
+.roles{display:flex;gap:4px;padding:4px;background:rgba(3,8,15,.6);
+  border:1px solid var(--abyss-3);border-radius:999px}
+.roles button{
+  font:inherit;font-size:12.5px;font-weight:550;color:var(--ink-2);
+  background:none;border:0;padding:7px 15px;border-radius:999px;cursor:pointer;
+  transition:.18s;
+}
+.roles button:hover{color:var(--ink-1)}
+.roles button[aria-pressed="true"]{
+  color:#04141a;background:linear-gradient(135deg,var(--glow-cyan),var(--glow-teal));
+  box-shadow:0 0 16px rgba(79,240,224,.4);
+}
+.kb-pill{
+  display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-2);
+  padding:8px 14px;border-radius:999px;background:rgba(43,184,201,.08);
+  border:1px solid rgba(43,184,201,.25);
+}
+.pulse{width:7px;height:7px;border-radius:50%;background:var(--glow-lume);
+  box-shadow:0 0 9px var(--glow-lume);animation:beat 2.4s ease-in-out infinite}
+@keyframes beat{0%,100%{opacity:1}50%{opacity:.35}}
+
+/* ---------- Layout: 3 columns → the whole RAG loop is visible at once ---------- */
+.grid{display:grid;grid-template-columns:290px minmax(0,1fr) 340px;gap:20px;align-items:start}
+@media(max-width:1180px){.grid{grid-template-columns:1fr}}
+
+.panel{
+  background:linear-gradient(180deg,rgba(10,30,48,.72),rgba(6,19,32,.6));
+  border:1px solid var(--abyss-3);border-radius:var(--r-lg);
+  backdrop-filter:blur(12px);
+}
+.panel-h{
+  display:flex;align-items:center;gap:9px;padding:16px 18px 12px;
+  font-size:11px;font-weight:700;letter-spacing:1.3px;text-transform:uppercase;
+  color:var(--glow-teal);
+}
+.panel-h .n{
+  width:19px;height:19px;flex:none;display:grid;place-items:center;border-radius:6px;
+  background:rgba(43,184,201,.14);border:1px solid rgba(43,184,201,.3);
+  font-size:10px;color:var(--glow-cyan);letter-spacing:0;
+}
+.panel-b{padding:0 18px 18px}
+
+/* ---------- Upload dropzone ---------- */
+.drop{
+  border:1.5px dashed rgba(79,240,224,.3);border-radius:var(--r-md);
+  padding:26px 16px;text-align:center;cursor:pointer;transition:.2s;
+  background:rgba(79,240,224,.03);
+}
+.drop:hover,.drop.over{
+  border-color:var(--glow-cyan);background:rgba(79,240,224,.09);
+  box-shadow:0 0 26px rgba(79,240,224,.15) inset;
+}
+.drop svg{width:30px;height:30px;color:var(--glow-teal);margin-bottom:9px}
+.drop b{display:block;font-size:13.5px;font-weight:600}
+.drop span{font-size:11.5px;color:var(--ink-3);display:block;margin-top:5px;line-height:1.5}
+
+/* Ingested docs — show chunk counts. Judges read this as "the pipeline is real". */
+.docs{list-style:none;margin-top:14px;display:flex;flex-direction:column;gap:7px}
+.doc{
+  display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:10px;
+  background:rgba(3,8,15,.45);border:1px solid rgba(15,44,66,.9);font-size:12.5px;
+}
+.doc .ic{width:26px;height:26px;flex:none;border-radius:7px;display:grid;place-items:center;
+  font-size:9px;font-weight:700;letter-spacing:.3px}
+.ic.pdf{background:rgba(255,122,92,.14);color:#ff9b82;border:1px solid rgba(255,122,92,.28)}
+.ic.csv{background:rgba(168,245,200,.14);color:var(--glow-lume);border:1px solid rgba(168,245,200,.28)}
+.ic.txt{background:rgba(139,127,232,.14);color:#a99ff0;border:1px solid rgba(139,127,232,.28)}
+.doc .meta{min-width:0;flex:1}
+.doc .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:520}
+.doc .sub{font-size:10.5px;color:var(--ink-3);font-family:var(--mono)}
+.doc .ok{color:var(--glow-lume);font-size:13px}
+
+.filters{margin-top:16px;display:flex;flex-wrap:wrap;gap:6px}
+.chip{
+  font:inherit;font-size:11px;padding:5px 11px;border-radius:999px;cursor:pointer;
+  background:rgba(3,8,15,.5);border:1px solid var(--abyss-3);color:var(--ink-2);transition:.16s;
+}
+.chip:hover{border-color:rgba(79,240,224,.4);color:var(--ink-1)}
+.chip[aria-pressed="true"]{background:rgba(79,240,224,.14);border-color:rgba(79,240,224,.5);color:var(--glow-cyan)}
+
+/* ---------- Centre: ask + answer ---------- */
+.ask{padding:18px}
+.ask-wrap{position:relative}
+textarea{
+  width:100%;min-height:96px;resize:vertical;font:inherit;font-size:15px;line-height:1.6;
+  color:var(--ink-1);background:rgba(3,8,15,.6);
+  border:1px solid var(--abyss-3);border-radius:var(--r-md);padding:15px 17px;
+  transition:.2s;
+}
+textarea::placeholder{color:var(--ink-3)}
+textarea:focus{
+  outline:none;border-color:rgba(79,240,224,.55);
+  box-shadow:0 0 0 4px rgba(79,240,224,.08),0 0 30px rgba(79,240,224,.1);
+}
+.ask-row{display:flex;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap}
+.btn{
+  font:inherit;font-size:13.5px;font-weight:600;cursor:pointer;border-radius:11px;
+  padding:11px 20px;border:1px solid transparent;transition:.18s;
+  display:inline-flex;align-items:center;gap:8px;
+}
+.btn-primary{
+  color:#04141a;background:linear-gradient(135deg,var(--glow-cyan),var(--glow-teal));
+  box-shadow:0 6px 24px rgba(79,240,224,.28);
+}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 9px 30px rgba(79,240,224,.4)}
+.btn-ghost{color:var(--ink-2);background:rgba(3,8,15,.5);border-color:var(--abyss-3)}
+.btn-ghost:hover{color:var(--ink-1);border-color:rgba(79,240,224,.35)}
+.mic{width:40px;height:40px;padding:0;justify-content:center;border-radius:50%}
+.hint{font-size:11.5px;color:var(--ink-3);margin-left:auto;font-family:var(--mono)}
+
+.suggest{margin-top:15px;padding-top:15px;border-top:1px solid rgba(15,44,66,.7)}
+.suggest p{font-size:10.5px;letter-spacing:1.1px;text-transform:uppercase;color:var(--ink-3);margin-bottom:9px}
+.suggest .row{display:flex;flex-wrap:wrap;gap:7px}
+.sq{
+  font:inherit;text-align:left;font-size:12px;line-height:1.4;cursor:pointer;
+  padding:8px 12px;border-radius:10px;color:var(--ink-2);
+  background:rgba(43,184,201,.06);border:1px solid rgba(43,184,201,.18);transition:.16s;
+}
+.sq:hover{background:rgba(43,184,201,.14);color:var(--ink-1);border-color:rgba(43,184,201,.42)}
+
+/* ---------- Retrieval trace: makes RAG VISIBLE. High-value for judges. ---------- */
+.trace{
+  display:flex;align-items:center;gap:0;margin:18px 0 0;padding:13px 16px;
+  border-radius:var(--r-md);background:rgba(3,8,15,.42);
+  border:1px solid rgba(15,44,66,.9);overflow-x:auto;
+}
+.step{display:flex;align-items:center;gap:8px;flex:none}
+.step .dot{
+  width:22px;height:22px;border-radius:50%;display:grid;place-items:center;
+  font-size:10px;font-weight:700;font-family:var(--mono);
+  background:rgba(43,184,201,.12);color:var(--ink-3);border:1px solid var(--abyss-3);
+  transition:.3s;
+}
+.step .lbl{font-size:11px;color:var(--ink-3);white-space:nowrap;transition:.3s}
+.step .sub{font-size:9.5px;color:var(--ink-3);font-family:var(--mono);opacity:.7}
+.step.done .dot{background:rgba(168,245,200,.15);color:var(--glow-lume);border-color:rgba(168,245,200,.45)}
+.step.done .lbl{color:var(--ink-2)}
+.step.active .dot{
+  background:var(--glow-cyan);color:#04141a;border-color:var(--glow-cyan);
+  box-shadow:0 0 14px rgba(79,240,224,.6);
+}
+.step.active .lbl{color:var(--glow-cyan);font-weight:600}
+.link{width:26px;height:1px;background:var(--abyss-3);margin:0 9px;flex:none}
+.step.done+.link{background:rgba(168,245,200,.35)}
+
+/* ---------- Answer ---------- */
+.answer{margin-top:20px}
+.ans-head{display:flex;align-items:flex-start;gap:13px;padding:16px 18px 0}
+.av{
+  width:36px;height:36px;flex:none;border-radius:11px;display:grid;place-items:center;
+  background:radial-gradient(circle at 30% 25%,#1d6b78,#061320);
+  border:1px solid rgba(79,240,224,.35);box-shadow:0 0 18px rgba(79,240,224,.2);
+}
+.av svg{width:19px;height:19px}
+.ans-head .who{font-size:13.5px;font-weight:650}
+.ans-head .when{font-size:11px;color:var(--ink-3);font-family:var(--mono);margin-top:2px}
+
+/* Confidence + grounding badges — directly targets "Accuracy & Grounded Responses" */
+.badges{display:flex;gap:7px;margin-left:auto;flex-wrap:wrap;align-items:center}
+.badge{
+  display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;
+  padding:6px 11px;border-radius:999px;
+}
+.badge.grounded{background:rgba(168,245,200,.13);color:var(--glow-lume);border:1px solid rgba(168,245,200,.35)}
+.badge.conf{background:rgba(43,184,201,.12);color:var(--glow-teal);border:1px solid rgba(43,184,201,.3);font-family:var(--mono)}
+.badge.pri{background:rgba(255,122,92,.14);color:var(--alert);border:1px solid rgba(255,122,92,.35)}
+.meter{width:44px;height:4px;border-radius:2px;background:rgba(3,8,15,.7);overflow:hidden}
+.meter i{display:block;height:100%;border-radius:2px;
+  background:linear-gradient(90deg,var(--glow-teal),var(--glow-lume))}
+
+.ans-body{padding:16px 18px 18px;font-size:14.8px;line-height:1.78;color:#d5e8ec}
+.ans-body h4{
+  font-size:11px;letter-spacing:1.2px;text-transform:uppercase;color:var(--glow-teal);
+  margin:20px 0 9px;display:flex;align-items:center;gap:8px;
+}
+.ans-body h4::after{content:"";flex:1;height:1px;background:rgba(15,44,66,.9)}
+.ans-body h4:first-child{margin-top:0}
+.ans-body p{margin-bottom:11px}
+.ans-body ol,.ans-body ul{padding-left:20px;margin-bottom:11px}
+.ans-body li{margin-bottom:7px}
+.ans-body li::marker{color:var(--glow-teal)}
+
+/* Inline citations — click to spotlight the source card. The core UX idea. */
+.cite{
+  display:inline-block;font-family:var(--mono);font-size:10.5px;font-weight:700;
+  vertical-align:super;line-height:1;cursor:pointer;
+  padding:2.5px 5px;margin:0 1.5px;border-radius:5px;
+  background:rgba(79,240,224,.15);color:var(--glow-cyan);
+  border:1px solid rgba(79,240,224,.32);transition:.15s;
+}
+.cite:hover,.cite.hot{
+  background:var(--glow-cyan);color:#04141a;border-color:var(--glow-cyan);
+  box-shadow:0 0 12px rgba(79,240,224,.6);
+}
+
+/* Action / risk callout */
+.callout{
+  display:flex;gap:12px;padding:14px 16px;border-radius:var(--r-md);margin:16px 0;
+  background:rgba(255,122,92,.07);border:1px solid rgba(255,122,92,.28);
+  border-left:3px solid var(--alert);
+}
+.callout svg{width:18px;height:18px;flex:none;color:var(--alert);margin-top:2px}
+.callout b{display:block;font-size:12.5px;color:var(--alert);margin-bottom:4px;
+  letter-spacing:.6px;text-transform:uppercase}
+.callout p{font-size:13.5px;color:var(--ink-1);margin:0;line-height:1.65}
+
+.ans-foot{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  padding:14px 18px;border-top:1px solid rgba(15,44,66,.7);
+}
+.tool{
+  font:inherit;font-size:11.5px;color:var(--ink-3);background:none;border:0;cursor:pointer;
+  padding:6px 10px;border-radius:8px;display:inline-flex;align-items:center;gap:6px;transition:.15s;
+}
+.tool:hover{color:var(--glow-cyan);background:rgba(79,240,224,.08)}
+.tool svg{width:14px;height:14px}
+
+/* ---------- Insufficient-evidence state (REQUIRED by spec #6) ---------- */
+.insufficient{
+  margin:16px 18px 18px;padding:20px;border-radius:var(--r-md);text-align:center;
+  background:rgba(255,200,107,.06);border:1px dashed rgba(255,200,107,.4);
+}
+.insufficient svg{width:32px;height:32px;color:var(--warn);margin-bottom:11px}
+.insufficient b{display:block;font-size:14.5px;color:var(--warn);margin-bottom:7px}
+.insufficient p{font-size:13px;color:var(--ink-2);line-height:1.65;max-width:520px;margin:0 auto}
+.insufficient .best{
+  margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,200,107,.2);
+  font-size:11.5px;color:var(--ink-3);font-family:var(--mono);
+}
+
+/* ---------- Right rail: sources ---------- */
+.src{
+  padding:13px;border-radius:var(--r-md);margin-bottom:10px;cursor:pointer;
+  background:rgba(3,8,15,.45);border:1px solid rgba(15,44,66,.9);transition:.2s;
+}
+.src:hover{border-color:rgba(43,184,201,.45);transform:translateX(-3px)}
+.src.hot{
+  border-color:var(--glow-cyan);background:rgba(79,240,224,.07);
+  box-shadow:0 0 0 1px rgba(79,240,224,.3),0 0 26px rgba(79,240,224,.12);
+}
+.src-top{display:flex;align-items:center;gap:9px;margin-bottom:9px}
+.src-n{
+  width:22px;height:22px;flex:none;border-radius:6px;display:grid;place-items:center;
+  font-family:var(--mono);font-size:10.5px;font-weight:700;
+  background:rgba(79,240,224,.14);color:var(--glow-cyan);border:1px solid rgba(79,240,224,.3);
+}
+.src-nm{font-size:12.5px;font-weight:600;min-width:0;flex:1;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.src-loc{font-size:10.5px;color:var(--ink-3);font-family:var(--mono);margin-top:1px}
+.excerpt{
+  font-size:12px;line-height:1.6;color:var(--ink-2);
+  padding:10px 12px;border-radius:9px;margin-bottom:10px;
+  background:rgba(3,8,15,.55);border-left:2px solid rgba(43,184,201,.5);
+}
+.excerpt mark{background:rgba(79,240,224,.22);color:var(--glow-cyan);padding:0 2px;border-radius:3px}
+.score{display:flex;align-items:center;gap:9px}
+.score .bar{flex:1;height:4px;border-radius:2px;background:rgba(3,8,15,.7);overflow:hidden}
+.score .bar i{display:block;height:100%;border-radius:2px;
+  background:linear-gradient(90deg,var(--glow-teal),var(--glow-cyan))}
+.score .v{font-family:var(--mono);font-size:10.5px;color:var(--glow-teal);font-weight:600}
+.score .tag{font-size:9.5px;letter-spacing:.5px;text-transform:uppercase;color:var(--ink-3);
+  padding:3px 7px;border-radius:5px;background:rgba(15,44,66,.8)}
+
+/* Retrieval stats — cheap credibility */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.stat{padding:10px;border-radius:10px;text-align:center;
+  background:rgba(3,8,15,.45);border:1px solid rgba(15,44,66,.9)}
+.stat b{display:block;font-family:var(--mono);font-size:16px;color:var(--glow-cyan)}
+.stat span{font-size:9.5px;letter-spacing:.6px;text-transform:uppercase;color:var(--ink-3)}
+
+footer{text-align:center;margin-top:34px;font-size:11.5px;color:var(--ink-3);line-height:1.8}
+kbd{font-family:var(--mono);font-size:10.5px;padding:2px 6px;border-radius:5px;
+  background:rgba(15,44,66,.9);border:1px solid var(--abyss-3);color:var(--ink-2)}
+.hidden{display:none!important}
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--abyss-3);border-radius:5px}
+::-webkit-scrollbar-thumb:hover{background:#17435f}
+:focus-visible{outline:2px solid var(--glow-cyan);outline-offset:2px}
+</style>
+</head>
+<body>
+
+<div class="ambient"></div>
+<div class="spores" id="spores"></div>
+
+<div class="shell">
+
+  <header>
+    <div class="brand">
+      <div class="sigil">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#4ff0e0" stroke-width="1.6" stroke-linecap="round">
+          <path d="M12 2v20M2 12h20"/><circle cx="12" cy="12" r="4.5" stroke-width="1.3"/>
+          <path d="M5.5 5.5l3 3M18.5 5.5l-3 3M5.5 18.5l3-3M18.5 18.5l-3-3" stroke-width="1.1"/>
+        </svg>
+      </div>
+      <div>
+        <h1>Pandora Knowledge Guardian</h1>
+        <p>Retrieval-Grounded Ecosystem Intelligence</p>
+      </div>
+    </div>
+
+    <div class="roles" role="group" aria-label="Answer persona">
+      <button aria-pressed="true">Guardian</button>
+      <button aria-pressed="false">Researcher</button>
+      <button aria-pressed="false">Citizen</button>
+    </div>
+
+    <div class="kb-pill"><span class="pulse"></span> 7 docs · 1,284 chunks indexed</div>
+  </header>
+
+  <div class="grid">
+
+    <!-- ═══════════ LEFT: KNOWLEDGE BASE ═══════════ -->
+    <section class="panel">
+      <div class="panel-h"><span class="n">1</span> Knowledge Base</div>
+      <div class="panel-b">
+
+        <div class="drop" id="drop" tabindex="0" role="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/>
+          </svg>
+          <b>Drop field documents</b>
+          <span>PDF · DOCX · TXT · CSV<br>Reports, marine records, field notes</span>
+        </div>
+
+        <ul class="docs">
+          <li class="doc"><span class="ic pdf">PDF</span>
+            <span class="meta"><span class="nm">Bay-7_Water_Quality_Q3.pdf</span>
+            <span class="sub">214 chunks · 18 pp</span></span><span class="ok">✓</span></li>
+          <li class="doc"><span class="ic pdf">PDF</span>
+            <span class="meta"><span class="nm">Reef_Bleaching_Protocol_v4.pdf</span>
+            <span class="sub">96 chunks · 11 pp</span></span><span class="ok">✓</span></li>
+          <li class="doc"><span class="ic csv">CSV</span>
+            <span class="meta"><span class="nm">metkayina_species_registry.csv</span>
+            <span class="sub">431 rows · 431 chunks</span></span><span class="ok">✓</span></li>
+          <li class="doc"><span class="ic txt">TXT</span>
+            <span class="meta"><span class="nm">tsahik_oral_knowledge.txt</span>
+            <span class="sub">73 chunks</span></span><span class="ok">✓</span></li>
+          <li class="doc"><span class="ic pdf">PDF</span>
+            <span class="meta"><span class="nm">Emergency_Response_Master.pdf</span>
+            <span class="sub">188 chunks · 24 pp</span></span><span class="ok">✓</span></li>
+        </ul>
+
+        <div class="filters">
+          <button class="chip" aria-pressed="true">All sources</button>
+          <button class="chip" aria-pressed="false">Water quality</button>
+          <button class="chip" aria-pressed="false">Marine life</button>
+          <button class="chip" aria-pressed="false">Emergency</button>
+          <button class="chip" aria-pressed="false">Community</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════ CENTRE: ASK + ANSWER ═══════════ -->
+    <div>
+      <section class="panel">
+        <div class="panel-h"><span class="n">2</span> Ask the Guardian</div>
+        <div class="ask">
+          <div class="ask-wrap">
+            <textarea id="q" placeholder="A section of the eastern bay has turned rust-orange and the ilu have left the shallows. What is happening, which species are at risk, and what should the response team do first?"></textarea>
+          </div>
+          <div class="ask-row">
+            <button class="btn btn-primary" id="run">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+              Retrieve &amp; Answer
+            </button>
+            <button class="btn btn-ghost mic" title="Voice question" aria-label="Voice question">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 2a3 3 0 013 3v6a3 3 0 01-6 0V5a3 3 0 013-3z"/><path d="M19 10v1a7 7 0 01-14 0v-1M12 19v3"/></svg>
+            </button>
+            <button class="btn btn-ghost" id="reset">Clear session</button>
+            <span class="hint"><kbd>Ctrl</kbd>+<kbd>↵</kbd> to send</span>
+          </div>
+
+          <div class="suggest">
+            <p>Suggested guardian queries</p>
+            <div class="row">
+              <button class="sq">Causes of unusual ocean colour change?</button>
+              <button class="sq">Which species are most vulnerable to contamination?</button>
+              <button class="sq">Immediate actions after coral damage</button>
+              <button class="sq">Compare: contamination vs. volcanic event response</button>
+              <button class="sq">Traditional practices supporting conservation</button>
+            </div>
+          </div>
+
+          <!-- Retrieval trace -->
+          <div class="trace" id="trace">
+            <div class="step done" data-s="0"><span class="dot">1</span>
+              <span><span class="lbl">Query rewrite</span><br><span class="sub">3 variants</span></span></div>
+            <span class="link"></span>
+            <div class="step done" data-s="1"><span class="dot">2</span>
+              <span><span class="lbl">Hybrid search</span><br><span class="sub">BM25 + dense</span></span></div>
+            <span class="link"></span>
+            <div class="step done" data-s="2"><span class="dot">3</span>
+              <span><span class="lbl">Rerank</span><br><span class="sub">24 → 6</span></span></div>
+            <span class="link"></span>
+            <div class="step done" data-s="3"><span class="dot">4</span>
+              <span><span class="lbl">Ground &amp; generate</span><br><span class="sub">claude · 6 ctx</span></span></div>
+            <span class="link"></span>
+            <div class="step done" data-s="4"><span class="dot">5</span>
+              <span><span class="lbl">Verify citations</span><br><span class="sub">4/4 supported</span></span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ANSWER (grounded) -->
+      <section class="panel answer" id="ansGrounded">
+        <div class="ans-head">
+          <div class="av">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#4ff0e0" stroke-width="1.6" stroke-linecap="round">
+              <circle cx="12" cy="12" r="3.4"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/>
+            </svg>
+          </div>
+          <div>
+            <div class="who">Grounded Response</div>
+            <div class="when">6 chunks · 4 documents · 2.4 s</div>
+          </div>
+          <div class="badges">
+            <span class="badge pri">
+              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9L2.4 18a2 2 0 001.7 3h15.8a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+              Priority: HIGH
+            </span>
+            <span class="badge grounded">
+              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>
+              Fully grounded
+            </span>
+            <span class="badge conf">0.87 <span class="meter"><i style="width:87%"></i></span></span>
+          </div>
+        </div>
+
+        <div class="ans-body">
+          <div class="callout">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9L2.4 18a2 2 0 001.7 3h15.8a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+            <div>
+              <b>Act within 6 hours</b>
+              <p>The retrieved evidence matches a <b>Stage-2 algal proliferation</b> signature. Protocol requires water sampling and a shellfish-harvest suspension before the next tidal cycle.</p>
+            </div>
+          </div>
+
+          <h4>What the evidence indicates</h4>
+          <p>Rust-orange discolouration in the eastern bay is most consistent with a <b>dinoflagellate bloom triggered by nutrient runoff</b>. Bay-7 monitoring recorded nitrate at <b>4.8 mg/L</b> — 3.2× the seasonal baseline — with dissolved oxygen falling to 4.1 mg/L over the same window <span class="cite" data-c="1">1</span>. Field notes describe an identical colour shift preceding the Kelutral inlet event two seasons ago <span class="cite" data-c="2">2</span>.</p>
+          <p>Departure of <i>ilu</i> from the shallows is a documented early avoidance response to hypoxia, and is treated in the protocol as a leading indicator rather than an incidental observation <span class="cite" data-c="3">3</span>.</p>
+
+          <h4>Species at elevated risk</h4>
+          <ul>
+            <li><b>Reef-brooding corals (3 spp.)</b> — bleaching threshold is crossed below 5.0 mg/L dissolved oxygen <span class="cite" data-c="1">1</span></li>
+            <li><b>Filter-feeding shellfish beds</b> — bioaccumulate the toxin; primary human-exposure pathway <span class="cite" data-c="3">3</span></li>
+            <li><b>Juvenile <i>ilu</i> nurseries</b> — the eastern shallows are the only recorded nursery in this range <span class="cite" data-c="4">4</span></li>
+          </ul>
+
+          <h4>Recommended immediate actions</h4>
+          <ol>
+            <li>Take water samples at <b>3 depths across 5 transects</b>; log nitrate, DO, and cell counts <span class="cite" data-c="3">3</span></li>
+            <li>Suspend shellfish harvesting bay-wide until two consecutive clear counts <span class="cite" data-c="3">3</span></li>
+            <li>Notify the Tsahìk council — oral records hold the historical bloom cycle for this bay <span class="cite" data-c="2">2</span></li>
+            <li>Trace upstream runoff sources along the northern watershed <span class="cite" data-c="1">1</span></li>
+          </ol>
+
+          <h4>Where the evidence is thin</h4>
+          <p>No document in the current knowledge base specifies a <b>toxin-clearance time</b> for shellfish beds after a bloom subsides. Treat the harvest suspension as open-ended until a clearance study is added to the corpus.</p>
+        </div>
+
+        <div class="ans-foot">
+          <button class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.3a2 2 0 002-1.7l1.4-9a2 2 0 00-2-2.3zM7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3"/></svg> Helpful</button>
+          <button class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M10 15v4a3 3 0 003 3l4-9V2H5.7a2 2 0 00-2 1.7l-1.4 9a2 2 0 002 2.3zm7-13h2.7A2 2 0 0122 4v7a2 2 0 01-2 2h-3"/></svg> Not grounded</button>
+          <button class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy with citations</button>
+          <button class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg> Export incident brief</button>
+          <button class="tool" id="toggleIns" style="margin-left:auto;color:var(--warn)">↻ Show insufficient-evidence state</button>
+        </div>
+      </section>
+
+      <!-- ANSWER (insufficient) -->
+      <section class="panel answer hidden" id="ansInsufficient">
+        <div class="ans-head">
+          <div class="av" style="border-color:rgba(255,200,107,.4);box-shadow:0 0 18px rgba(255,200,107,.18)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#ffc86b" stroke-width="1.8" stroke-linecap="round"><path d="M12 9v4M12 17h.01"/><circle cx="12" cy="12" r="9.5"/></svg>
+          </div>
+          <div>
+            <div class="who">Insufficient Evidence</div>
+            <div class="when">Best match scored 0.31 · threshold 0.62</div>
+          </div>
+          <div class="badges">
+            <span class="badge" style="background:rgba(255,200,107,.12);color:var(--warn);border:1px solid rgba(255,200,107,.35)">Answer withheld</span>
+          </div>
+        </div>
+
+        <div class="insufficient">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+            <circle cx="11" cy="11" r="7.5"/><path d="M21 21l-4.7-4.7M11 8v3M11 14h.01"/>
+          </svg>
+          <b>The available Pandora knowledge base does not contain sufficient evidence to answer this question.</b>
+          <p>Nothing in the 7 indexed documents addresses <i>atmospheric spore-density thresholds during storm season</i>. Rather than infer an answer, the Guardian is withholding it.</p>
+          <div class="best">
+            closest retrieved chunk → Emergency_Response_Master.pdf p.14 · score 0.31 (below 0.62 threshold)
+          </div>
+        </div>
+
+        <div class="ans-foot">
+          <button class="tool">＋ Upload a document covering this</button>
+          <button class="tool">✎ Rephrase the question</button>
+          <button class="tool">⚑ Flag as knowledge gap</button>
+          <button class="tool" id="toggleBack" style="margin-left:auto;color:var(--glow-cyan)">↻ Back to grounded answer</button>
+        </div>
+      </section>
+    </div>
+
+    <!-- ═══════════ RIGHT: SOURCES ═══════════ -->
+    <section class="panel">
+      <div class="panel-h"><span class="n">3</span> Retrieved Sources</div>
+      <div class="panel-b">
+
+        <div class="stats">
+          <div class="stat"><b>6</b><span>chunks</span></div>
+          <div class="stat"><b>4</b><span>docs</span></div>
+          <div class="stat"><b>0.87</b><span>mean</span></div>
+        </div>
+
+        <article class="src" data-c="1">
+          <div class="src-top"><span class="src-n">1</span>
+            <span class="src-nm">Bay-7_Water_Quality_Q3.pdf<span class="src-loc">§3.2 Nutrient Load · p.7</span></span></div>
+          <div class="excerpt">“Nitrate concentration in the eastern bay reached <mark>4.8 mg/L</mark>, exceeding the seasonal baseline by a factor of 3.2. Dissolved oxygen declined to <mark>4.1 mg/L</mark>, below the 5.0 mg/L threshold at which reef-brooding corals begin bleaching…”</div>
+          <div class="score"><span class="tag">dense</span><span class="bar"><i style="width:94%"></i></span><span class="v">0.94</span></div>
+        </article>
+
+        <article class="src" data-c="2">
+          <div class="src-top"><span class="src-n">2</span>
+            <span class="src-nm">tsahik_oral_knowledge.txt<span class="src-loc">Passage 41 · Kelutral inlet</span></span></div>
+          <div class="excerpt">“When the water takes the colour of rust and the ilu go to deep song, the elders name it <mark>the breath-taking</mark>. It has come to the eastern bay four times in living memory, always after the long rains…”</div>
+          <div class="score"><span class="tag">hybrid</span><span class="bar"><i style="width:89%"></i></span><span class="v">0.89</span></div>
+        </article>
+
+        <article class="src" data-c="3">
+          <div class="src-top"><span class="src-n">3</span>
+            <span class="src-nm">Emergency_Response_Master.pdf<span class="src-loc">§7.4 Bloom Response · p.19</span></span></div>
+          <div class="excerpt">“Stage-2 confirmation requires sampling at <mark>three depths across five transects</mark>. Shellfish harvesting must be suspended bay-wide until two consecutive clear cell counts are recorded…”</div>
+          <div class="score"><span class="tag">bm25+dense</span><span class="bar"><i style="width:86%"></i></span><span class="v">0.86</span></div>
+        </article>
+
+        <article class="src" data-c="4">
+          <div class="src-top"><span class="src-n">4</span>
+            <span class="src-nm">metkayina_species_registry.csv<span class="src-loc">rows 88–94 · ilu</span></span></div>
+          <div class="excerpt">“<mark>ilu · juvenile nursery</mark> · eastern shallows · sole recorded nursery within surveyed range · hypoxia sensitivity: HIGH · avoidance onset ≈ 4.5 mg/L DO…”</div>
+          <div class="score"><span class="tag">metadata</span><span class="bar"><i style="width:81%"></i></span><span class="v">0.81</span></div>
+        </article>
+
+        <article class="src" data-c="5" style="opacity:.62">
+          <div class="src-top"><span class="src-n">5</span>
+            <span class="src-nm">Reef_Bleaching_Protocol_v4.pdf<span class="src-loc">§2.1 · p.4</span></span></div>
+          <div class="excerpt">“Bleaching onset is observed within 72 hours of sustained dissolved-oxygen depression…”</div>
+          <div class="score"><span class="tag">retrieved · uncited</span><span class="bar"><i style="width:68%"></i></span><span class="v">0.68</span></div>
+        </article>
+      </div>
+    </section>
+  </div>
+
+  <footer>
+    <b style="color:var(--glow-teal)">THEME 1 · Abyss Bioluminescent</b><br>
+    Static mockup. Click any <span class="cite">n</span> citation to spotlight its source card ·
+    toggle the insufficient-evidence state from the answer footer.
+  </footer>
+</div>
+
+<script>
+/* Drifting spores */
+const sp = document.getElementById('spores');
+for (let i = 0; i < 26; i++) {
+  const s = document.createElement('i');
+  s.className = 'spore';
+  s.style.left = Math.random() * 100 + 'vw';
+  s.style.top = (100 + Math.random() * 30) + 'vh';
+  s.style.animationDuration = (16 + Math.random() * 22) + 's';
+  s.style.animationDelay = (-Math.random() * 30) + 's';
+  s.style.opacity = .3 + Math.random() * .5;
+  const k = .6 + Math.random() * 1.8;
+  s.style.width = s.style.height = (k * 2.4).toFixed(1) + 'px';
+  sp.appendChild(s);
+}
+
+/* Citation ⇄ source linking — the core interaction */
+function spotlight(id, on) {
+  document.querySelectorAll('.cite[data-c="' + id + '"]').forEach(e => e.classList.toggle('hot', on));
+  const card = document.querySelector('.src[data-c="' + id + '"]');
+  if (card) card.classList.toggle('hot', on);
+}
+document.querySelectorAll('.cite').forEach(c => {
+  const id = c.dataset.c;
+  c.addEventListener('mouseenter', () => spotlight(id, true));
+  c.addEventListener('mouseleave', () => spotlight(id, false));
+  c.addEventListener('click', () => {
+    const card = document.querySelector('.src[data-c="' + id + '"]');
+    if (!card) return;
+    card.scrollIntoView({behavior: 'smooth', block: 'center'});
+    card.classList.add('hot');
+    setTimeout(() => card.classList.remove('hot'), 1800);
+  });
+});
+document.querySelectorAll('.src').forEach(s => {
+  const id = s.dataset.c;
+  s.addEventListener('mouseenter', () => spotlight(id, true));
+  s.addEventListener('mouseleave', () => spotlight(id, false));
+});
+
+/* Toggle groups */
+function toggleGroup(sel) {
+  document.querySelectorAll(sel).forEach(b => b.addEventListener('click', () => {
+    b.parentElement.querySelectorAll('[aria-pressed]').forEach(x => x.setAttribute('aria-pressed', 'false'));
+    b.setAttribute('aria-pressed', 'true');
+  }));
+}
+toggleGroup('.roles button');
+toggleGroup('.filters .chip');
+
+/* Suggested question → textarea */
+const q = document.getElementById('q');
+document.querySelectorAll('.sq').forEach(b => b.addEventListener('click', () => {
+  q.value = b.textContent.trim();
+  q.focus();
+}));
+
+/* Animated retrieval trace on submit */
+const steps = [...document.querySelectorAll('.step')];
+function runTrace() {
+  steps.forEach(s => s.classList.remove('done', 'active'));
+  let i = 0;
+  (function tick() {
+    if (i > 0) steps[i - 1].classList.replace('active', 'done');
+    if (i >= steps.length) return;
+    steps[i].classList.add('active');
+    i++;
+    setTimeout(tick, 420);
+  })();
+}
+document.getElementById('run').addEventListener('click', runTrace);
+q.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); runTrace(); }
+});
+
+/* Insufficient-evidence state */
+const G = document.getElementById('ansGrounded'), I = document.getElementById('ansInsufficient');
+document.getElementById('toggleIns').addEventListener('click', () => {
+  G.classList.add('hidden'); I.classList.remove('hidden');
+  I.scrollIntoView({behavior: 'smooth', block: 'center'});
+});
+document.getElementById('toggleBack').addEventListener('click', () => {
+  I.classList.add('hidden'); G.classList.remove('hidden');
+});
+
+/* Reset */
+document.getElementById('reset').addEventListener('click', () => {
+  q.value = '';
+  steps.forEach(s => s.classList.remove('active'));
+  steps.forEach(s => s.classList.add('done'));
+  q.focus();
+});
+
+/* Dropzone affordance */
+const drop = document.getElementById('drop');
+['dragenter', 'dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
+['dragleave', 'drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('over'); }));
+</script>
+</body>
+</html>

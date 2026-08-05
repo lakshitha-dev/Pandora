@@ -1,0 +1,66 @@
+# ─── Secrets — NEVER commit ───────────────────────────────────────────────
+# Azure AI Search F0 is API-key-only. A leaked key is a live key.
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+secrets.json
+local.settings.json
+
+# ─── Python ───────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.venv/
+venv/
+env/
+.Python
+build/
+dist/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# ─── Node / Next.js ───────────────────────────────────────────────────────
+node_modules/
+.next/
+out/
+.turbo/
+*.tsbuildinfo
+npm-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# ─── Azure / infra ────────────────────────────────────────────────────────
+.azure/
+*.publishsettings
+.terraform/
+*.tfstate
+*.tfstate.*
+
+# ─── Local artifacts ──────────────────────────────────────────────────────
+*.log
+# Test-run output — the scripts that produce these are committed, the
+# results are per-machine and change on every run.
+gate-result.txt
+gate-run.txt
+sitrep-out.txt
+sitrep-test.txt
+tmp/
+temp/
+scratch/
+uploads/
+.cache/
+
+# ─── Editors / OS ─────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini

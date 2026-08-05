@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pandora Knowledge Guardian — Knowledge Library</title>
+<link rel="stylesheet" href="pandora.css">
+<style>
+  /* Route: /app/documents · UI_SPEC.md §Document Library, re-pointed at Pandora. */
+  .appnav { display: flex; align-items: center; gap: var(--s-4); flex-wrap: wrap;
+    padding: var(--s-3) var(--s-4); margin-block-end: var(--s-4);
+    background: linear-gradient(180deg,
+      color-mix(in oklab, var(--deep-2) 82%, transparent),
+      color-mix(in oklab, var(--deep) 68%, transparent));
+    border: 1px solid var(--line); border-radius: var(--r-lg);
+    backdrop-filter: blur(14px); }
+  .brand { display: flex; align-items: center; gap: var(--s-3); }
+  .sigil { display: grid; place-items: center; inline-size: 34px; aspect-ratio: 1;
+    border-radius: 10px; flex: none;
+    background: radial-gradient(circle at 32% 28%, #1d6b78, var(--deep));
+    border: 1px solid color-mix(in oklab, var(--cyan) 35%, transparent); }
+  .tabs { display: flex; gap: 2px; }
+  .tabs a { padding-inline: var(--s-3); padding-block: var(--s-2);
+    border-radius: var(--r-sm); font-size: var(--t-sm); color: var(--mist);
+    text-decoration: none; min-block-size: 36px; display: inline-flex;
+    align-items: center; gap: 6px;
+    transition: color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease); }
+  .tabs a:hover { color: var(--foam);
+    background: color-mix(in oklab, var(--cyan) 7%, transparent); }
+  .tabs a[aria-current="page"] { color: var(--cyan);
+    background: color-mix(in oklab, var(--cyan) 12%, transparent); }
+  .count { display: inline-grid; place-items: center; min-inline-size: 17px;
+    block-size: 17px; padding-inline: 4px; border-radius: 999px;
+    font-family: var(--mono); font-size: 9px; font-weight: 700;
+    background: var(--amber); color: var(--on-accent); }
+
+  h1 { font-size: var(--t-xl); font-weight: 650; margin-block-end: var(--s-2); }
+  .lede { color: var(--mist); max-inline-size: var(--measure); margin-block-end: var(--s-5); }
+  h2 { font-size: var(--t-lg); font-weight: 640; margin-block: var(--s-6) var(--s-3); }
+
+  .layout { display: grid; grid-template-columns: minmax(0,1fr) 300px; gap: var(--s-4);
+    align-items: start; }
+  @media (max-width: 980px) { .layout { grid-template-columns: 1fr; } }
+
+  .doc { display: grid; grid-template-columns: 34px minmax(0,1fr) auto;
+    gap: var(--s-3); align-items: start; padding: var(--s-3) var(--s-4);
+    border-radius: var(--r-md); border: 1px solid var(--line);
+    background: color-mix(in oklab, var(--abyss) 45%, transparent);
+    transition: border-color var(--dur-fast) var(--ease); }
+  .doc + .doc { margin-block-start: var(--s-2); }
+  .doc:hover { border-color: var(--line-2); }
+  .doc__ic { display: grid; place-items: center; inline-size: 34px; block-size: 34px;
+    border-radius: 8px; font-family: var(--mono); font-size: 8.5px; font-weight: 700;
+    background: color-mix(in oklab, var(--hue, var(--coral)) 13%, transparent);
+    color: var(--hue, var(--coral));
+    border: 1px solid color-mix(in oklab, var(--hue, var(--coral)) 30%, transparent); }
+  .ic--pdf { --hue: var(--coral); }
+  .ic--txt { --hue: var(--violet); }
+  .ic--csv { --hue: var(--lume); }
+  .doc__nm { font-size: var(--t-md); font-weight: 600; }
+  .doc__meta { display: flex; flex-wrap: wrap; gap: var(--s-3);
+    font-family: var(--mono); font-size: var(--t-2xs); color: var(--mist-dim);
+    margin-block-start: 3px; }
+  .doc__right { display: flex; align-items: center; gap: var(--s-2); }
+  .st { display: inline-flex; align-items: center; gap: 5px;
+    padding-inline: 7px; padding-block: 4px; border-radius: 4px;
+    font-size: 9px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase;
+    background: color-mix(in oklab, var(--hue) 13%, transparent);
+    color: var(--hue);
+    border: 1px solid color-mix(in oklab, var(--hue) 32%, transparent); }
+  .st--indexed { --hue: var(--lume); }
+  .st--indexing { --hue: var(--cyan); }
+  .st--queued { --hue: var(--mist); }
+  .st--failed { --hue: var(--coral); }
+  .iconbtn { display: grid; place-items: center; inline-size: 36px; block-size: 36px;
+    border-radius: var(--r-sm); color: var(--mist-dim);
+    transition: color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease); }
+  .iconbtn:hover { color: var(--coral);
+    background: color-mix(in oklab, var(--coral) 10%, transparent); }
+  .doc__wide { grid-column: 2 / -1; }
+  .rowerr { margin-block-start: var(--s-2); padding: var(--s-2) var(--s-3);
+    border-radius: var(--r-sm); font-size: var(--t-sm); line-height: 1.55;
+    background: color-mix(in oklab, var(--coral) 7%, transparent);
+    border-inline-start: 2px solid var(--coral); color: var(--mist); }
+  .rowerr b { color: var(--coral); }
+
+  .confirm { margin-block-start: var(--s-2); padding: var(--s-3);
+    border-radius: var(--r-md); font-size: var(--t-sm); line-height: 1.6;
+    background: color-mix(in oklab, var(--coral) 6%, transparent);
+    border: 1px solid color-mix(in oklab, var(--coral) 30%, transparent);
+    color: var(--mist); }
+  .confirm b { color: var(--foam); }
+
+  .side { padding: var(--s-4); border-radius: var(--r-lg);
+    background: color-mix(in oklab, var(--deep) 55%, transparent);
+    border: 1px solid var(--line); }
+  .side h3 { font-size: 9.5px; font-weight: 700; letter-spacing: 1.2px;
+    text-transform: uppercase; color: var(--teal); margin-block-end: var(--s-3); }
+  .kv { display: flex; justify-content: space-between; gap: var(--s-2);
+    padding-block: 5px; font-size: var(--t-sm); color: var(--mist);
+    border-block-end: 1px solid color-mix(in oklab, var(--line) 60%, transparent); }
+  .kv:last-child { border-block-end: 0; }
+  .kv b { font-family: var(--mono); color: var(--foam); font-weight: 700; }
+
+  .why { max-inline-size: var(--measure); margin-block-start: var(--s-4);
+    padding-block-start: var(--s-3); border-block-start: 1px dashed var(--line-2);
+    font-size: var(--t-md); color: var(--mist-dim); }
+  .why b { display: block; margin-block-end: 4px; font-size: 9.5px;
+    letter-spacing: 1px; text-transform: uppercase; color: var(--teal); }
+  .why + .why { border-block-start: 0; margin-block-start: var(--s-3);
+    padding-block-start: 0; }
+  footer { margin-block-start: var(--s-7); padding-block-start: var(--s-4);
+    border-block-start: 1px solid var(--line); font-size: var(--t-sm);
+    color: var(--mist-dim); }
+  .state-tag { display: inline-flex; align-items: center; gap: 5px;
+    font-family: var(--mono); font-size: 9px; font-weight: 700; letter-spacing: .6px;
+    text-transform: uppercase; padding-inline: 7px; padding-block: 3px;
+    border-radius: 4px; margin-block-end: var(--s-3);
+    background: color-mix(in oklab, var(--violet) 13%, transparent);
+    color: var(--violet);
+    border: 1px solid color-mix(in oklab, var(--violet) 30%, transparent); }
+</style>
+<script src="pandora.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="ambient" aria-hidden="true"></div>
+
+<div class="shell">
+
+<nav class="appnav" aria-label="Primary">
+  <div class="brand">
+    <div class="sigil" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#4ff0e0"
+        stroke-width="1.5" stroke-linecap="round">
+        <path d="M12 2v20M2 12h20"/><circle cx="12" cy="12" r="4.5" stroke-width="1.2"/>
+      </svg>
+    </div>
+  </div>
+  <div class="tabs">
+    <a href="02-command-center.html">Ask</a>
+    <a href="08-documents.html" aria-current="page">Knowledge</a>
+    <a href="09-report-log.html">Reports <span class="count">3</span></a>
+  </div>
+  <div class="acct">
+    <span class="acct__av" aria-hidden="true">L</span>
+    <span class="acct__who"><b>Lakshitha Wijerathne</b>
+      <span>Guardian clearance</span></span>
+    <a class="tool" href="00-landing.html">Sign out</a>
+  </div>
+</nav>
+
+<main id="main">
+<header>
+  <h1>Knowledge Library</h1>
+  <p class="lede">The Pandora corpus ships pre-indexed. Add your own field
+  documents and they join the same index, so cross-document questions work without
+  any extra step.</p>
+</header>
+
+<div class="layout">
+  <div>
+    <div class="drop" id="drop" tabindex="0" role="button"
+      aria-label="Upload documents. PDF, TXT, CSV or DOCX, up to 10 MB each.">
+      <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="#2bb8c9"
+        stroke-width="1.5" stroke-linecap="round" aria-hidden="true"
+        style="margin:0 auto var(--s-2)">
+        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+        <path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>
+      <b>Drop documents here, or <span style="color:var(--cyan)">browse</span></b>
+      <span>PDF · TXT · CSV · DOCX · up to 10&nbsp;MB each<br>
+        Text-layer PDFs only — scanned images are not read</span>
+    </div>
+
+    <h2>Indexed documents</h2>
+
+    <div class="doc">
+      <span class="doc__ic ic--pdf" aria-hidden="true">PDF</span>
+      <span>
+        <span class="doc__nm">Pandora_RAG_Knowledge_2026.pdf</span>
+        <span class="doc__meta"><span>56 pp</span><span>188 chunks</span>
+          <span>135 records</span><span>15 chapters</span><span>489 KB</span></span>
+      </span>
+      <span class="doc__right">
+        <span class="st st--indexed"><span aria-hidden="true">✓</span> Indexed</span>
+        <button class="iconbtn" aria-label="Delete Pandora_RAG_Knowledge_2026.pdf">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"
+            stroke-width="1.7" stroke-linecap="round" aria-hidden="true">
+            <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
+        </button>
+      </span>
+    </div>
+
+    <div class="doc">
+      <span class="doc__ic ic--pdf" aria-hidden="true">PDF</span>
+      <span>
+        <span class="doc__nm">Vitra_vent_survey_2026-06.pdf</span>
+        <span class="doc__meta"><span>11 pp</span><span>embedding 142/188</span>
+          <span>1.2 MB</span></span>
+        <div class="prog" style="margin-block-start:var(--s-2);max-inline-size:280px"
+          role="progressbar" aria-valuenow="76" aria-valuemin="0" aria-valuemax="100">
+          <i style="inline-size:76%"></i></div>
+      </span>
+      <span class="doc__right">
+        <span class="st st--indexing"><span aria-hidden="true">◐</span> Indexing</span>
+        <button class="iconbtn" aria-label="Cancel indexing">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"
+            stroke-width="1.7" stroke-linecap="round" aria-hidden="true">
+            <path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </span>
+    </div>
+
+    <div class="doc">
+      <span class="doc__ic ic--csv" aria-hidden="true">CSV</span>
+      <span>
+        <span class="doc__nm">reef_transect_counts.csv</span>
+        <span class="doc__meta"><span>214 rows</span><span>queued</span>
+          <span>88 KB</span></span>
+      </span>
+      <span class="doc__right">
+        <span class="st st--queued"><span aria-hidden="true">○</span> Queued</span>
+        <button class="iconbtn" aria-label="Remove from queue">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"
+            stroke-width="1.7" stroke-linecap="round" aria-hidden="true">
+            <path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </span>
+    </div>
+
+    <div class="doc" style="border-color:color-mix(in oklab, var(--coral) 30%, transparent)">
+      <span class="doc__ic ic--pdf" aria-hidden="true">PDF</span>
+      <span>
+        <span class="doc__nm">council_minutes_scan.pdf</span>
+        <span class="doc__meta"><span>6 pp</span><span>0 chunks</span><span>3.4 MB</span></span>
+        <div class="rowerr" role="alert">
+          <b>No text layer found.</b> This looks like a scanned image. The system reads
+          text-layer PDFs only — OCR is not available. Re-export from the source
+          document if you have it.
+        </div>
+      </span>
+      <span class="doc__right">
+        <span class="st st--failed"><span aria-hidden="true">✕</span> Failed</span>
+        <button class="iconbtn" aria-label="Delete council_minutes_scan.pdf">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"
+            stroke-width="1.7" stroke-linecap="round" aria-hidden="true">
+            <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
+        </button>
+      </span>
+    </div>
+
+    <h2>Delete confirmation</h2>
+    <span class="state-tag">state · confirming delete</span>
+    <div class="doc" style="border-color:color-mix(in oklab, var(--coral) 34%, transparent)">
+      <span class="doc__ic ic--txt" aria-hidden="true">TXT</span>
+      <span>
+        <span class="doc__nm">ralu_mangrove_field_notes.txt</span>
+        <span class="doc__meta"><span>73 chunks</span><span>41 KB</span></span>
+        <div class="confirm" role="alertdialog" aria-label="Confirm deletion">
+          <b>Delete this document and its 73 chunks?</b>
+          Any answer that cited it will lose those sources. This cannot be undone.
+          <div class="row" style="margin-block-start:var(--s-3);gap:var(--s-2)">
+            <button class="btn btn--sm" style="background:var(--coral);color:var(--on-accent)">
+              Delete permanently</button>
+            <button class="btn btn--sm btn--ghost">Keep it</button>
+          </div>
+        </div>
+      </span>
+      <span class="doc__right">
+        <span class="st st--indexed"><span aria-hidden="true">✓</span> Indexed</span>
+      </span>
+    </div>
+
+    <div class="why"><b>Deletion crosses two stores</b>Removing a document must drop
+    both its application row and its vectors from the index. Orphaned vectors mean
+    citing a document the user deleted — which looks like a fabricated source, the
+    single worst failure this product can have.</div>
+
+    <h2>Empty state</h2>
+    <span class="state-tag">state · nothing uploaded</span>
+    <div class="empty" style="text-align:center;padding:var(--s-6) var(--s-4)">
+      <b>No documents of your own yet</b>
+      The Pandora corpus is already indexed and the console works right now — you
+      don't need to upload anything to start.
+      <div class="row" style="justify-content:center;margin-block-start:var(--s-4)">
+        <a class="btn btn--sm btn--primary" href="02-command-center.html">Ask a question</a>
+        <button class="btn btn--sm btn--ghost">Upload a field document</button>
+      </div>
+    </div>
+    <div class="why"><b>Why this empty state doesn't beg for an upload</b>The corpus
+    ships pre-indexed, so an empty personal library is not a blocked state. Telling
+    the user they can already start removes the most likely place to lose them.</div>
+  </div>
+
+  <aside class="side">
+    <h3>Index</h3>
+    <div class="kv"><span>Chunks</span><b>188</b></div>
+    <div class="kv"><span>Records</span><b>135</b></div>
+    <div class="kv"><span>Shared protocols</span><b>9</b></div>
+    <div class="kv"><span>Boilerplate hoisted</span><b>958</b></div>
+    <div class="kv"><span>Lexical vocabulary</span><b>2,874</b></div>
+    <div class="kv"><span>Embedding dim</span><b>384</b></div>
+
+    <h3 style="margin-block-start:var(--s-5)">Record families</h3>
+    <div class="kv"><span>FAU · species</span><b>30</b></div>
+    <div class="kv"><span>FLR · flora</span><b>20</b></div>
+    <div class="kv"><span>KC · knowledge cards</span><b>20</b></div>
+    <div class="kv"><span>MED · clinical</span><b>12</b></div>
+    <div class="kv"><span>INC · incidents</span><b>10</b></div>
+    <div class="kv"><span>POL · policies</span><b>10</b></div>
+    <div class="kv"><span>REG · regions</span><b>10</b></div>
+    <div class="kv"><span>STL · settlements</span><b>10</b></div>
+    <div class="kv"><span>ACC · accommodation</span><b>10</b></div>
+    <div class="kv"><span>FN/LAB · notes</span><b>3</b></div>
+  </aside>
+</div>
+</main>
+
+<footer>
+  Knowledge Library · UI_SPEC.md §<code>/app/documents</code> ·
+  <a href="index.html">all screens</a> ·
+  <a href="04-lifecycle.html">ingestion states</a> ·
+  <a href="02-command-center.html">console</a>
+</footer>
+</div>
+<script>
+const drop = document.getElementById('drop');
+['dragenter','dragover'].forEach(ev =>
+  drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('is-over'); }));
+['dragleave','drop'].forEach(ev =>
+  drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('is-over'); }));
+</script>
+</body>
+</html>

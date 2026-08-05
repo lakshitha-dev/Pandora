@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pandora Knowledge Guardian — Report Log</title>
+<link rel="stylesheet" href="pandora.css">
+<style>
+  /* Route: /app/reports — replaces UI_SPEC's /app/actions + /app/history.
+     Pandora has no invoice-action inbox. What it does have is a review
+     obligation: every INC record carries a "next review time" in its minimum
+     incident dataset, and POL-010 requires public alerts to state when the next
+     update will occur. So the log is a review queue, not an approval queue. */
+  .appnav { display: flex; align-items: center; gap: var(--s-4); flex-wrap: wrap;
+    padding: var(--s-3) var(--s-4); margin-block-end: var(--s-4);
+    background: linear-gradient(180deg,
+      color-mix(in oklab, var(--deep-2) 82%, transparent),
+      color-mix(in oklab, var(--deep) 68%, transparent));
+    border: 1px solid var(--line); border-radius: var(--r-lg);
+    backdrop-filter: blur(14px); }
+  .sigil { display: grid; place-items: center; inline-size: 34px; aspect-ratio: 1;
+    border-radius: 10px; flex: none;
+    background: radial-gradient(circle at 32% 28%, #1d6b78, var(--deep));
+    border: 1px solid color-mix(in oklab, var(--cyan) 35%, transparent); }
+  .tabs { display: flex; gap: 2px; }
+  .tabs a { padding-inline: var(--s-3); padding-block: var(--s-2);
+    border-radius: var(--r-sm); font-size: var(--t-sm); color: var(--mist);
+    text-decoration: none; min-block-size: 36px; display: inline-flex;
+    align-items: center; gap: 6px;
+    transition: color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease); }
+  .tabs a:hover { color: var(--foam);
+    background: color-mix(in oklab, var(--cyan) 7%, transparent); }
+  .tabs a[aria-current="page"] { color: var(--cyan);
+    background: color-mix(in oklab, var(--cyan) 12%, transparent); }
+  .count { display: inline-grid; place-items: center; min-inline-size: 17px;
+    block-size: 17px; padding-inline: 4px; border-radius: 999px;
+    font-family: var(--mono); font-size: 9px; font-weight: 700;
+    background: var(--amber); color: var(--on-accent); }
+
+  h1 { font-size: var(--t-xl); font-weight: 650; margin-block-end: var(--s-2); }
+  .lede { color: var(--mist); max-inline-size: var(--measure); margin-block-end: var(--s-4); }
+  h2 { font-size: var(--t-lg); font-weight: 640; margin-block: var(--s-6) var(--s-3); }
+
+  .filters { display: flex; flex-wrap: wrap; gap: var(--s-3); align-items: center;
+    padding: var(--s-3) var(--s-4); border-radius: var(--r-md);
+    background: color-mix(in oklab, var(--abyss) 45%, transparent);
+    border: 1px solid var(--line); margin-block-end: var(--s-4); }
+  .filters__l { font-size: 9.5px; font-weight: 700; letter-spacing: 1px;
+    text-transform: uppercase; color: var(--mist-dim); }
+
+  .rep { border-radius: var(--r-md); border: 1px solid var(--line);
+    background: color-mix(in oklab, var(--abyss) 45%, transparent);
+    transition: border-color var(--dur-fast) var(--ease); }
+  .rep + .rep { margin-block-start: var(--s-2); }
+  .rep:hover { border-color: var(--line-2); }
+  .rep--due { border-color: color-mix(in oklab, var(--amber) 40%, transparent);
+    background: color-mix(in oklab, var(--amber) 4%, transparent); }
+  .rep__top { display: grid; grid-template-columns: minmax(0,1fr) auto;
+    gap: var(--s-3); padding: var(--s-3) var(--s-4); align-items: start; }
+  .rep__q { font-size: var(--t-md); font-weight: 600; color: var(--foam);
+    line-height: 1.5; }
+  .rep__meta { display: flex; flex-wrap: wrap; gap: var(--s-3);
+    font-family: var(--mono); font-size: var(--t-2xs); color: var(--mist-dim);
+    margin-block-start: 5px; }
+  .rep__badges { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+  .rep__foot { display: flex; flex-wrap: wrap; gap: var(--s-3); align-items: center;
+    padding: var(--s-2) var(--s-4) var(--s-3);
+    border-block-start: 1px solid color-mix(in oklab, var(--line) 60%, transparent); }
+  .ids { display: flex; flex-wrap: wrap; gap: 4px; }
+  .rid { font-family: var(--mono); font-size: 9px; font-weight: 700;
+    padding-inline: 6px; padding-block: 3px; border-radius: 4px;
+    background: color-mix(in oklab, var(--cyan) 12%, transparent);
+    color: var(--cyan);
+    border: 1px solid color-mix(in oklab, var(--cyan) 28%, transparent); }
+  .due { display: inline-flex; align-items: center; gap: 5px;
+    font-family: var(--mono); font-size: var(--t-2xs); font-weight: 700;
+    color: var(--amber); }
+  .stat { display: inline-flex; align-items: center; gap: 5px;
+    padding-inline: 7px; padding-block: 4px; border-radius: 4px;
+    font-size: 9px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase;
+    background: color-mix(in oklab, var(--hue) 13%, transparent);
+    color: var(--hue);
+    border: 1px solid color-mix(in oklab, var(--hue) 32%, transparent); }
+  .stat--open { --hue: var(--amber); }
+  .stat--resample { --hue: var(--coral); }
+  .stat--closed { --hue: var(--lume); }
+
+  .side { padding: var(--s-4); border-radius: var(--r-lg);
+    background: color-mix(in oklab, var(--deep) 55%, transparent);
+    border: 1px solid var(--line); }
+  .side h3 { font-size: 9.5px; font-weight: 700; letter-spacing: 1.2px;
+    text-transform: uppercase; color: var(--teal); margin-block-end: var(--s-3); }
+  .kv { display: flex; justify-content: space-between; gap: var(--s-2);
+    padding-block: 5px; font-size: var(--t-sm); color: var(--mist);
+    border-block-end: 1px solid color-mix(in oklab, var(--line) 60%, transparent); }
+  .kv:last-child { border-block-end: 0; }
+  .kv b { font-family: var(--mono); color: var(--foam); font-weight: 700; }
+  .layout { display: grid; grid-template-columns: minmax(0,1fr) 280px; gap: var(--s-4);
+    align-items: start; }
+  @media (max-width: 980px) { .layout { grid-template-columns: 1fr; } }
+
+  .why { max-inline-size: var(--measure); margin-block-start: var(--s-4);
+    padding-block-start: var(--s-3); border-block-start: 1px dashed var(--line-2);
+    font-size: var(--t-md); color: var(--mist-dim); }
+  .why b { display: block; margin-block-end: 4px; font-size: 9.5px;
+    letter-spacing: 1px; text-transform: uppercase; color: var(--teal); }
+  .why + .why { border-block-start: 0; margin-block-start: var(--s-3);
+    padding-block-start: 0; }
+  .state-tag { display: inline-flex; align-items: center; gap: 5px;
+    font-family: var(--mono); font-size: 9px; font-weight: 700; letter-spacing: .6px;
+    text-transform: uppercase; padding-inline: 7px; padding-block: 3px;
+    border-radius: 4px; margin-block-end: var(--s-3);
+    background: color-mix(in oklab, var(--violet) 13%, transparent);
+    color: var(--violet);
+    border: 1px solid color-mix(in oklab, var(--violet) 30%, transparent); }
+  footer { margin-block-start: var(--s-7); padding-block-start: var(--s-4);
+    border-block-start: 1px solid var(--line); font-size: var(--t-sm);
+    color: var(--mist-dim); }
+</style>
+<script src="pandora.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="ambient" aria-hidden="true"></div>
+
+<div class="shell">
+
+<nav class="appnav" aria-label="Primary">
+  <div class="sigil" aria-hidden="true">
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#4ff0e0"
+      stroke-width="1.5" stroke-linecap="round">
+      <path d="M12 2v20M2 12h20"/><circle cx="12" cy="12" r="4.5" stroke-width="1.2"/>
+    </svg>
+  </div>
+  <div class="tabs">
+    <a href="02-command-center.html">Ask</a>
+    <a href="08-documents.html">Knowledge</a>
+    <a href="09-report-log.html" aria-current="page">Reports <span class="count">3</span></a>
+  </div>
+  <div class="acct">
+    <span class="acct__av" aria-hidden="true">L</span>
+    <span class="acct__who"><b>Lakshitha Wijerathne</b>
+      <span>Guardian clearance</span></span>
+    <a class="tool" href="00-landing.html">Sign out</a>
+  </div>
+</nav>
+
+<main id="main">
+<header>
+  <h1>Report Log</h1>
+  <p class="lede">Every situation report, with the review it is still owed. Three
+  are due — the badge in the nav is how you find out a restriction is about to
+  expire without anyone having decided to lift it.</p>
+</header>
+
+<div class="layout">
+  <div>
+    <div class="filters" role="group" aria-label="Filter reports">
+      <span class="filters__l">Status</span>
+      <button class="chip" aria-pressed="true">All</button>
+      <button class="chip" aria-pressed="false">Review due</button>
+      <button class="chip" aria-pressed="false">Awaiting resample</button>
+      <button class="chip" aria-pressed="false">Closed</button>
+      <span class="filters__l" style="margin-inline-start:var(--s-3)">Severity</span>
+      <button class="chip" aria-pressed="false">W3–W4</button>
+      <button class="chip" aria-pressed="false">W2</button>
+      <button class="chip" aria-pressed="false">W1</button>
+    </div>
+
+    <article class="rep rep--due">
+      <div class="rep__top">
+        <div>
+          <p class="rep__q">"The water near Awa Reef has turned bright turquoise and
+            the fish are leaving the shallows."</p>
+          <div class="rep__meta"><span>2026-06-02 06:40</span><span>REG-01</span>
+            <span>8 sources</span><span>conf 0.68</span><span>Guardian</span></div>
+        </div>
+        <div class="rep__badges">
+          <span class="hz hz--w2"><span aria-hidden="true">◆</span> W2</span>
+          <span class="badge is-disputed"><span aria-hidden="true">!</span> Contested</span>
+        </div>
+      </div>
+      <div class="rep__foot">
+        <span class="stat stat--resample"><span aria-hidden="true">◈</span>
+          Awaiting resample</span>
+        <span class="due"><span aria-hidden="true">⏱</span> Review was due 18:00 — 2 h overdue</span>
+        <span class="ids"><span class="rid">INC-001</span><span class="rid">FN-A</span>
+          <span class="rid">FN-B</span><span class="rid">LAB-C</span>
+          <span class="rid">WS-01</span></span>
+        <a class="tool ml-auto" href="03-answer-states.html">Open report →</a>
+      </div>
+    </article>
+
+    <article class="rep rep--due">
+      <div class="rep__top">
+        <div>
+          <p class="rep__q">"Yellow plume and dead shellfish along the Vitra coast —
+            what do we do first?"</p>
+          <div class="rep__meta"><span>2026-06-14 11:12</span><span>REG-05</span>
+            <span>6 sources</span><span>conf 0.91</span><span>Guardian</span></div>
+        </div>
+        <div class="rep__badges">
+          <span class="hz hz--w3"><span aria-hidden="true">▲</span> W3</span>
+          <span class="badge is-verified"><span aria-hidden="true">✓</span> Grounded</span>
+        </div>
+      </div>
+      <div class="rep__foot">
+        <span class="stat stat--open"><span aria-hidden="true">◐</span> Open</span>
+        <span class="due"><span aria-hidden="true">⏱</span> Next review 23:00 — in 40 min</span>
+        <span class="ids"><span class="rid">INC-005</span><span class="rid">WS-03</span>
+          <span class="rid">FAU-018</span><span class="rid">REG-05</span></span>
+        <a class="tool ml-auto" href="06-compare-mode.html">Open report →</a>
+      </div>
+    </article>
+
+    <article class="rep rep--due">
+      <div class="rep__top">
+        <div>
+          <p class="rep__q">"Did the Tideglass Grazer population decline at Awa Reef?"</p>
+          <div class="rep__meta"><span>2026-06-05 09:20</span><span>REG-01</span>
+            <span>6 sources</span><span>conf 0.74</span><span>Researcher</span></div>
+        </div>
+        <div class="rep__badges">
+          <span class="hz hz--w1"><span aria-hidden="true">●</span> W1</span>
+          <span class="badge is-provisional"><span aria-hidden="true">~</span>
+            Not comparable</span>
+        </div>
+      </div>
+      <div class="rep__foot">
+        <span class="stat stat--open"><span aria-hidden="true">◐</span> Open</span>
+        <span class="due"><span aria-hidden="true">⏱</span> Needs a normalised survey</span>
+        <span class="ids"><span class="rid">SV-101</span><span class="rid">SV-102</span>
+          <span class="rid">FAU-001</span></span>
+        <a class="tool ml-auto" href="02-command-center.html">Open report →</a>
+      </div>
+    </article>
+
+    <h2>Closed</h2>
+
+    <article class="rep">
+      <div class="rep__top">
+        <div>
+          <p class="rep__q">"What immediate actions should guardians take after
+            detecting coral damage?"</p>
+          <div class="rep__meta"><span>2026-05-28 14:05</span><span>REG-01</span>
+            <span>5 sources</span><span>conf 0.94</span><span>Guardian</span></div>
+        </div>
+        <div class="rep__badges">
+          <span class="hz hz--w1"><span aria-hidden="true">●</span> W1</span>
+          <span class="badge is-verified"><span aria-hidden="true">✓</span> Grounded</span>
+        </div>
+      </div>
+      <div class="rep__foot">
+        <span class="stat stat--closed"><span aria-hidden="true">✓</span> Closed</span>
+        <span class="mono t-xs dim">Site reopened after two clear surveys</span>
+        <span class="ids"><span class="rid">INC-002</span><span class="rid">§4.2</span></span>
+        <a class="tool ml-auto" href="03-answer-states.html">Open report →</a>
+      </div>
+    </article>
+
+    <article class="rep">
+      <div class="rep__top">
+        <div>
+          <p class="rep__q">"What is the average lifespan of a Deepbell Singer?"</p>
+          <div class="rep__meta"><span>2026-05-22 16:44</span><span>—</span>
+            <span>0 sources</span><span>best 0.41</span><span>Researcher</span></div>
+        </div>
+        <div class="rep__badges">
+          <span class="badge is-provisional"><span aria-hidden="true">⚠</span>
+            Insufficient evidence</span>
+        </div>
+      </div>
+      <div class="rep__foot">
+        <span class="stat stat--closed"><span aria-hidden="true">✓</span> Closed</span>
+        <span class="mono t-xs dim">Logged as a knowledge gap — no life-history field
+          exists on the FAU schema</span>
+        <a class="tool ml-auto" href="03-answer-states.html">Open report →</a>
+      </div>
+    </article>
+
+    <div class="why"><b>Why refusals are kept in the log</b>An unanswerable question
+    is data about the corpus, not a dead end. Five of these become a gap list worth
+    handing to whoever maintains the knowledge base — which is the corpus's own
+    adaptive-management principle applied to the knowledge base itself.</div>
+
+    <h2>Empty state</h2>
+    <span class="state-tag">state · no reports yet</span>
+    <div class="empty" style="text-align:center;padding:var(--s-6) var(--s-4)">
+      <b>No reports yet</b>
+      Every question you ask produces a situation report, and it lands here with the
+      review time it is owed. Nothing is logged until you ask something.
+      <div class="row" style="justify-content:center;margin-block-start:var(--s-4)">
+        <a class="btn btn--sm btn--primary" href="02-command-center.html">Ask the first question</a>
+      </div>
+    </div>
+  </div>
+
+  <aside class="side">
+    <h3>Review queue</h3>
+    <div class="kv"><span>Overdue</span><b style="color:var(--coral)">1</b></div>
+    <div class="kv"><span>Due within 1 h</span><b style="color:var(--amber)">1</b></div>
+    <div class="kv"><span>Awaiting resample</span><b>1</b></div>
+    <div class="kv"><span>Closed this week</span><b>2</b></div>
+
+    <h3 style="margin-block-start:var(--s-5)">By outcome</h3>
+    <div class="kv"><span>Grounded</span><b>2</b></div>
+    <div class="kv"><span>Contested</span><b>1</b></div>
+    <div class="kv"><span>Not comparable</span><b>1</b></div>
+    <div class="kv"><span>Insufficient</span><b>1</b></div>
+
+    <h3 style="margin-block-start:var(--s-5)">Knowledge gaps</h3>
+    <p class="t-sm mist" style="line-height:1.6">2 questions the corpus could not
+      answer. Both concern demographic fields the FAU record schema does not
+      define.</p>
+    <button class="btn btn--sm btn--ghost" style="margin-block-start:var(--s-3);inline-size:100%">
+      Export gap list</button>
+  </aside>
+</div>
+</main>
+
+<footer>
+  Report Log · replaces UI_SPEC's <code>/app/actions</code> + <code>/app/history</code> ·
+  <a href="index.html">all screens</a> ·
+  <a href="02-command-center.html">console</a>
+</footer>
+</div>
+<script>
+document.querySelectorAll('.filters').forEach(g =>
+  g.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+    b.parentElement.querySelectorAll('[aria-pressed]')
+      .forEach(x => x.setAttribute('aria-pressed', 'false'));
+    b.setAttribute('aria-pressed', 'true');
+  })));
+</script>
+</body>
+</html>
