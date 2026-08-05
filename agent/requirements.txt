@@ -1,0 +1,38 @@
+# ─── Web framework ───────────────────────────────────────────────────────
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+python-multipart==0.0.20
+
+# The orchestration trace. Wow feature 1 is three sections filling at once,
+# which only exists if events reach the browser as they happen.
+sse-starlette==3.4.1
+
+# ─── Config & validation ─────────────────────────────────────────────────
+pydantic==2.10.4
+pydantic-settings==2.7.0
+python-dotenv==1.0.1
+
+# ─── Azure OpenAI (via the official OpenAI SDK) ──────────────────────────
+# We call Azure OpenAI through this SDK rather than LangChain's chat wrapper.
+# Reason: gpt-5-mini is a reasoning model requiring max_completion_tokens and
+# temperature=1; pinning that behaviour ourselves removes a whole class of
+# version-compatibility risk during a 5-hour build.
+openai==1.59.6
+
+# ─── Azure AI Search ─────────────────────────────────────────────────────
+# Used directly rather than via LangChain's AzureSearch vectorstore: we need
+# a custom 12-field schema and precise control over the hybrid query shape.
+azure-search-documents==11.5.2
+azure-core==1.32.0
+
+# ─── LangChain — prompt templates & chain composition ────────────────────
+langchain-core==0.3.29
+langchain==0.3.14
+
+# ─── Document ingestion (user uploads) ───────────────────────────────────
+pypdf==5.1.0
+python-docx==1.1.2
+
+# ─── Utilities ───────────────────────────────────────────────────────────
+httpx==0.28.1
+tenacity==9.0.0
