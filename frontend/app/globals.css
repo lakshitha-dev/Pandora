@@ -20,6 +20,7 @@
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
+  --color-teal: var(--teal);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-warning: var(--warning);
@@ -39,28 +40,36 @@
 
 :root {
   color-scheme: dark;
-  --background: #050d1a;
-  --foreground: #e2f4ff;
-  --surface: #0a1628;
-  --surface-2: #0c1b32;
-  --card: #0a1628;
-  --card-foreground: #e2f4ff;
-  --border: #0d2040;
-  --border-glow: #123a63;
-  --input: #0c1b32;
-  --ring: #00e5ff;
+  /* SOLUTION.md "The Abyss at Night" palette */
+  --background: #04121C;
+  --foreground: #E8F6F5;
+  --surface: #0A2233;
+  --surface-2: #0c1f30;
+  --card: #0A2233;
+  --card-foreground: #E8F6F5;
+  --border: #0d2a40;
+  --border-glow: #1a4a6e;
+  --input: #0c1f30;
+  --ring: #3EE8D0;
 
-  --primary: #00e5ff;
-  --primary-foreground: #04121f;
+  /* Bioluminescent cyan — primary accent, active agents, citations */
+  --primary: #3EE8D0;
+  --primary-foreground: #04121C;
+  /* Reef teal — secondary */
+  --teal: #1FA9A0;
+  /* Green secondary kept for status indicators */
   --secondary: #39ff8f;
-  --secondary-foreground: #04121f;
-  --accent: #a855f7;
+  --secondary-foreground: #04121C;
+  /* Spirit violet — agentic/innovation accents */
+  --accent: #7B6BF0;
   --accent-foreground: #ffffff;
-  --warning: #f59e0b;
-  --critical: #ef4444;
+  /* Warning amber — W2 advisory */
+  --warning: #F0A93E;
+  /* Coral alert — W3/W4 emergency */
+  --critical: #F0644E;
 
-  --muted: #0c1b32;
-  --muted-foreground: #7faec7;
+  --muted: #0c1f30;
+  --muted-foreground: #8FAFB8;
 }
 
 @layer base {
@@ -77,120 +86,123 @@
 /* ---- Bioluminescent utilities ---- */
 @layer utilities {
   .glow-cyan {
-    box-shadow: 0 0 20px rgba(0, 229, 255, 0.35), inset 0 0 12px rgba(0, 229, 255, 0.05);
+    box-shadow: 0 0 20px rgba(62, 232, 208, 0.35), inset 0 0 12px rgba(62, 232, 208, 0.05);
   }
   .glow-cyan-strong {
-    box-shadow: 0 0 30px rgba(0, 229, 255, 0.55), 0 0 8px rgba(0, 229, 255, 0.4);
+    box-shadow: 0 0 30px rgba(62, 232, 208, 0.55), 0 0 8px rgba(62, 232, 208, 0.4);
+  }
+  .glow-teal {
+    box-shadow: 0 0 20px rgba(31, 169, 160, 0.4);
   }
   .glow-green {
     box-shadow: 0 0 20px rgba(57, 255, 143, 0.3);
   }
   .glow-purple {
-    box-shadow: 0 0 20px rgba(168, 85, 247, 0.35);
+    box-shadow: 0 0 20px rgba(123, 107, 240, 0.4);
   }
   .glow-amber {
-    box-shadow: 0 0 20px rgba(245, 158, 11, 0.35);
+    box-shadow: 0 0 20px rgba(240, 169, 62, 0.4);
   }
   .glow-red {
-    box-shadow: 0 0 24px rgba(239, 68, 68, 0.45);
+    box-shadow: 0 0 24px rgba(240, 100, 78, 0.5);
   }
   .text-glow-cyan {
-    text-shadow: 0 0 12px rgba(0, 229, 255, 0.55);
+    text-shadow: 0 0 14px rgba(62, 232, 208, 0.6);
   }
   .text-glow-green {
     text-shadow: 0 0 12px rgba(57, 255, 143, 0.5);
+  }
+  .text-glow-purple {
+    text-shadow: 0 0 12px rgba(123, 107, 240, 0.5);
+  }
+  /* Orb breathing for active agents */
+  .orb-breathe {
+    animation: orb-breathe 2.4s ease-in-out infinite;
+  }
+  /* Section thread pulse for agent ownership */
+  .thread-pulse {
+    animation: thread-pulse 1.8s ease-in-out infinite;
   }
 }
 
 /* ---- Animations ---- */
 @keyframes float-up {
-  0% {
-    transform: translateY(0) translateX(0);
-    opacity: 0;
-  }
-  10% {
-    opacity: 0.6;
-  }
-  90% {
-    opacity: 0.4;
-  }
-  100% {
-    transform: translateY(-100vh) translateX(20px);
-    opacity: 0;
-  }
+  0% { transform: translateY(0) translateX(0); opacity: 0; }
+  10% { opacity: 0.6; }
+  90% { opacity: 0.4; }
+  100% { transform: translateY(-100vh) translateX(20px); opacity: 0; }
 }
 
 @keyframes pulse-dot {
-  0%, 100% {
-    opacity: 0.3;
-    transform: scale(0.8);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1.1);
-  }
+  0%, 100% { opacity: 0.3; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.1); }
 }
 
 @keyframes pulse-border {
-  0%, 100% {
-    box-shadow: 0 0 12px rgba(239, 68, 68, 0.4);
-    border-color: rgba(239, 68, 68, 0.6);
-  }
-  50% {
-    box-shadow: 0 0 28px rgba(239, 68, 68, 0.8);
-    border-color: rgba(239, 68, 68, 1);
-  }
+  0%, 100% { box-shadow: 0 0 12px rgba(240, 100, 78, 0.4); border-color: rgba(240, 100, 78, 0.6); }
+  50% { box-shadow: 0 0 28px rgba(240, 100, 78, 0.8); border-color: rgba(240, 100, 78, 1); }
 }
 
 @keyframes shimmer {
-  0% {
-    transform: translateX(-100%);
-  }
-  100% {
-    transform: translateX(100%);
-  }
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
 }
 
 @keyframes send-pulse {
-  0% {
-    box-shadow: 0 0 0 0 rgba(0, 229, 255, 0.6);
-  }
-  100% {
-    box-shadow: 0 0 0 14px rgba(0, 229, 255, 0);
-  }
+  0% { box-shadow: 0 0 0 0 rgba(62, 232, 208, 0.6); }
+  100% { box-shadow: 0 0 0 14px rgba(62, 232, 208, 0); }
 }
 
-.animate-float {
-  animation: float-up linear infinite;
+@keyframes orb-breathe {
+  0%, 100% { box-shadow: 0 0 12px rgba(62, 232, 208, 0.4), 0 0 24px rgba(62, 232, 208, 0.15); }
+  50% { box-shadow: 0 0 20px rgba(62, 232, 208, 0.7), 0 0 40px rgba(62, 232, 208, 0.3); }
 }
-.animate-pulse-dot {
-  animation: pulse-dot 1.2s ease-in-out infinite;
+
+@keyframes orb-breathe-violet {
+  0%, 100% { box-shadow: 0 0 12px rgba(123, 107, 240, 0.4), 0 0 24px rgba(123, 107, 240, 0.15); }
+  50% { box-shadow: 0 0 20px rgba(123, 107, 240, 0.7), 0 0 40px rgba(123, 107, 240, 0.3); }
 }
-.animate-pulse-border {
-  animation: pulse-border 1.6s ease-in-out infinite;
+
+@keyframes orb-breathe-teal {
+  0%, 100% { box-shadow: 0 0 12px rgba(31, 169, 160, 0.4), 0 0 24px rgba(31, 169, 160, 0.15); }
+  50% { box-shadow: 0 0 20px rgba(31, 169, 160, 0.7), 0 0 40px rgba(31, 169, 160, 0.3); }
 }
-.animate-send-pulse {
-  animation: send-pulse 0.6s ease-out;
+
+@keyframes thread-pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.9; }
 }
+
+@keyframes grounding-tick {
+  from { transform: scale(0.5); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes section-fill {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-float { animation: float-up linear infinite; }
+.animate-pulse-dot { animation: pulse-dot 1.2s ease-in-out infinite; }
+.animate-pulse-border { animation: pulse-border 1.6s ease-in-out infinite; }
+.animate-send-pulse { animation: send-pulse 0.6s ease-out; }
+.animate-orb-breathe { animation: orb-breathe 2.4s ease-in-out infinite; }
+.animate-orb-breathe-violet { animation: orb-breathe-violet 2.4s ease-in-out infinite; }
+.animate-orb-breathe-teal { animation: orb-breathe-teal 2.4s ease-in-out infinite; }
+.animate-grounding-tick { animation: grounding-tick 0.3s ease-out both; }
+.animate-section-fill { animation: section-fill 0.4s ease-out both; }
+
 .progress-shimmer::after {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, transparent, rgba(0, 229, 255, 0.6), transparent);
+  background: linear-gradient(90deg, transparent, rgba(62, 232, 208, 0.6), transparent);
   animation: shimmer 1.4s linear infinite;
 }
 
 /* scrollbar */
-.thin-scroll::-webkit-scrollbar {
-  width: 6px;
-}
-.thin-scroll::-webkit-scrollbar-track {
-  background: transparent;
-}
-.thin-scroll::-webkit-scrollbar-thumb {
-  background: rgba(0, 229, 255, 0.25);
-  border-radius: 999px;
-}
-.thin-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 229, 255, 0.45);
-}
+.thin-scroll::-webkit-scrollbar { width: 6px; }
+.thin-scroll::-webkit-scrollbar-track { background: transparent; }
+.thin-scroll::-webkit-scrollbar-thumb { background: rgba(62, 232, 208, 0.2); border-radius: 999px; }
+.thin-scroll::-webkit-scrollbar-thumb:hover { background: rgba(62, 232, 208, 0.4); }

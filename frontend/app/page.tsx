@@ -65,7 +65,12 @@ export default function Page() {
         <div className="flex min-h-0 flex-1">
           {/* Left sidebar - desktop */}
           <aside className="hidden w-[280px] shrink-0 border-r border-border bg-surface/40 backdrop-blur-md lg:block">
-            <LeftSidebar role={role} onRoleChange={setRole} />
+            <LeftSidebar
+              role={role}
+              onRoleChange={setRole}
+              affectedRegions={answer?.affectedRegions}
+              triageLevel={answer?.emergency}
+            />
           </aside>
 
           {/* Center */}
@@ -80,6 +85,7 @@ export default function Page() {
               setInput={setInput}
               onSubmit={handleSubmit}
               onPick={runQuery}
+              onRoleChange={setRole}
             />
 
             {/* Right panel as accordion on mobile / tablet */}
@@ -88,12 +94,12 @@ export default function Page() {
                 onClick={() => setSourcesOpen((o) => !o)}
                 className="flex w-full items-center justify-between px-5 py-3 text-sm font-semibold text-foreground"
               >
-                Retrieved Sources & Analysis
+                Orchestration Rail &amp; Sources
                 <ChevronDown className={cn("h-4 w-4 text-primary transition-transform", sourcesOpen && "rotate-180")} />
               </button>
               {sourcesOpen && (
                 <div className="max-h-[70vh] overflow-hidden">
-                  <RightPanel answer={answer} />
+                  <RightPanel answer={answer} processing={processing} />
                 </div>
               )}
             </div>
@@ -101,7 +107,7 @@ export default function Page() {
 
           {/* Right sidebar - desktop */}
           <aside className="hidden w-[320px] shrink-0 border-l border-border bg-surface/40 backdrop-blur-md xl:block">
-            <RightPanel answer={answer} />
+            <RightPanel answer={answer} processing={processing} />
           </aside>
         </div>
       </div>
@@ -125,7 +131,12 @@ export default function Page() {
               </button>
             </div>
             <div className="max-h-[calc(85vh-56px)] overflow-y-auto thin-scroll">
-              <LeftSidebar role={role} onRoleChange={(r) => setRole(r)} />
+              <LeftSidebar
+                role={role}
+                onRoleChange={(r) => { setRole(r); setSidebarOpen(false) }}
+                affectedRegions={answer?.affectedRegions}
+                triageLevel={answer?.emergency}
+              />
             </div>
           </div>
         </div>
