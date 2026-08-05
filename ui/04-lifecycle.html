@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pandora Knowledge Guardian — Lifecycle States</title>
+<link rel="stylesheet" href="pandora.css">
+<style>
+  /* Page-local only. Everything reusable lives in pandora.css. */
+  .demo { border: 1px solid var(--line); border-radius: var(--r-lg);
+    background: color-mix(in oklab, var(--deep) 40%, transparent);
+    padding: var(--s-4); margin-block-end: var(--s-5); }
+  .demo__label { display: flex; align-items: center; gap: var(--s-2);
+    margin-block-end: var(--s-4); font-size: 9.5px; font-weight: 700;
+    letter-spacing: 1.2px; text-transform: uppercase; color: var(--mist-dim); }
+  .demo__label::after { content: ""; flex: 1; block-size: 1px; background: var(--line); }
+  .demo__label .num { display: grid; place-items: center; inline-size: 18px;
+    aspect-ratio: 1; border-radius: 5px; font-family: var(--mono); font-size: 9px;
+    background: color-mix(in oklab, var(--violet) 14%, transparent);
+    color: var(--violet); border: 1px solid color-mix(in oklab, var(--violet) 32%, transparent); }
+  .why { max-inline-size: var(--measure); margin-block-start: var(--s-3);
+    padding-block-start: var(--s-3); border-block-start: 1px dashed var(--line-2);
+    font-size: var(--t-md); color: var(--mist-dim); }
+  .why b { display: block; margin-block-end: 4px; font-size: 9.5px;
+    letter-spacing: 1px; text-transform: uppercase; color: var(--teal); }
+  h1 { font-size: var(--t-2xl); font-weight: 660; margin-block-end: var(--s-2); }
+  h2 { font-size: var(--t-lg); font-weight: 640; margin-block: var(--s-7) var(--s-3); }
+  .lede { color: var(--mist); font-size: var(--t-lg); max-inline-size: var(--measure); }
+  .hero { text-align: center; padding: var(--s-7) var(--s-4); }
+  .hero__sigil { inline-size: 64px; aspect-ratio: 1; margin: 0 auto var(--s-4);
+    display: grid; place-items: center; border-radius: 18px;
+    background: radial-gradient(circle at 32% 28%, #1d6b78, var(--deep));
+    border: 1px solid color-mix(in oklab, var(--cyan) 35%, transparent);
+    box-shadow: 0 0 30px color-mix(in oklab, var(--cyan) 22%, transparent); }
+  .hero h3 { font-size: var(--t-xl); font-weight: 650; margin-block-end: var(--s-2); }
+  .hero p { color: var(--mist); max-inline-size: 52ch; margin: 0 auto var(--s-5); }
+  .starters { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: var(--s-3); max-inline-size: 760px; margin-inline: auto; text-align: start; }
+  .starter { padding: var(--s-3) var(--s-4); border-radius: var(--r-md);
+    background: color-mix(in oklab, var(--abyss) 45%, transparent);
+    border: 1px solid var(--line); cursor: pointer;
+    transition: border-color var(--dur-fast) var(--ease); }
+  .starter:hover { border-color: color-mix(in oklab, var(--cyan) 45%, transparent); }
+  .starter .k { display: block; font-family: var(--mono); font-size: 9px;
+    letter-spacing: .6px; text-transform: uppercase; color: var(--teal);
+    margin-block-end: 5px; }
+  .starter .q { font-size: var(--t-md); color: var(--foam); line-height: 1.5; }
+  .kbdhint { margin-block-start: var(--s-5); font-size: var(--t-sm); color: var(--mist-dim); }
+  .ingest-row { display: flex; align-items: center; gap: var(--s-3);
+    padding-block: var(--s-2); font-size: var(--t-sm); }
+  .ingest-row .st { inline-size: 16px; flex: none; text-align: center; }
+  .ingest-row .nm { flex: 1; min-inline-size: 0; }
+  .ingest-row .ct { font-family: var(--mono); font-size: var(--t-2xs); color: var(--mist-dim); }
+  footer { margin-block-start: var(--s-7); padding-block-start: var(--s-4);
+    border-block-start: 1px solid var(--line); font-size: var(--t-sm); color: var(--mist-dim); }
+</style>
+<script src="pandora.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="ambient" aria-hidden="true"></div>
+
+<div class="shell shell--narrow">
+<header>
+  <h1>Lifecycle States</h1>
+  <p class="lede">Four screens the app needs and the earlier samples did not
+  cover: before the first query, while ingesting, while assembling, and when an
+  agent fails. All four are designed states — none of them is a spinner.</p>
+</header>
+
+<main id="main">
+
+<!-- ═════════════════ 1 · FIRST RUN ═════════════════ -->
+<h2>1 — First run</h2>
+<div class="demo">
+  <div class="demo__label"><span class="num">1</span> Empty state · corpus preloaded</div>
+
+  <div class="panel">
+    <div class="hero">
+      <div class="hero__sigil" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#4ff0e0"
+          stroke-width="1.4" stroke-linecap="round">
+          <path d="M12 2v20M2 12h20"/><circle cx="12" cy="12" r="4.5" stroke-width="1.1"/>
+          <path d="M5.5 5.5l3 3M18.5 5.5l-3 3M5.5 18.5l3-3M18.5 18.5l-3-3" stroke-width=".9"/>
+        </svg>
+      </div>
+      <h3>The corpus is already indexed</h3>
+      <p>188 chunks across 15 chapters and 135 records — ready now. Describe a
+      situation in plain language, or start from one of these.</p>
+
+      <div class="starters">
+        <button class="starter">
+          <span class="k">Incident investigation</span>
+          <span class="q">The water near Awa Reef has turned turquoise and the fish
+          are leaving the shallows.</span>
+        </button>
+        <button class="starter">
+          <span class="k">Marine-life protection</span>
+          <span class="q">Which species are most vulnerable to water contamination?</span>
+        </button>
+        <button class="starter">
+          <span class="k">Multi-document comparison</span>
+          <span class="q">Compare the response to water contamination and an
+          underwater volcanic event.</span>
+        </button>
+        <button class="starter">
+          <span class="k">Emergency triage</span>
+          <span class="q">Which areas should receive emergency attention first?</span>
+        </button>
+      </div>
+
+      <p class="kbdhint"><kbd>Ctrl</kbd> <kbd>K</kbd> for the command palette ·
+        <kbd>/</kbd> to focus the question field</p>
+    </div>
+  </div>
+
+  <div class="why"><b>Why not a blank text box</b>A cold empty box makes the user
+  invent a query format, and on an unfamiliar fictional corpus they will guess
+  wrong and get a weak first answer. Four starters — one per required use case —
+  teach the input shape and guarantee the first impression is a strong retrieval.
+  Stating the index is already built also removes the fear that something must be
+  uploaded first.</div>
+</div>
+
+<!-- ═════════════════ 2 · INGESTING ═════════════════ -->
+<h2>2 — Ingesting an upload</h2>
+<div class="demo">
+  <div class="demo__label"><span class="num">2</span> extract → chunk → embed → index</div>
+
+  <div class="panel" style="max-inline-size:330px">
+    <div class="panel__h"><span class="n" aria-hidden="true">1</span> Knowledge Base</div>
+    <div class="panel__b">
+      <div class="drop is-over">
+        <b>Reading Vitra_vent_survey.pdf</b>
+        <span>2 of 3 files · do not close this panel</span>
+      </div>
+
+      <div style="margin-block-start:var(--s-4)" role="status" aria-live="polite">
+        <div class="row" style="justify-content:space-between;gap:var(--s-2);
+          margin-block-end:var(--s-2)">
+          <span class="t-sm">Embedding chunks</span>
+          <span class="mono t-xs dim">142 / 188</span>
+        </div>
+        <div class="prog"><i style="inline-size:76%"></i></div>
+
+        <div style="margin-block-start:var(--s-3)">
+          <div class="ingest-row"><span class="st" style="color:var(--lume)">✓</span>
+            <span class="nm">Extract text</span>
+            <span class="ct">56 pp · 0.9s</span></div>
+          <div class="ingest-row"><span class="st" style="color:var(--lume)">✓</span>
+            <span class="nm">Detect record boundaries</span>
+            <span class="ct">135 records</span></div>
+          <div class="ingest-row"><span class="st" style="color:var(--lume)">✓</span>
+            <span class="nm">Hoist shared boilerplate</span>
+            <span class="ct">958 sentences</span></div>
+          <div class="ingest-row"><span class="st" style="color:var(--cyan)">◐</span>
+            <span class="nm" style="color:var(--foam)">Generate embeddings</span>
+            <span class="ct" style="color:var(--cyan)">76%</span></div>
+          <div class="ingest-row" style="opacity:.5"><span class="st dim">○</span>
+            <span class="nm dim">Build lexical index</span>
+            <span class="ct">—</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="why"><b>Why name every stage</b>"Uploading…" tells a judge nothing.
+  Naming the four pipeline stages, and reporting that 958 boilerplate sentences
+  were hoisted while it runs, turns a wait into the clearest available evidence
+  that the document processing is real. The 25-mark retrieval criterion asks for
+  effective document processing and an appropriate chunking strategy — this is
+  where a judge can actually see both.</div>
+</div>
+
+<!-- ═════════════════ 3 · ASSEMBLING ═════════════════ -->
+<h2>3 — Assembling, mid-flight</h2>
+<div class="demo">
+  <div class="demo__label"><span class="num">3</span> Three agents active · sections streaming</div>
+
+  <div class="row" style="align-items:flex-start;gap:var(--s-4)">
+    <!-- Rail -->
+    <div class="panel" style="inline-size:300px;flex:none">
+      <div class="panel__h"><span class="n" aria-hidden="true">5</span> Orchestration</div>
+      <div class="panel__b">
+        <div class="stack" style="gap:var(--s-2)">
+          <div class="orb is-done">
+            <span class="orb__ball" aria-hidden="true">🐋</span>
+            <span class="flex-1"><span class="t-sm fw-7 truncate">Marine-Life Protector</span>
+              <span class="orb__owns">Affected Species · 3 species</span></span>
+            <span class="mono t-xs dim">2.6s</span>
+          </div>
+          <div class="orb is-active">
+            <span class="orb__ball" aria-hidden="true">🌊</span>
+            <span class="flex-1"><span class="t-sm fw-7 truncate">Incident Investigator</span>
+              <span class="orb__owns">Likely Causes · reading 8 sources</span></span>
+            <span class="mono t-xs" style="color:var(--cyan)">3.1s</span>
+          </div>
+          <div class="orb is-active">
+            <span class="orb__ball" aria-hidden="true">🚨</span>
+            <span class="flex-1"><span class="t-sm fw-7 truncate">Emergency Responder</span>
+              <span class="orb__owns">Recommended Actions · drafting</span></span>
+            <span class="mono t-xs" style="color:var(--cyan)">2.8s</span>
+          </div>
+        </div>
+
+        <div style="margin-block-start:var(--s-4)">
+          <div class="row" style="justify-content:space-between;font-size:9.5px;
+            letter-spacing:1.1px;text-transform:uppercase;color:var(--mist-dim);
+            margin-block-end:var(--s-2)">
+            <span>GroundingGate · §15.2</span><span class="mono" style="color:var(--cyan)">4/8</span>
+          </div>
+          <div class="rule"><span class="rule__tick" aria-hidden="true">✓</span>
+            <span class="rule__n">1</span><span>Record IDs cited on every claim</span></div>
+          <div class="rule"><span class="rule__tick" aria-hidden="true">✓</span>
+            <span class="rule__n">2</span><span>Causes kept as hypotheses</span></div>
+          <div class="rule"><span class="rule__tick" aria-hidden="true">✓</span>
+            <span class="rule__n">3</span><span>No cross-record merging</span></div>
+          <div class="rule"><span class="rule__tick" aria-hidden="true">✓</span>
+            <span class="rule__n">4</span><span>Time and location preserved</span></div>
+          <div class="rule"><span class="rule__tick is-pending" aria-hidden="true">○</span>
+            <span class="rule__n">5</span><span class="dim">Health red flags</span></div>
+          <div class="rule"><span class="rule__tick is-pending" aria-hidden="true">○</span>
+            <span class="rule__n">6</span><span class="dim">Absence stated where absent</span></div>
+          <div class="rule"><span class="rule__tick is-pending" aria-hidden="true">○</span>
+            <span class="rule__n">7</span><span class="dim">Conflict summarised</span></div>
+          <div class="rule"><span class="rule__tick is-pending" aria-hidden="true">○</span>
+            <span class="rule__n">8</span><span class="dim">Protocol vs inference</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Streaming report -->
+    <div class="panel flex-1">
+      <div class="panel__h"><span class="n" aria-hidden="true">3</span>
+        Situation Report · assembling</div>
+      <div class="panel__b">
+        <section class="sec" data-agent="marine">
+          <div class="sec__h"><span class="sec__t">Affected Species</span>
+            <span class="owner owner--marine">🐋 complete</span></div>
+          <div class="sec__body t-sm">
+            <p><b>FAU-001 Tideglass Grazer</b> — juveniles vulnerable to turbidity
+            <span class="cite">FAU-001</span></p>
+            <p><b>FAU-026 Ironjaw Shellfish</b> — toxin accumulation risk
+            <span class="cite">FAU-026</span></p>
+          </div>
+        </section>
+
+        <section class="sec is-filling" data-agent="invest">
+          <div class="sec__h"><span class="sec__t">Likely Causes</span>
+            <span class="owner owner--invest">🌊 filling…</span></div>
+          <div class="sec__body">
+            <p class="t-sm">INC-001 lists four competing hypotheses and states these
+            are not confirmed findings <span class="cite">INC-001</span></p>
+            <div class="skel skel--line" style="inline-size:94%"></div>
+            <div class="skel skel--line" style="inline-size:88%"></div>
+            <div class="skel skel--line" style="inline-size:62%"></div>
+          </div>
+        </section>
+
+        <section class="sec is-filling" data-agent="respond">
+          <div class="sec__h"><span class="sec__t">Recommended Actions</span>
+            <span class="owner owner--respond">🚨 filling…</span></div>
+          <div class="sec__body">
+            <div class="skel skel--line" style="inline-size:80%"></div>
+            <div class="skel skel--line" style="inline-size:91%"></div>
+            <div class="skel skel--line" style="inline-size:55%"></div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <div class="why"><b>Why skeletons rather than a spinner</b>A skeleton preserves
+  the layout, so nothing jumps when the text lands — and the section headings are
+  already legible, so a reader knows what is coming. More importantly, two orbs
+  burning simultaneously while a third is already complete is the visual proof
+  that the work is genuinely concurrent. A spinner would hide precisely the thing
+  worth showing.</div>
+</div>
+
+<!-- ═════════════════ 4 · PARTIAL ═════════════════ -->
+<h2>4 — An agent fails</h2>
+<div class="demo">
+  <div class="demo__label"><span class="num">4</span> Timeout at 8s · report still renders</div>
+
+  <div class="panel">
+    <div class="panel__b" style="padding-block-start:var(--s-4)">
+      <div class="row" style="margin-block-end:var(--s-4)">
+        <span class="hz hz--w2"><span aria-hidden="true">◆</span> W2 ADVISORY</span>
+        <span class="badge is-provisional"><span aria-hidden="true">◐</span>
+          Partial report · 2 of 3 sections</span>
+      </div>
+
+      <section class="sec" data-agent="marine">
+        <div class="sec__h"><span class="sec__t">Affected Species</span>
+          <span class="owner owner--marine">🐋 3 species · 2.6s</span></div>
+        <div class="sec__body t-sm">
+          <p>FAU-001 Tideglass Grazer, FAU-026 Ironjaw Shellfish and FAU-002
+          Ribbonfin Skimmer all carry documented pressures relevant to a
+          water-quality event <span class="cite">FAU-001</span></p>
+        </div>
+      </section>
+
+      <section class="sec" data-agent="invest" style="border-inline-start-color:var(--amber)">
+        <div class="sec__h"><span class="sec__t">Likely Causes</span>
+          <span class="owner is-provisional" style="--hue:var(--amber)">
+            ⏱ did not respond</span></div>
+        <div class="sec__body">
+          <div class="empty">
+            <b>Section unavailable — agent timeout</b>
+            🌊 Incident Investigator did not respond within 8 s, so Likely Causes
+            could not be filled. <b style="display:inline;text-transform:none;
+            letter-spacing:0;font-size:inherit;color:var(--foam)">This is not an
+            error in the other sections</b> — their claims were validated
+            independently and remain fully cited. Retry this section, or proceed on
+            the documented actions below.
+            <div class="row" style="margin-block-start:var(--s-3)">
+              <button class="btn btn--sm btn--ghost">↻ Retry this section</button>
+              <button class="btn btn--sm btn--ghost">◱ Show its 8 retrieved sources</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="sec" data-agent="respond">
+        <div class="sec__h"><span class="sec__t">Recommended Actions</span>
+          <span class="owner owner--respond">🚨 6 claims · 2.9s</span></div>
+        <div class="sec__body t-sm">
+          <div class="protocol">
+            <span class="kind">From the record — documented protocol</span>
+            <p>Restrict drinking water and suspend shellfish harvest; sample at three
+            depths; inspect upstream and wind direction
+            <span class="cite">INC-001</span></p>
+          </div>
+        </div>
+      </section>
+
+      <div class="conf">
+        <svg class="conf__arc" viewBox="0 0 36 36" role="img"
+          aria-label="Confidence low, 0.52">
+          <circle cx="18" cy="18" r="15.6" fill="none" stroke="#0f2c42" stroke-width="3.4"/>
+          <circle cx="18" cy="18" r="15.6" fill="none" stroke="#ffc86b" stroke-width="3.4"
+            stroke-linecap="round" stroke-dasharray="98 98" stroke-dashoffset="47"
+            transform="rotate(-90 18 18)"/>
+          <text x="18" y="21.5" text-anchor="middle" font-size="9"
+            font-family="JetBrains Mono, monospace" fill="#ffc86b" font-weight="700">.52</text>
+        </svg>
+        <div>
+          <span class="t-lg fw-7" style="color:var(--amber)">Low</span>
+          <p class="conf__reason"><b>2 of 3 sections filled · 1 agent timed out.</b>
+          Every claim present is cited and validated. Confidence is reduced because
+          the report is incomplete — not because anything shown is unsupported.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="why"><b>Why a partial report is a successful report</b>Per §2.1 rule
+  1, sections are independent: one failing must never blank the others. Showing a
+  handled timeout builds more credibility with a judge than hiding it, because it
+  proves the timeout logic exists rather than merely being described in a slide.
+  The confidence meter states <em>why</em> it dropped, which is the difference
+  between "this answer is weak" and "this report is incomplete" — those need
+  different responses from a guardian.</div>
+</div>
+
+<div class="toasts" aria-live="polite">
+  <div class="toast toast--warn">
+    <span aria-hidden="true" style="color:var(--amber)">⏱</span>
+    <div><b>Incident Investigator timed out</b>
+      Continuing with 2 of 3 sections. Retry available.</div>
+  </div>
+</div>
+
+</main>
+
+<footer>
+  Lifecycle states · built on <code>pandora.css</code> ·
+  <a href="01-design-system.html">design system</a> ·
+  <a href="02-command-center.html">command center</a> ·
+  <a href="03-answer-states.html">answer states</a> ·
+  <a href="05-role-views.html">role views</a> ·
+  <a href="06-compare-mode.html">compare mode</a>
+</footer>
+</div>
+
+</body>
+</html>

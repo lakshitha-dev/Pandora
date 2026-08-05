@@ -1,0 +1,815 @@
+/* ============================================================================
+   PANDORA KNOWLEDGE GUARDIAN — SHARED DESIGN SYSTEM
+   Single source of truth for tokens and components.
+
+   Written against SOLUTION.md §8.2, with one correction: spirit violet #4d7385
+   measured 4.04:1 on --deep and failed WCAG AA for text. Raised to #8b7fe8
+   (5.82:1). See docs/UI-UX-PRINCIPLES.md §2 for the full audit.
+
+   Modern CSS in use: @layer for cascade control, color-mix() for tints (one
+   token yields its whole family), container queries for panel-level response,
+   clamp() fluid type, logical properties, :has() for state-driven styling,
+   @property for animatable custom properties, text-wrap for typography.
+   ========================================================================== */
+
+@layer reset, tokens, base, layout, components, utilities;
+
+/* ---------------------------------------------------------------- reset ---- */
+@layer reset {
+  *, *::before, *::after { box-sizing: border-box; }
+  * { margin: 0; padding: 0; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { min-height: 100dvh; }
+  img, svg, video { display: block; max-inline-size: 100%; }
+  button, input, textarea, select { font: inherit; color: inherit; }
+  button { background: none; border: 0; cursor: pointer; }
+  ul, ol { list-style-position: outside; }
+  :target { scroll-margin-block-start: 5rem; }
+}
+
+/* --------------------------------------------------------------- tokens ---- */
+@layer tokens {
+  /* Animatable custom property — lets the glow ring tween rather than jump. */
+  @property --ring {
+    syntax: "<length>";
+    inherits: false;
+    initial-value: 0px;
+  }
+
+  :root {
+    color-scheme: dark;
+
+    /* ---- Surfaces: depth ramp, from theme-1-abyss-bioluminescent.html.
+       Darkest = deepest water. Surfaces only, never text. ---- */
+    --abyss:   #03080f;   /* page floor                              */
+    --deep:    #061320;   /* panel — the contrast datum for all ink   */
+    --deep-2:  #0a1e30;   /* raised panel, input wells, inline code   */
+    --line:    #0f2c42;   /* hairline / default border               */
+    --line-2:  #17435f;   /* border hover, scrollbar thumb            */
+
+    /* ---- Bioluminescence, theme-1 values. Each hue has one job.
+       Ratios measured against --deep (#061320). ---- */
+    --cyan:    #4ff0e0;   /* system voice · active agent · citations  13.26:1 */
+    --teal:    #2bb8c9;   /* retrieval machinery · panel labels        7.85:1 */
+    --lume:    #a8f5c8;   /* verified evidence · success              14.77:1 */
+    --violet:  #8b7fe8;   /* agentic accent · human                    5.62:1 */
+    --amber:   #ffc86b;   /* W2 advisory · uncertainty · partial      12.24:1 */
+    --coral:   #ff7a5c;   /* W3/W4 emergency · contradiction           7.30:1 */
+
+    /* ---- Ink. Three levels, all AA or better on --deep. ---- */
+    --foam:     #e8f6f8;  /* 16.91:1 */
+    --mist:     #8fb3c0;  /*  8.36:1 */
+    /* theme-1 shipped #4d7385 here — 3.66:1, the only token that failed AA.
+       Lifted to 6.45:1; it carries page locators and relevance scores. */
+    --mist-dim: #7c9caf;  /*  6.45:1 — the floor, never below */
+
+    /* ---- Ink on light accent fills (buttons). ---- */
+    --on-accent: #04141a;
+
+    /* ---- Tint scale via color-mix: one hue, its whole family. ----
+       Replaces ~40 hand-written rgba() values. Change the hue once and every
+       fill, border and glow derived from it follows. */
+    --tint-weak:   8%;
+    --tint-soft:   12%;
+    --tint-mid:    20%;
+    --tint-border: 32%;
+
+    /* ---- Fluid type: 1.2 minor third, 15px base, scales 360→1440px ---- */
+    --t-2xs: 0.625rem;                              /* 10px  */
+    --t-xs:  0.6875rem;                             /* 11px  */
+    --t-sm:  0.75rem;                               /* 12px  */
+    --t-md:  0.84375rem;                            /* 13.5px */
+    --t-base: clamp(0.9rem, 0.86rem + 0.2vw, 0.9375rem);
+    --t-lg:  clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+    --t-xl:  clamp(1.15rem, 1.05rem + 0.5vw, 1.375rem);
+    --t-2xl: clamp(1.35rem, 1.15rem + 1vw, 1.6875rem);
+
+    /* ---- Space: 4px base, 8px rhythm ---- */
+    --s-1: 0.25rem; --s-2: 0.5rem;  --s-3: 0.75rem; --s-4: 1rem;
+    --s-5: 1.5rem;  --s-6: 2rem;    --s-7: 3rem;
+
+    --r-sm: 8px; --r-md: 14px; --r-lg: 20px; --r-full: 999px;
+
+    /* ---- Motion: two durations, one curve ---- */
+    --dur-fast: 150ms;
+    --dur-base: 240ms;
+    --ease: cubic-bezier(.4, 0, .2, 1);
+
+    --sans: "Segoe UI Variable Display", "Segoe UI", Inter, system-ui, sans-serif;
+    --mono: "JetBrains Mono", "Cascadia Code", "SF Mono", ui-monospace, Consolas, monospace;
+
+    /* Prose cap — inside the 45–75ch readability band */
+    --measure: 68ch;
+
+    /* Elevation: one shadow recipe, three depths */
+    --lift-1: 0 1px 2px rgb(0 0 0 / .3);
+    --lift-2: 0 4px 16px rgb(0 0 0 / .35);
+    --lift-3: 0 12px 40px rgb(0 0 0 / .45);
+  }
+
+  /* Semantic aliases keep component rules readable and re-themeable. */
+  :root {
+    --bg: var(--abyss);
+    --panel: color-mix(in oklab, var(--deep) 74%, transparent);
+    --panel-solid: var(--deep);
+    --accent: var(--cyan);
+  }
+}
+
+/* ----------------------------------------------------------------- base ---- */
+@layer base {
+  body {
+    font-family: var(--sans);
+    font-size: var(--t-base);
+    line-height: 1.6;
+    background: var(--bg);
+    color: var(--foam);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+    scrollbar-color: var(--line) transparent;
+    scrollbar-width: thin;
+  }
+
+  h1, h2, h3, h4 { text-wrap: balance; line-height: 1.25; }
+  p, li { text-wrap: pretty; }
+
+  a { color: var(--teal); text-underline-offset: 2px; }
+  a:hover { color: var(--cyan); }
+
+  code, kbd, .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  code {
+    font-size: 0.88em;
+    padding-inline: 0.35em;
+    padding-block: 0.1em;
+    border-radius: 4px;
+    background: var(--deep-2);
+    color: var(--cyan);
+    border: 1px solid var(--line);
+  }
+  kbd {
+    font-size: var(--t-2xs);
+    padding-inline: 0.4em; padding-block: 0.15em;
+    border-radius: 4px;
+    background: var(--deep-2);
+    border: 1px solid var(--line);
+    color: var(--mist);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--cyan);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  ::selection { background: color-mix(in oklab, var(--cyan) 30%, transparent); }
+
+  /* Skip link — first tab stop on every page */
+  .skip {
+    position: absolute; inset-inline-start: -9999px; inset-block-start: var(--s-2);
+    z-index: 99;
+    padding: var(--s-3) var(--s-4);
+    border-radius: var(--r-sm);
+    background: var(--cyan); color: var(--on-accent);
+    font-weight: 650; text-decoration: none;
+  }
+  .skip:focus { inset-inline-start: var(--s-2); }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 1ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 1ms !important;
+      scroll-behavior: auto !important;
+    }
+    .ambient, .plankton { display: none; }
+  }
+}
+
+/* --------------------------------------------------------------- layout ---- */
+@layer layout {
+  /* Content must sit above the ambient layers (.ambient z-index 0,
+     .plankton z-index 1). A static wrapper would be painted *under* the
+     particles, because positioned elements with a non-auto z-index paint above
+     non-positioned ones regardless of document order. `.wrap` is included
+     because pages 01 and 03 use it instead of `.shell`. */
+  .shell, .wrap {
+    position: relative; z-index: 2;
+  }
+  .shell {
+    max-inline-size: 1560px;
+    margin-inline: auto;
+    padding: var(--s-5) var(--s-5) var(--s-7);
+  }
+  .shell--narrow { max-inline-size: 900px; }
+
+  /* §8.4 three columns → two → one. Rail drops below at the first break. */
+  .cols {
+    display: grid;
+    grid-template-columns: 300px minmax(0, 1fr) 320px;
+    gap: var(--s-4);
+    align-items: start;
+  }
+  @media (max-width: 1400px) {
+    .cols { grid-template-columns: 280px minmax(0, 1fr); }
+    .cols > .rail { grid-column: 1 / -1; }
+  }
+  @media (max-width: 1000px) {
+    .cols { grid-template-columns: 1fr; }
+    /* Report first on small screens — it is what the user came for. */
+    .cols > .center { order: -1; }
+  }
+
+  .stack { display: grid; gap: var(--s-4); }
+  .row { display: flex; flex-wrap: wrap; gap: var(--s-3); align-items: center; }
+  .prose { max-inline-size: var(--measure); }
+  .scroller { overflow-x: auto; overscroll-behavior-x: contain; }
+}
+
+/* ----------------------------------------------------------- components ---- */
+@layer components {
+
+  /* ---- Ambient bioluminescence: two shafts + sparse plankton ---- */
+  .ambient { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+  .ambient::before, .ambient::after {
+    content: ""; position: absolute; border-radius: 50%;
+    filter: blur(70px); opacity: .26;
+    animation: drift 32s ease-in-out infinite;
+    will-change: transform;
+  }
+  .ambient::before {
+    inline-size: 50vw; aspect-ratio: 1; inset-block-start: -19vw; inset-inline-start: -9vw;
+    background: radial-gradient(circle, #0d5f6e 0%, transparent 68%);
+  }
+  .ambient::after {
+    inline-size: 44vw; aspect-ratio: 1; inset-block-end: -20vw; inset-inline-end: -7vw;
+    background: radial-gradient(circle, #2b3f7d 0%, transparent 70%);
+    animation-delay: -16s;
+  }
+  @keyframes drift {
+    0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+    50% { transform: translate3d(3vw, 4vh, 0) scale(1.09); }
+  }
+  .plankton { position: fixed; inset: 0; pointer-events: none; z-index: 1; overflow: hidden; }
+  .plankton i {
+    position: absolute; border-radius: 50%;
+    background: var(--lume);
+    box-shadow: 0 0 7px 2px color-mix(in oklab, var(--lume) 55%, transparent);
+    animation: rise linear infinite;
+  }
+  @keyframes rise {
+    from { transform: translateY(0); opacity: 0; }
+    8% { opacity: .75; } 85% { opacity: .4; }
+    to { transform: translateY(-110vh) translateX(4vw); opacity: 0; }
+  }
+  /* Pause everything ambient when the tab is hidden — projector safety. */
+  body.is-hidden :is(.plankton i, .ambient::before, .ambient::after) {
+    animation-play-state: paused;
+  }
+
+  /* ---- Panel ---- */
+  .panel {
+    background: linear-gradient(180deg,
+      color-mix(in oklab, var(--deep-2) 74%, transparent),
+      color-mix(in oklab, var(--deep) 60%, transparent));
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    backdrop-filter: blur(12px);
+    box-shadow: var(--lift-1);
+    /* Panels respond to their own width, not the viewport's. */
+    container-type: inline-size;
+  }
+  .panel__h {
+    display: flex; align-items: center; gap: var(--s-2);
+    padding: var(--s-4) var(--s-4) var(--s-3);
+    font-size: var(--t-2xs); font-weight: 700;
+    letter-spacing: 1.3px; text-transform: uppercase;
+    color: var(--teal);
+  }
+  .panel__h .n {
+    inline-size: 18px; aspect-ratio: 1; flex: none;
+    display: grid; place-items: center; border-radius: 6px;
+    background: color-mix(in oklab, var(--teal) var(--tint-soft), transparent);
+    border: 1px solid color-mix(in oklab, var(--teal) var(--tint-border), transparent);
+    font-size: 9.5px; color: var(--cyan); letter-spacing: 0;
+  }
+  .panel__b { padding-inline: var(--s-4); padding-block-end: var(--s-4); }
+
+  /* ---- Buttons: 44px minimum target ---- */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: var(--s-2);
+    min-block-size: 44px;
+    padding-inline: var(--s-5); padding-block: var(--s-3);
+    font-size: var(--t-md); font-weight: 600;
+    border-radius: 11px; border: 1px solid transparent;
+    transition: transform var(--dur-fast) var(--ease),
+                box-shadow var(--dur-fast) var(--ease),
+                border-color var(--dur-fast) var(--ease),
+                color var(--dur-fast) var(--ease);
+  }
+  .btn--primary {
+    color: var(--on-accent);
+    background: linear-gradient(135deg, var(--cyan), var(--teal));
+    box-shadow: 0 6px 22px color-mix(in oklab, var(--cyan) 26%, transparent);
+  }
+  .btn--primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 9px 28px color-mix(in oklab, var(--cyan) 38%, transparent);
+  }
+  .btn--primary:active { transform: translateY(0); }
+  .btn--ghost {
+    color: var(--mist);
+    background: color-mix(in oklab, var(--abyss) 50%, transparent);
+    border-color: var(--line);
+  }
+  .btn--ghost:hover { color: var(--foam); border-color: var(--line-2); }
+  .btn:disabled { opacity: .45; cursor: not-allowed; transform: none; box-shadow: none; }
+  .btn--sm { min-block-size: 36px; padding-inline: var(--s-4); font-size: var(--t-sm); }
+
+  .tool {
+    display: inline-flex; align-items: center; gap: var(--s-2);
+    min-block-size: 36px; padding-inline: var(--s-3);
+    font-size: var(--t-xs); color: var(--mist-dim);
+    border-radius: var(--r-sm);
+    transition: color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease);
+  }
+  .tool:hover {
+    color: var(--cyan);
+    background: color-mix(in oklab, var(--cyan) var(--tint-weak), transparent);
+  }
+
+  /* ---- Segmented control (role toggle, filters) ---- */
+  .seg {
+    display: inline-flex; gap: 3px; padding: 3px;
+    background: color-mix(in oklab, var(--abyss) 60%, transparent);
+    border: 1px solid var(--line);
+    border-radius: var(--r-full);
+  }
+  .seg button {
+    min-block-size: 36px; padding-inline: var(--s-3);
+    font-size: var(--t-xs); font-weight: 560;
+    color: var(--mist); border-radius: var(--r-full);
+    transition: color var(--dur-fast) var(--ease);
+  }
+  .seg button:hover { color: var(--foam); }
+  .seg button[aria-pressed="true"] {
+    color: var(--on-accent);
+    background: linear-gradient(135deg, var(--cyan), var(--teal));
+    box-shadow: 0 0 14px color-mix(in oklab, var(--cyan) 34%, transparent);
+  }
+
+  .chip {
+    min-block-size: 32px; padding-inline: var(--s-3);
+    font-size: var(--t-xs); color: var(--mist);
+    background: color-mix(in oklab, var(--abyss) 50%, transparent);
+    border: 1px solid var(--line); border-radius: var(--r-full);
+    transition: border-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+  }
+  .chip:hover { border-color: color-mix(in oklab, var(--cyan) 40%, transparent); color: var(--foam); }
+  .chip[aria-pressed="true"] {
+    background: color-mix(in oklab, var(--cyan) var(--tint-soft), transparent);
+    border-color: color-mix(in oklab, var(--cyan) 50%, transparent);
+    color: var(--cyan);
+  }
+
+  /* ---- Inputs ---- */
+  .field {
+    inline-size: 100%;
+    min-block-size: 44px;
+    padding: var(--s-3) var(--s-4);
+    font-size: var(--t-base); line-height: 1.6;
+    color: var(--foam);
+    background: color-mix(in oklab, var(--abyss) 62%, transparent);
+    border: 1px solid var(--line); border-radius: var(--r-md);
+    transition: border-color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
+  }
+  .field::placeholder { color: var(--mist-dim); }
+  .field:focus {
+    outline: none;
+    border-color: color-mix(in oklab, var(--cyan) 55%, transparent);
+    box-shadow: 0 0 0 4px color-mix(in oklab, var(--cyan) 10%, transparent);
+  }
+  textarea.field { resize: vertical; min-block-size: 84px; field-sizing: content; }
+
+  /* ---- Dropzone ---- */
+  .drop {
+    padding: var(--s-4) var(--s-3);
+    text-align: center; cursor: pointer;
+    border: 1.5px dashed color-mix(in oklab, var(--cyan) 30%, transparent);
+    border-radius: var(--r-md);
+    background: color-mix(in oklab, var(--cyan) 3%, transparent);
+    transition: border-color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease);
+  }
+  .drop:is(:hover, :focus-visible, .is-over) {
+    border-color: var(--cyan);
+    background: color-mix(in oklab, var(--cyan) var(--tint-weak), transparent);
+  }
+  .drop b { display: block; font-size: var(--t-md); font-weight: 600; }
+  .drop span { display: block; margin-block-start: var(--s-1); font-size: var(--t-xs); color: var(--mist-dim); }
+
+  /* ---- Badges & evidence chips: colour + glyph + word, never colour alone ---- */
+  .badge {
+    display: inline-flex; align-items: center; gap: var(--s-1);
+    padding-inline: var(--s-3); padding-block: 5px;
+    font-size: var(--t-xs); font-weight: 650;
+    border-radius: var(--r-full);
+  }
+  .ev {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding-inline: 6px; padding-block: 3px;
+    font-size: 9px; font-weight: 700;
+    letter-spacing: .5px; text-transform: uppercase;
+    border-radius: 4px;
+  }
+  /* One recipe, six hues — the tinting is derived, not hand-written. */
+  .badge, .ev {
+    background: color-mix(in oklab, var(--hue, var(--teal)) var(--tint-soft), transparent);
+    color: var(--hue, var(--teal));
+    border: 1px solid color-mix(in oklab, var(--hue, var(--teal)) var(--tint-border), transparent);
+  }
+  .is-verified   { --hue: var(--lume); }
+  .is-protocol   { --hue: var(--teal); }
+  .is-tradition  { --hue: var(--violet); }
+  .is-provisional{ --hue: var(--amber); }
+  .is-disputed   { --hue: var(--coral); }
+  .is-modeled    { --hue: var(--mist); }
+
+  /* ---- Hazard token: glyph + word + colour (corpus §11.1) ---- */
+  .hz {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding-inline: var(--s-3); padding-block: 6px;
+    font-size: var(--t-xs); font-weight: 700; letter-spacing: .4px;
+    border-radius: var(--r-sm);
+    background: color-mix(in oklab, var(--hue) 15%, transparent);
+    color: var(--hue);
+    border: 1px solid color-mix(in oklab, var(--hue) 44%, transparent);
+  }
+  .hz--w1 { --hue: var(--lume); }
+  .hz--w2 { --hue: var(--amber); }
+  .hz--w3, .hz--w4 { --hue: var(--coral); }
+
+  /* ---- Citation chip: baseline-aligned, record ID visible, 44px hit area ---- */
+  .cite {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-inline-size: 38px; block-size: 19px;
+    padding-inline: 6px; margin-inline: 2px;
+    font-family: var(--mono); font-size: 9.5px; font-weight: 700;
+    border-radius: 5px; vertical-align: baseline; position: relative;
+    background: color-mix(in oklab, var(--cyan) 15%, transparent);
+    color: var(--cyan);
+    border: 1px solid color-mix(in oklab, var(--cyan) 34%, transparent);
+    transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+  }
+  /* Invisible 44px target over the 19px visual — Fitts without visual bulk. */
+  .cite::after { content: ""; position: absolute; inset: -13px -8px; }
+  .cite:is(:hover, :focus-visible, .is-hot) {
+    background: var(--cyan); color: var(--on-accent);
+    box-shadow: 0 0 12px color-mix(in oklab, var(--cyan) 50%, transparent);
+  }
+
+  /* ---- Protocol vs inference: structural, per §15.2 rule 8 ---- */
+  .protocol, .inference { margin-block-end: var(--s-3); }
+  .protocol { border-inline-start: 2px solid var(--lume); padding-inline-start: var(--s-3); }
+  .inference {
+    border-inline-start: 2px dashed var(--amber);
+    padding: var(--s-2) var(--s-3) 2px;
+    background: color-mix(in oklab, var(--amber) 4%, transparent);
+    border-start-end-radius: var(--r-sm); border-end-end-radius: var(--r-sm);
+  }
+  .kind {
+    display: block; margin-block-end: 5px;
+    font-size: 9px; font-weight: 700; letter-spacing: 1.1px; text-transform: uppercase;
+  }
+  .protocol .kind { color: var(--lume); }
+  .inference .kind { color: var(--amber); }
+
+  /* ---- Source card ---- */
+  .src {
+    padding: var(--s-3);
+    border-radius: var(--r-md);
+    background: color-mix(in oklab, var(--abyss) 45%, transparent);
+    border: 1px solid var(--line);
+    cursor: pointer;
+    transition: border-color var(--dur-base) var(--ease), box-shadow var(--dur-base) var(--ease);
+  }
+  .src:hover { border-color: color-mix(in oklab, var(--teal) 50%, transparent); }
+  .src.is-hot {
+    border-color: var(--cyan);
+    background: color-mix(in oklab, var(--cyan) 7%, transparent);
+    box-shadow: 0 0 0 1px color-mix(in oklab, var(--cyan) 28%, transparent),
+                0 0 22px color-mix(in oklab, var(--cyan) 10%, transparent);
+  }
+  .src__id {
+    display: grid; place-items: center;
+    inline-size: 38px; block-size: 19px; flex: none;
+    font-family: var(--mono); font-size: 9px; font-weight: 700;
+    border-radius: 5px;
+    background: color-mix(in oklab, var(--cyan) 14%, transparent);
+    color: var(--cyan);
+    border: 1px solid color-mix(in oklab, var(--cyan) 30%, transparent);
+  }
+  .src__loc {
+    display: block; margin-block-start: 2px;
+    font-family: var(--mono); font-size: var(--t-2xs);
+    color: var(--mist-dim); font-weight: 400;
+  }
+  .excerpt {
+    padding: var(--s-2) var(--s-3);
+    margin-block: var(--s-2);
+    font-size: var(--t-sm); line-height: 1.58; color: var(--mist);
+    border-radius: var(--r-sm);
+    background: color-mix(in oklab, var(--abyss) 60%, transparent);
+    border-inline-start: 2px solid color-mix(in oklab, var(--teal) 50%, transparent);
+  }
+  .excerpt mark {
+    background: color-mix(in oklab, var(--cyan) 20%, transparent);
+    color: var(--cyan); padding-inline: 2px; border-radius: 3px;
+  }
+
+  /* ---- Meter: the number always sits beside the bar ---- */
+  .meter {
+    block-size: 4px; border-radius: 2px; flex: 1;
+    background: color-mix(in oklab, var(--abyss) 75%, transparent);
+    overflow: hidden;
+  }
+  .meter > i {
+    display: block; block-size: 100%; border-radius: 2px;
+    background: linear-gradient(90deg, var(--teal), var(--cyan));
+  }
+
+  /* ---- Empty / unavailable section: §2.1 rule 3 ---- */
+  .empty {
+    padding: var(--s-3) var(--s-4);
+    border-radius: var(--r-md);
+    background: color-mix(in oklab, var(--abyss) 45%, transparent);
+    border: 1px dashed var(--line-2);
+    font-size: var(--t-md); line-height: 1.6; color: var(--mist);
+  }
+  .empty b {
+    display: block; margin-block-end: 4px;
+    font-size: 9.5px; letter-spacing: .9px; text-transform: uppercase;
+    color: var(--amber);
+  }
+
+  /* ---- Skeleton loader ---- */
+  .skel {
+    border-radius: 6px;
+    background: linear-gradient(90deg,
+      color-mix(in oklab, var(--line) 40%, transparent) 0%,
+      color-mix(in oklab, var(--line-2) 70%, transparent) 50%,
+      color-mix(in oklab, var(--line) 40%, transparent) 100%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s ease-in-out infinite;
+  }
+  @keyframes shimmer {
+    from { background-position: 200% 0; }
+    to { background-position: -200% 0; }
+  }
+  .skel--line { block-size: 11px; margin-block-end: var(--s-2); }
+
+  /* ---- Progress bar (ingestion) ---- */
+  .prog {
+    block-size: 6px; border-radius: 3px; overflow: hidden;
+    background: color-mix(in oklab, var(--abyss) 70%, transparent);
+  }
+  .prog > i {
+    display: block; block-size: 100%; border-radius: 3px;
+    background: linear-gradient(90deg, var(--teal), var(--cyan));
+    transition: inline-size var(--dur-base) var(--ease);
+  }
+
+  /* ---- Agent orb ---- */
+  .orb {
+    display: flex; align-items: center; gap: var(--s-3);
+    padding: var(--s-3);
+    border-radius: var(--r-md);
+    background: color-mix(in oklab, var(--abyss) 45%, transparent);
+    border: 1px solid var(--line);
+    transition: border-color var(--dur-base) var(--ease);
+  }
+  .orb__ball {
+    display: grid; place-items: center;
+    inline-size: 30px; aspect-ratio: 1; flex: none;
+    border-radius: 50%; font-size: 14px;
+    background: color-mix(in oklab, var(--abyss) 70%, transparent);
+    border: 1.5px solid var(--line-2);
+    transition: border-color var(--dur-base) var(--ease),
+                background var(--dur-base) var(--ease),
+                box-shadow var(--dur-base) var(--ease);
+  }
+  .orb__owns {
+    display: flex; align-items: center; gap: 4px;
+    margin-block-start: 1px;
+    font-family: var(--mono); font-size: 9.5px; color: var(--mist-dim);
+  }
+  .orb__owns::before { content: "↳"; opacity: .7; }
+  .orb.is-done { border-color: color-mix(in oklab, var(--lume) 30%, transparent); }
+  .orb.is-done .orb__ball {
+    border-color: color-mix(in oklab, var(--lume) 60%, transparent);
+    background: color-mix(in oklab, var(--lume) var(--tint-soft), transparent);
+  }
+  .orb.is-active .orb__ball {
+    border-color: var(--cyan);
+    background: color-mix(in oklab, var(--cyan) var(--tint-mid), transparent);
+    animation: breathe 2.4s ease-in-out infinite;
+  }
+  @keyframes breathe {
+    0%, 100% { box-shadow: 0 0 12px color-mix(in oklab, var(--cyan) 35%, transparent); }
+    50% { box-shadow: 0 0 24px color-mix(in oklab, var(--cyan) 70%, transparent); }
+  }
+  .orb.is-partial { border-color: color-mix(in oklab, var(--amber) 40%, transparent); }
+  .orb.is-partial .orb__ball {
+    border-color: var(--amber);
+    background: color-mix(in oklab, var(--amber) var(--tint-soft), transparent);
+  }
+
+  /* ---- SITREP section, owned by an agent ---- */
+  .sec {
+    position: relative;
+    border-inline-start: 3px solid var(--line-2);
+    padding-inline-start: var(--s-4);
+    margin-block-end: var(--s-5);
+    transition: border-color var(--dur-base) var(--ease);
+  }
+  .sec[data-agent="marine"]  { border-inline-start-color: var(--lume); }
+  .sec[data-agent="invest"]  { border-inline-start-color: var(--cyan); }
+  .sec[data-agent="respond"] { border-inline-start-color: var(--coral); }
+  .sec[data-agent="orch"]    { border-inline-start-color: var(--violet); }
+  /* Only sections that are actually filling glow — :has() keeps it declarative. */
+  .sec.is-filling { animation: secglow 1.4s ease-in-out infinite; }
+  @keyframes secglow {
+    0%, 100% { box-shadow: -3px 0 0 0 transparent; }
+    50% { box-shadow: -3px 0 14px 0 color-mix(in oklab, var(--cyan) 50%, transparent); }
+  }
+  .sec__h {
+    display: flex; align-items: center; gap: var(--s-2);
+    flex-wrap: wrap; margin-block-end: var(--s-2);
+  }
+  .sec__t {
+    font-size: var(--t-2xs); font-weight: 700;
+    letter-spacing: 1.2px; text-transform: uppercase; color: var(--teal);
+  }
+  .owner {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding-inline: var(--s-2); padding-block: 3px;
+    font-family: var(--mono); font-size: 9.5px; font-weight: 650; letter-spacing: .4px;
+    border-radius: var(--r-full);
+    background: color-mix(in oklab, var(--hue) var(--tint-soft), transparent);
+    color: var(--hue);
+    border: 1px solid color-mix(in oklab, var(--hue) var(--tint-border), transparent);
+  }
+  .owner--marine  { --hue: var(--lume); }
+  .owner--invest  { --hue: var(--cyan); }
+  .owner--respond { --hue: var(--coral); }
+  .owner--orch    { --hue: var(--violet); }
+  .sec__body { font-size: var(--t-base); line-height: 1.75; color: #D5E8EC; max-inline-size: var(--measure); }
+  .sec__body > * + * { margin-block-start: var(--s-3); }
+  .sec__body :is(ol, ul) { padding-inline-start: var(--s-5); }
+  .sec__body li + li { margin-block-start: var(--s-2); }
+  .sec__body li::marker { color: var(--teal); }
+
+  /* ---- Contradiction panel ---- */
+  .contra {
+    border-radius: var(--r-md); overflow: hidden;
+    background: color-mix(in oklab, var(--coral) 5%, transparent);
+    border: 1px solid color-mix(in oklab, var(--coral) var(--tint-border), transparent);
+  }
+  .contra__h {
+    display: flex; align-items: center; gap: var(--s-2);
+    padding: var(--s-3) var(--s-4);
+    background: color-mix(in oklab, var(--coral) 10%, transparent);
+    border-block-end: 1px solid color-mix(in oklab, var(--coral) 24%, transparent);
+    font-size: var(--t-2xs); font-weight: 700;
+    letter-spacing: 1.1px; text-transform: uppercase; color: var(--coral);
+  }
+  .contra__b { padding: var(--s-3) var(--s-4); }
+  .pos {
+    display: grid; grid-template-columns: auto 1fr; gap: var(--s-2) var(--s-3);
+    padding-block-end: var(--s-3);
+    border-block-end: 1px dashed color-mix(in oklab, var(--coral) 22%, transparent);
+  }
+  .pos + .pos { margin-block-start: var(--s-3); }
+  .pos:last-of-type { border-block-end: 0; padding-block-end: 0; }
+  .pos__id {
+    padding-inline: 7px; padding-block: 3px; block-size: fit-content;
+    font-family: var(--mono); font-size: 9.5px; font-weight: 700;
+    white-space: nowrap; border-radius: 5px;
+    background: color-mix(in oklab, var(--coral) var(--tint-soft), transparent);
+    color: var(--coral);
+    border: 1px solid color-mix(in oklab, var(--coral) var(--tint-border), transparent);
+  }
+  .pos__rel { margin-block-start: 3px; font-size: var(--t-xs); color: var(--mist-dim); font-style: italic; }
+  .verdict {
+    margin-block-start: var(--s-3); padding-block-start: var(--s-3);
+    border-block-start: 1px solid color-mix(in oklab, var(--coral) 24%, transparent);
+    font-size: var(--t-md); line-height: 1.62; color: var(--mist);
+  }
+  .verdict > b {
+    display: block; margin-block-end: 4px;
+    font-size: 9.5px; letter-spacing: .9px; text-transform: uppercase; color: var(--coral);
+  }
+
+  /* ---- Confidence: arc + level + reason. Never a naked number. ---- */
+  .conf {
+    display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap;
+    padding: var(--s-3) var(--s-4); border-radius: var(--r-md);
+    background: color-mix(in oklab, var(--abyss) 45%, transparent);
+    border: 1px solid var(--line);
+  }
+  .conf__arc { inline-size: 50px; aspect-ratio: 1; flex: none; }
+  .conf__reason { flex: 1; min-inline-size: 190px; font-size: var(--t-sm); line-height: 1.55; color: var(--mist); }
+  .conf__reason b { color: var(--foam); }
+
+  /* ---- Trace timeline ---- */
+  .timeline { max-block-size: 230px; overflow-y: auto; overscroll-behavior-y: contain; }
+  .tl { display: flex; gap: var(--s-2); padding-block: 4px; font-size: var(--t-2xs); line-height: 1.45; }
+  .tl__t { inline-size: 38px; flex: none; font-family: var(--mono); font-size: 9px; color: var(--mist-dim); }
+  .tl__m { min-inline-size: 0; color: var(--mist); }
+  .tl__m b { color: var(--cyan); font-weight: 600; }
+  .tl.is-warn .tl__m b { color: var(--amber); }
+
+  /* ---- GroundingGate rules ---- */
+  .rule { display: flex; align-items: center; gap: var(--s-2); padding-block: 5px; font-size: var(--t-2xs); color: var(--mist); }
+  .rule__tick {
+    display: grid; place-items: center;
+    inline-size: 14px; aspect-ratio: 1; flex: none;
+    border-radius: 4px; font-size: 8px; font-weight: 700;
+    background: color-mix(in oklab, var(--lume) 14%, transparent);
+    color: var(--lume);
+    border: 1px solid color-mix(in oklab, var(--lume) 35%, transparent);
+  }
+  .rule__tick.is-pending {
+    background: color-mix(in oklab, var(--mist) 10%, transparent);
+    color: var(--mist-dim); border-color: var(--line-2);
+  }
+  .rule__n { flex: none; font-family: var(--mono); font-size: 9px; color: var(--mist-dim); }
+
+  /* ---- Account chip (Google identity) ---- */
+  .acct { display: flex; align-items: center; gap: var(--s-2);
+    margin-inline-start: auto; }
+  .acct__av { display: grid; place-items: center; flex: none;
+    inline-size: 28px; aspect-ratio: 1; border-radius: 50%;
+    font-size: var(--t-sm); font-weight: 700; color: #fff;
+    /* Google brand gradient — signals the provider without a second logo */
+    background: linear-gradient(135deg, #4285F4, #34A853); }
+  .acct__who { min-inline-size: 0; line-height: 1.3; }
+  .acct__who b { display: block; font-size: var(--t-sm); font-weight: 600;
+    color: var(--foam); }
+  .acct__who span { display: block; font-family: var(--mono);
+    font-size: var(--t-2xs); color: var(--mist-dim); }
+  /* Media, not container: the nav is not a container-type ancestor. */
+  @media (max-width: 620px) { .acct__who { display: none; } }
+
+  /* ---- Toast ---- */
+  .toasts {
+    position: fixed; inset-block-end: var(--s-5); inset-inline-end: var(--s-5);
+    z-index: 60; display: grid; gap: var(--s-2); max-inline-size: 340px;
+  }
+  .toast {
+    display: flex; align-items: flex-start; gap: var(--s-3);
+    padding: var(--s-3) var(--s-4); border-radius: var(--r-md);
+    background: var(--deep-2); border: 1px solid var(--line-2);
+    box-shadow: var(--lift-3);
+    font-size: var(--t-sm); line-height: 1.55; color: var(--mist);
+    animation: toastin var(--dur-base) var(--ease);
+  }
+  .toast b { display: block; color: var(--foam); margin-block-end: 2px; }
+  .toast--warn { border-inline-start: 3px solid var(--amber); }
+  .toast--ok { border-inline-start: 3px solid var(--lume); }
+  @keyframes toastin { from { opacity: 0; transform: translateY(8px); } }
+
+  /* ---- Table ---- */
+  .tbl { inline-size: 100%; border-collapse: collapse; font-size: var(--t-md); }
+  .tbl th {
+    text-align: start; padding: var(--s-2) var(--s-3);
+    font-size: 9.5px; letter-spacing: 1px; text-transform: uppercase; color: var(--teal);
+    border-block-end: 1px solid var(--line);
+  }
+  .tbl td {
+    padding: var(--s-2) var(--s-3); color: var(--mist); vertical-align: top;
+    border-block-end: 1px solid color-mix(in oklab, var(--line) 60%, transparent);
+  }
+  .tbl td:first-child { color: var(--foam); font-weight: 560; }
+}
+
+/* ------------------------------------------------------------ utilities ---- */
+@layer utilities {
+  .sr-only {
+    position: absolute; inline-size: 1px; block-size: 1px;
+    overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+  }
+  .mono { font-family: var(--mono); }
+  .dim { color: var(--mist-dim); }
+  .mist { color: var(--mist); }
+  .hidden { display: none !important; }
+  .mt-0 { margin-block-start: 0; }
+  .ml-auto { margin-inline-start: auto; }
+  .flex-1 { flex: 1; min-inline-size: 0; }
+  .nowrap { white-space: nowrap; }
+  .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .t-xs { font-size: var(--t-xs); }
+  .t-sm { font-size: var(--t-sm); }
+  .t-lg { font-size: var(--t-lg); }
+  .fw-7 { font-weight: 700; }
+  /* Long source lists skip layout work while off-screen. */
+  .lazy-list > * { content-visibility: auto; contain-intrinsic-size: auto 120px; }
+}

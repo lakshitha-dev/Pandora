@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pandora Knowledge Guardian — UI Screens</title>
+<link rel="stylesheet" href="pandora.css">
+<style>
+  .hero { padding-block: var(--s-6) var(--s-5); }
+  h1 { font-size: var(--t-2xl); font-weight: 660; margin-block-end: var(--s-2); }
+  .lede { color: var(--mist); font-size: var(--t-lg); max-inline-size: var(--measure); }
+  h2 { font-size: var(--t-lg); font-weight: 640; margin-block: var(--s-6) var(--s-3); }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--s-4); }
+  .card { display: flex; flex-direction: column; gap: var(--s-3);
+    padding: var(--s-4); border-radius: var(--r-lg);
+    background: linear-gradient(180deg,
+      color-mix(in oklab, var(--deep-2) 70%, transparent),
+      color-mix(in oklab, var(--deep) 55%, transparent));
+    border: 1px solid var(--line); text-decoration: none; color: inherit;
+    transition: border-color var(--dur-base) var(--ease),
+                transform var(--dur-base) var(--ease),
+                box-shadow var(--dur-base) var(--ease); }
+  .card:hover { border-color: color-mix(in oklab, var(--cyan) 45%, transparent);
+    transform: translateY(-2px); box-shadow: var(--lift-2); }
+  .card__n { display: inline-grid; place-items: center; inline-size: 26px;
+    aspect-ratio: 1; border-radius: 7px; font-family: var(--mono);
+    font-size: var(--t-xs); font-weight: 700;
+    background: color-mix(in oklab, var(--cyan) 13%, transparent);
+    color: var(--cyan);
+    border: 1px solid color-mix(in oklab, var(--cyan) 32%, transparent); }
+  .card__t { font-size: var(--t-md); font-weight: 650; color: var(--foam); }
+  .card__d { font-size: var(--t-sm); color: var(--mist); line-height: 1.6; flex: 1; }
+  .card__tags { display: flex; flex-wrap: wrap; gap: 5px; }
+  .tag { font-family: var(--mono); font-size: 9px; letter-spacing: .4px;
+    padding-inline: 6px; padding-block: 3px; border-radius: 4px;
+    background: color-mix(in oklab, var(--hue, var(--teal)) 12%, transparent);
+    color: var(--hue, var(--teal));
+    border: 1px solid color-mix(in oklab, var(--hue, var(--teal)) 30%, transparent); }
+  .tag--new { --hue: var(--lume); }
+  .tag--spec { --hue: var(--violet); }
+  .note { padding: var(--s-4); border-radius: var(--r-lg); margin-block-start: var(--s-5);
+    background: color-mix(in oklab, var(--amber) 6%, transparent);
+    border: 1px solid color-mix(in oklab, var(--amber) 28%, transparent);
+    font-size: var(--t-md); line-height: 1.65; color: var(--mist);
+    max-inline-size: var(--measure); }
+  .note b { color: var(--amber); display: block; font-size: 9.5px;
+    letter-spacing: 1px; text-transform: uppercase; margin-block-end: 5px; }
+  footer { margin-block-start: var(--s-7); padding-block-start: var(--s-4);
+    border-block-start: 1px solid var(--line); font-size: var(--t-sm);
+    color: var(--mist-dim); }
+</style>
+<script src="pandora.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="ambient" aria-hidden="true"></div>
+
+<div class="shell shell--narrow">
+<header class="hero">
+  <h1>UI Screens</h1>
+  <p class="lede">Pandora Knowledge Guardian — Guardian Command Center. Seven
+  standalone HTML files, no build step, no network. All content is real corpus
+  records from the ingested 188 chunks.</p>
+</header>
+
+<main id="main">
+
+<h2>Foundations</h2>
+<div class="cards">
+  <a class="card" href="01-design-system.html">
+    <span class="card__n">01</span>
+    <span class="card__t">Design System</span>
+    <span class="card__d">Tokens with measured WCAG ratios, the ten principles with
+    stated rationale, component and state gallery. Includes the two rejected colour
+    values shown as failures.</span>
+    <span class="card__tags"><span class="tag">tokens</span>
+      <span class="tag">a11y audit</span><span class="tag">principles</span></span>
+  </a>
+  <a class="card" href="pandora.css">
+    <span class="card__n">CSS</span>
+    <span class="card__t">pandora.css</span>
+    <span class="card__d">Single source of truth. Cascade layers, colour-mix tinting,
+    container queries, fluid type, logical properties. Replaces three inline copies
+    that had already drifted once.</span>
+    <span class="card__tags"><span class="tag tag--new">shared</span>
+      <span class="tag">@layer</span><span class="tag">color-mix</span></span>
+  </a>
+</div>
+
+<h2>Primary screens</h2>
+<div class="cards">
+  <a class="card" href="02-command-center.html">
+    <span class="card__n">02</span>
+    <span class="card__t">Command Center</span>
+    <span class="card__d">The main screen. Three columns, six-section SITREP with
+    per-section agent ownership, cited triage banner, orchestration rail with the
+    eight-rule GroundingGate, ten-zone map, role toggle.</span>
+    <span class="card__tags"><span class="tag tag--spec">§8.4</span>
+      <span class="tag tag--spec">§2.1</span><span class="tag tag--spec">§7.2</span></span>
+  </a>
+  <a class="card" href="03-answer-states.html">
+    <span class="card__n">03</span>
+    <span class="card__t">Three Honest States</span>
+    <span class="card__d">Grounded, Contested, Insufficient — including the
+    banner-plus-verbatim-body split. Contested is the state the corpus was built to
+    test.</span>
+    <span class="card__tags"><span class="tag tag--spec">§4.6</span>
+      <span class="tag">refusal</span><span class="tag">conflict</span></span>
+  </a>
+</div>
+
+<h2>Flows and modes</h2>
+<div class="cards">
+  <a class="card" href="04-lifecycle.html">
+    <span class="card__n">04</span>
+    <span class="card__t">Lifecycle States</span>
+    <span class="card__d">First run with use-case starters, ingestion progress naming
+    all four pipeline stages, mid-flight assembly with skeletons, and an agent
+    timeout that still renders a valid partial report.</span>
+    <span class="card__tags"><span class="tag tag--new">new</span>
+      <span class="tag">empty</span><span class="tag">loading</span>
+      <span class="tag">partial</span></span>
+  </a>
+  <a class="card" href="05-role-views.html">
+    <span class="card__n">05</span>
+    <span class="card__t">Role Views</span>
+    <span class="card__d">Guardian, Researcher and Citizen side by side from one
+    frozen evidence set. Hover any citation to light every chip sharing that record
+    ID across all three columns.</span>
+    <span class="card__tags"><span class="tag tag--new">new</span>
+      <span class="tag tag--spec">§8.6</span><span class="tag">KC-01</span></span>
+  </a>
+  <a class="card" href="06-compare-mode.html">
+    <span class="card__n">06</span>
+    <span class="card__t">Compare Mode</span>
+    <span class="card__d">INC-001 against INC-005, aligned field by field, with the
+    decomposition trace showing each half retrieved independently so neither side is
+    starved.</span>
+    <span class="card__tags"><span class="tag tag--new">new</span>
+      <span class="tag tag--spec">§5.4</span><span class="tag">multi-doc</span></span>
+  </a>
+</div>
+
+<h2>Site routes</h2>
+<div class="cards">
+  <a class="card" href="00-landing.html">
+    <span class="card__n">00</span>
+    <span class="card__t">Landing page <code style="font-size:9px">/</code></span>
+    <span class="card__d">The first thing judges see. Hero, the problem, three things
+    it does with the refusal-to-guess as the lead, how it works, and a worked example
+    that shows the Contested verdict rather than claiming accuracy.</span>
+    <span class="card__tags"><span class="tag tag--new">new</span>
+      <span class="tag">proof region</span><span class="tag">no fake proof</span></span>
+  </a>
+  <a class="card" href="07-auth.html">
+    <span class="card__n">07</span>
+    <span class="card__t">Authentication <code style="font-size:9px">/login /auth/callback</code></span>
+    <span class="card__d">Supabase Auth with Google. One button, no password, no
+    separate signup. Six states including the callback code exchange, cancellation
+    treated as not-an-error, and first-sign-in clearance selection. The Google button
+    is deliberately unthemed — brand guidelines, and recognisability.</span>
+    <span class="card__tags"><span class="tag tag--new">google oauth</span>
+      <span class="tag">6 states</span><span class="tag">off critical path</span></span>
+  </a>
+  <a class="card" href="08-documents.html">
+    <span class="card__n">08</span>
+    <span class="card__t">Knowledge Library <code style="font-size:9px">/app/documents</code></span>
+    <span class="card__d">Upload, live per-document indexing progress, indexed /
+    indexing / queued / failed rows, a real failure message for a scanned PDF, delete
+    confirmation, and the index statistics panel.</span>
+    <span class="card__tags"><span class="tag tag--new">new</span>
+      <span class="tag">4 row states</span><span class="tag">empty</span></span>
+  </a>
+  <a class="card" href="09-report-log.html">
+    <span class="card__n">09</span>
+    <span class="card__t">Report Log <code style="font-size:9px">/app/reports</code></span>
+    <span class="card__d">Replaces UI_SPEC's invoice-action inbox with a review queue,
+    which is what Pandora actually needs — every incident record carries a next
+    review time, and POL-010 requires stating when the next update comes.</span>
+    <span class="card__tags"><span class="tag tag--new">new</span>
+      <span class="tag">review queue</span><span class="tag">gap list</span></span>
+  </a>
+</div>
+
+<div class="note">
+  <b>Theme source and the one correction</b>
+  The palette is <a href="../theme-1-abyss-bioluminescent.html">theme-1-abyss-bioluminescent.html</a>
+  verbatim. It audits well — cyan 13.26:1, warn 12.24:1, violet 5.62:1, all clear
+  WCAG AA. One token did not: tertiary ink <code>#4d7385</code> measured
+  <b>3.66:1</b> while carrying page locators and relevance scores, so it is lifted
+  to <code>#7c9caf</code> (6.45:1). Full audit in
+  <a href="../docs/UI-UX-PRINCIPLES.md">docs/UI-UX-PRINCIPLES.md</a> §2.
+</div>
+
+</main>
+
+<footer>
+  Pandora Builderthon 2026 · <a href="../SOLUTION.md">SOLUTION.md</a> ·
+  <a href="../docs/UI-UX-PRINCIPLES.md">UI/UX principles</a> ·
+  <a href="../theme-1-abyss-bioluminescent.html">original mockup</a>
+</footer>
+</div>
+
+</body>
+</html>
