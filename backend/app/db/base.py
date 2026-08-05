@@ -1,10 +1,11 @@
 """Declarative base and the column types shared across models."""
 
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import DateTime, MetaData
-from sqlalchemy.dialects.postgresql import JSONB, UUID as PG_UUID
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.types import JSON, TypeDecorator
 
@@ -56,6 +57,5 @@ TimestampTZ = DateTime(timezone=True)
 
 
 def utcnow() -> datetime:
-    from datetime import timezone
 
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)

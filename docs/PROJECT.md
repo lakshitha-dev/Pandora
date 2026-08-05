@@ -121,6 +121,7 @@ Append a row whenever you make a call that affects someone else's work. Newest a
 | `[KICKOFF]` | Agent actions require explicit user approval | Nothing auto-executes. Safer product, better demo, and it removes a whole class of failure. |
 | `[KICKOFF]` | **Deliverable is a 7-route web application**, not just an API | Judges interact with a website. The landing page and the workspace both count. |
 | `[KICKOFF]` | **`docs/UI_SPEC.md` specifies screen function only; Nipuna owns all visual design** | Colour, type, spacing, components, and iconography are design decisions and shouldn't be frozen in a spec written by someone else. |
-| | | |
-| | | |
+| 2026-08-05 | **Windows devs run the backend with `python run.py`, not `uvicorn app.main:app`** *(Manujaya)* | psycopg's async mode cannot use Windows' default `ProactorEventLoop`, and uvicorn builds that loop before it imports the app — so the app can't fix it from the inside. `run.py` sets the selector policy first. Linux/App Service keeps the plain uvicorn command. |
+| 2026-08-05 | **`AGENT_STUB_MODE` and `AUTH_DISABLED` env switches on the backend** *(Manujaya)* | Lets the gateway serve the contract's exact payloads before Supabase, Postgres, or `agent/` exist — Nipuna integrates against the real backend on day 0 instead of fixtures. Both log a warning at startup and must never be set in App Service config. |
+| 2026-08-05 | **Proposed: add `DELETE /rag/documents/{id}` to API_CONTRACT Part 2** *(Manujaya → Lakshitha, needs 👍)* | Deleting a document must clear its AI Search vectors, but Part 2 has no delete endpoint and the gateway holds no search credentials by design. Until it exists the backend calls the path, treats 404/405 as not-implemented, logs it, and completes the Postgres delete. |
 | | | |

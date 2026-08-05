@@ -5,7 +5,7 @@ browser never waits on embedding.
 """
 
 import uuid
-from datetime import timezone
+from datetime import UTC
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -207,7 +207,7 @@ async def _set_status(session: AsyncSession, document_id: uuid.UUID, status: str
 def as_utc(document: Document) -> Document:
     """Postgres returns tz-aware datetimes; SQLite (tests) returns naive ones."""
     if document.uploaded_at is not None and document.uploaded_at.tzinfo is None:
-        document.uploaded_at = document.uploaded_at.replace(tzinfo=timezone.utc)
+        document.uploaded_at = document.uploaded_at.replace(tzinfo=UTC)
     if document.indexed_at is not None and document.indexed_at.tzinfo is None:
-        document.indexed_at = document.indexed_at.replace(tzinfo=timezone.utc)
+        document.indexed_at = document.indexed_at.replace(tzinfo=UTC)
     return document
