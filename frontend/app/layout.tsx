@@ -32,8 +32,16 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${orbitron.variable} bg-background`}>
-      <body className="antialiased font-sans">
+    // suppressHydrationWarning covers only these two elements' own attributes, so
+    // extensions that inject attributes on <html>/<body> before React hydrates
+    // (Grammarly, dark-mode and password managers all do) stop throwing. Real
+    // mismatches anywhere below still surface — React does not suppress deeply.
+    <html
+      lang="en"
+      className={`${inter.variable} ${orbitron.variable} bg-background`}
+      suppressHydrationWarning
+    >
+      <body className="antialiased font-sans" suppressHydrationWarning>
         {children}
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>

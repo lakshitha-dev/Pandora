@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pandora Knowledge Guardian — Role Views</title>
+<link rel="stylesheet" href="pandora.css">
+<style>
+  h1 { font-size: var(--t-2xl); font-weight: 660; margin-block-end: var(--s-2); }
+  h2 { font-size: var(--t-lg); font-weight: 640; margin-block: var(--s-7) var(--s-3); }
+  .lede { color: var(--mist); font-size: var(--t-lg); max-inline-size: var(--measure); }
+
+  /* Frozen evidence strip — the proof that nothing shifts between roles */
+  .frozen { padding: var(--s-4); border-radius: var(--r-lg);
+    background: color-mix(in oklab, var(--violet) 6%, transparent);
+    border: 1px solid color-mix(in oklab, var(--violet) 28%, transparent);
+    margin-block-end: var(--s-5); }
+  .frozen__h { display: flex; align-items: center; gap: var(--s-2);
+    font-size: 9.5px; font-weight: 700; letter-spacing: 1.1px;
+    text-transform: uppercase; color: var(--violet); margin-block-end: var(--s-3); }
+  .frozen__ids { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+  .fid { display: inline-flex; align-items: center; gap: 5px;
+    padding-inline: var(--s-2); padding-block: 4px; border-radius: 5px;
+    font-family: var(--mono); font-size: var(--t-2xs); font-weight: 700;
+    background: color-mix(in oklab, var(--cyan) 13%, transparent);
+    color: var(--cyan);
+    border: 1px solid color-mix(in oklab, var(--cyan) 30%, transparent); }
+  .fid .p { color: var(--mist-dim); font-weight: 400; }
+
+  /* Three role panels, side by side for direct comparison */
+  .views { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-4);
+    align-items: start; }
+  @media (max-width: 1180px) { .views { grid-template-columns: 1fr; } }
+
+  .view__h { display: flex; align-items: center; gap: var(--s-2);
+    padding: var(--s-4) var(--s-4) var(--s-3);
+    border-block-end: 1px solid var(--line); }
+  .view__badge { display: grid; place-items: center; inline-size: 30px;
+    aspect-ratio: 1; border-radius: 9px; font-size: 15px;
+    background: color-mix(in oklab, var(--hue) 14%, transparent);
+    border: 1px solid color-mix(in oklab, var(--hue) 34%, transparent); }
+  .view__t { font-size: var(--t-md); font-weight: 650; }
+  .view__reg { font-size: 9.5px; font-family: var(--mono); color: var(--mist-dim);
+    letter-spacing: .4px; text-transform: uppercase; margin-block-start: 1px; }
+  .view--guardian  { --hue: var(--cyan); }
+  .view--researcher{ --hue: var(--violet); }
+  .view--citizen   { --hue: var(--lume); }
+  .view__b { padding: var(--s-4); font-size: var(--t-sm); line-height: 1.7;
+    color: #D5E8EC; }
+  .view__b > * + * { margin-block-start: var(--s-3); }
+  .view__b h4 { font-size: 9.5px; font-weight: 700; letter-spacing: 1.1px;
+    text-transform: uppercase; color: var(--teal); }
+  .view__b :is(ol, ul) { padding-inline-start: var(--s-4); }
+  .view__b li + li { margin-block-start: 6px; }
+  .view__b li::marker { color: var(--teal); }
+  .view__b .num { font-family: var(--mono); color: var(--foam); font-weight: 700; }
+
+  .meta-tbl { font-size: var(--t-2xs); }
+  .meta-tbl td { padding-block: 3px; padding-inline: 0; border: 0;
+    vertical-align: top; }
+  .meta-tbl td:first-child { color: var(--mist-dim); font-family: var(--mono);
+    white-space: nowrap; padding-inline-end: var(--s-2); font-weight: 400; }
+
+  .tmpl { padding: var(--s-3); border-radius: var(--r-md);
+    background: color-mix(in oklab, var(--lume) 6%, transparent);
+    border-inline-start: 2px solid var(--lume); font-size: var(--t-sm);
+    line-height: 1.65; }
+  .tmpl__k { display: block; font-size: 9px; font-weight: 700; letter-spacing: 1px;
+    text-transform: uppercase; color: var(--lume); margin-block-end: 5px; }
+
+  .why { max-inline-size: var(--measure); margin-block-start: var(--s-5);
+    padding-block-start: var(--s-3); border-block-start: 1px dashed var(--line-2);
+    font-size: var(--t-md); color: var(--mist-dim); }
+  .why b { display: block; margin-block-end: 4px; font-size: 9.5px;
+    letter-spacing: 1px; text-transform: uppercase; color: var(--teal); }
+  .why + .why { border-block-start: 0; margin-block-start: var(--s-4);
+    padding-block-start: 0; }
+
+  footer { margin-block-start: var(--s-7); padding-block-start: var(--s-4);
+    border-block-start: 1px solid var(--line); font-size: var(--t-sm);
+    color: var(--mist-dim); }
+</style>
+<script src="pandora.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="ambient" aria-hidden="true"></div>
+
+<div class="shell">
+<header>
+  <h1>Role Views — one evidence set, three registers</h1>
+  <p class="lede">The same retrieval, the same claims, the same record IDs,
+  rendered for three audiences. Register and depth change; the evidence never
+  does.</p>
+</header>
+
+<main id="main">
+
+<div class="frozen">
+  <div class="frozen__h"><span aria-hidden="true">❄</span>
+    Frozen evidence set — identical in all three views below</div>
+  <div class="frozen__ids">
+    <span class="fid">INC-001 <span class="p">p.40</span></span>
+    <span class="fid">§4.5 <span class="p">p.12</span></span>
+    <span class="fid">WS-01 <span class="p">p.46</span></span>
+    <span class="fid">FAU-001 <span class="p">p.12</span></span>
+    <span class="fid">FAU-026 <span class="p">p.22</span></span>
+    <span class="fid">§8.3 <span class="p">p.34</span></span>
+    <span class="fid">KC-01 <span class="p">p.50</span></span>
+    <span class="fid">A.1 <span class="p">p.49</span></span>
+  </div>
+  <p class="t-sm mist" style="margin-block-start:var(--s-3)">
+    Switching role performs <b style="color:var(--foam)">no re-query and no
+    re-retrieval</b> — it re-renders these eight records. One retrieval, one
+    grounded claim set, three presentations.</p>
+</div>
+
+<div class="views">
+
+  <!-- ══════════ GUARDIAN ══════════ -->
+  <section class="panel view view--guardian" aria-labelledby="rv-g">
+    <div class="view__h">
+      <span class="view__badge" aria-hidden="true">🛡</span>
+      <div><div class="view__t" id="rv-g">Guardian</div>
+        <div class="view__reg">Operational · imperative</div></div>
+    </div>
+    <div class="view__b">
+      <div class="row" style="gap:var(--s-2)">
+        <span class="hz hz--w2"><span aria-hidden="true">◆</span> W2 ADVISORY</span>
+      </div>
+
+      <h4>Do now</h4>
+      <ol>
+        <li>Restrict drinking water. Suspend shellfish harvest bay-wide
+          <span class="cite">INC-001</span></li>
+        <li>Sample at three depths. Inspect upstream and wind direction
+          <span class="cite">INC-001</span></li>
+        <li>Set an exclusion boundary. Log every entrant. Chain-of-custody on all
+          samples <span class="cite">INC-001</span></li>
+        <li>Provide alternate drinking water
+          <span class="cite">§4.5</span></li>
+        <li>Notify drinking-water, fishery, clinic and lodge operators
+          <span class="cite">A.1</span></li>
+      </ol>
+
+      <h4>Do not</h4>
+      <ul>
+        <li>Do not name a cause. Four hypotheses, none confirmed
+          <span class="cite">INC-001</span></li>
+        <li>Do not lift restrictions without a stated review time and criteria
+          <span class="cite">A.1</span></li>
+      </ul>
+
+      <h4>Watch</h4>
+      <p>Tideglass Grazer juveniles — turbidity-vulnerable
+        <span class="cite">FAU-001</span>. Ironjaw Shellfish accumulate toxins even
+        when the water looks clear <span class="cite">§8.3</span>.</p>
+
+      <p class="t-xs dim">Next review 18:00. Reassess against W3 indicators:
+        multiple illnesses, fish deaths, severe oxygen loss.</p>
+    </div>
+  </section>
+
+  <!-- ══════════ RESEARCHER ══════════ -->
+  <section class="panel view view--researcher" aria-labelledby="rv-r">
+    <div class="view__h">
+      <span class="view__badge" aria-hidden="true">🔬</span>
+      <div><div class="view__t" id="rv-r">Researcher</div>
+        <div class="view__reg">Technical · maximum depth</div></div>
+    </div>
+    <div class="view__b">
+      <div class="row" style="gap:var(--s-2)">
+        <span class="hz hz--w2"><span aria-hidden="true">◆</span> W2</span>
+        <span class="badge is-disputed"><span aria-hidden="true">!</span>
+          Custody incomplete</span>
+      </div>
+
+      <h4>Measurements</h4>
+      <table class="tbl meta-tbl">
+        <tr><td>WS-01 2026-05-03</td><td>28.2 °C · DO 7.1 · pH 8.12 · clear</td></tr>
+        <tr><td>WS-01 2026-06-02</td><td>29.7 °C · DO 5.4 · pH 8.05 · green tint</td></tr>
+        <tr><td>Δ over 30 d</td><td>+1.5 °C · −1.7 mg/L DO · −0.07 pH</td></tr>
+        <tr><td>Station</td><td>Awa Reef North, REG-01 <span class="cite">WS-01</span></td></tr>
+      </table>
+
+      <h4>Evidence grades</h4>
+      <table class="tbl meta-tbl">
+        <tr><td>INC-001</td><td>Provisional interpretation — 4 unranked hypotheses</td></tr>
+        <tr><td>WS-01</td><td>Verified observation — calibration not recorded</td></tr>
+        <tr><td>LAB-C</td><td>Disputed — chain-of-custody form incomplete</td></tr>
+        <tr><td>FAU-001</td><td>Verified observation</td></tr>
+      </table>
+
+      <h4>Methodology caveats</h4>
+      <ul>
+        <li>§4.1: a change over 2 °C in a day must be verified at multiple depths
+          before conclusions <span class="cite">§4.5</span></li>
+        <li>Two WS-01 readings 30 days apart are not a time series. No intermediate
+          sampling exists</li>
+        <li>The DO fall and FN-A's bloom hypothesis are <b>not linked in the
+          corpus</b>. Any association is inference</li>
+      </ul>
+
+      <h4>What would resolve it</h4>
+      <p>Upstream/downstream paired sampling at matched depths with complete
+        chain-of-custody per checklist A.1, plus calibration records
+        <span class="cite">A.1</span>.</p>
+    </div>
+  </section>
+
+  <!-- ══════════ CITIZEN ══════════ -->
+  <section class="panel view view--citizen" aria-labelledby="rv-c">
+    <div class="view__h">
+      <span class="view__badge" aria-hidden="true">🏘</span>
+      <div><div class="view__t" id="rv-c">Citizen</div>
+        <div class="view__reg">Plain language · condensed</div></div>
+    </div>
+    <div class="view__b">
+      <div class="row" style="gap:var(--s-2)">
+        <span class="hz hz--w2"><span aria-hidden="true">◆</span> ADVISORY</span>
+      </div>
+
+      <div class="tmpl">
+        <span class="tmpl__k">Public alert · KC-01 template</span>
+        At <b>06:40</b> at <b>Awa Reef North</b>, we observed <b>bright turquoise
+        water and fish moving offshore</b>. The cause is <b>not yet confirmed</b>.
+        People should <b>use alternate drinking water and avoid gathering
+        shellfish</b>. Avoid <b>swimming and fishing in the affected shallows</b>.
+        Report <b>any illness, or more dead or distressed animals</b>, through
+        <b>the Council of Tides</b>. The next update will be issued at
+        <b>18:00</b>. <span class="cite">KC-01</span>
+      </div>
+
+      <h4>What this means for you</h4>
+      <ul>
+        <li>Drinking water from the bay is <b>not safe</b> until tested
+          <span class="cite">INC-001</span></li>
+        <li>Do not eat shellfish from the bay. They can hold harmful substances
+          even when the water looks clean again
+          <span class="cite">§8.3</span></li>
+        <li>Fishing and swimming in the affected shallows should stop for now
+          <span class="cite">§4.5</span></li>
+      </ul>
+
+      <h4>Why we cannot say what caused it</h4>
+      <p>Three separate reports disagree, and the laboratory test was not properly
+        documented, so it cannot settle the question. Guardians are resampling.
+        <b>Saying a cause now would risk blaming the wrong thing</b> and sending
+        help to the wrong place <span class="cite">INC-001</span>.</p>
+
+      <h4>Where to get help</h4>
+      <p>Council of Tides at Awa Reef Village. If anyone has stomach illness,
+        breathing trouble, or a rash after contact with the water, contact a healer
+        <span class="cite">§4.5</span>.</p>
+    </div>
+  </section>
+</div>
+
+<div class="why"><b>What changed, and what did not</b>All three views cite the same
+eight records. Guardian gets imperatives and a do-not list. Researcher gets the
+measurement deltas, the evidence grades, and the methodology caveats — including
+the explicit note that the corpus does not link the oxygen fall to the bloom
+hypothesis. Citizen gets the corpus's own KC-01 communication template filled with
+retrieved evidence, so even the plain-language rendering is grounded rather than
+freely paraphrased.</div>
+
+<div class="why"><b>Why re-render and never re-query</b>If switching role re-ran
+retrieval, the cited evidence could shift between views and a judge would watch
+the facts change on screen — collapsing the grounding story the whole system is
+built on. The frozen-evidence strip above is the visible guarantee: those eight IDs
+are the input to all three renderings.</div>
+
+<div class="why"><b>The one place this rule bends</b>Access clearance is a
+different axis from register. A Citizen is not cleared for healer-limited clinical
+detail under POL-005, so clearance is resolved <em>at query time from the active
+role</em> and the toggle re-renders within it. Changing clearance is an explicit
+re-query, and the interface says so rather than silently returning a different
+evidence set.</div>
+
+</main>
+
+<footer>
+  Role views · implements SOLUTION.md §8.6 · built on <code>pandora.css</code> ·
+  <a href="01-design-system.html">design system</a> ·
+  <a href="02-command-center.html">command center</a> ·
+  <a href="03-answer-states.html">answer states</a> ·
+  <a href="04-lifecycle.html">lifecycle</a> ·
+  <a href="06-compare-mode.html">compare mode</a>
+</footer>
+</div>
+
+<script>
+/* Hovering any citation chip lights every chip carrying the same record ID,
+   across all three views — makes "same evidence" tangible rather than asserted. */
+document.querySelectorAll('.cite').forEach(c => {
+  const id = c.textContent.trim();
+  const kin = () => [...document.querySelectorAll('.cite')]
+    .filter(x => x.textContent.trim() === id);
+  c.addEventListener('mouseenter', () => kin().forEach(x => x.classList.add('is-hot')));
+  c.addEventListener('mouseleave', () => kin().forEach(x => x.classList.remove('is-hot')));
+});
+</script>
+</body>
+</html>
