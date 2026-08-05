@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pandora Knowledge Guardian — Design System &amp; UI/UX Principles</title>
+<style>
+/* ============================================================================
+   PANDORA KNOWLEDGE GUARDIAN — DESIGN SYSTEM
+   A token reference and principle ledger. Every colour pairing below carries a
+   measured WCAG 2.1 contrast ratio, computed from relative luminance — not
+   estimated by eye.
+   ========================================================================== */
+
+:root{
+  /* ---- Depth ramp. Darkest = deepest water. Surfaces only, never text. ----
+     Values are SOLUTION.md §8.2 verbatim. Every ratio below is measured
+     against --abyss-1 (#0A2233), the panel surface body text sits on. */
+  --abyss-0:#04121C;   /* page floor        */
+  --abyss-1:#0A2233;   /* panel — ink datum */
+  --abyss-2:#0E2C41;   /* raised panel      */
+  --abyss-3:#16394F;   /* hairline / border */
+  --abyss-4:#1E4A65;   /* border, hover     */
+
+  /* ---- Bioluminescence. Each hue has exactly one job. ---- */
+  --glow-cyan:#3EE8D0;   /* system / AI voice     10.59:1 */
+  --glow-teal:#1FA9A0;   /* retrieval / labels     5.61:1 */
+  --glow-lume:#A8F5C8;   /* verified / success    13.90:1 */
+  --glow-violet:#9A8DF5; /* agentic (corrected)    5.82:1 */
+  --alert:#F0644E;       /* risk / emergency       5.15:1 */
+  --warn:#F0A93E;        /* caution / uncertainty  8.10:1 */
+
+  /* ---- Ink. Three levels. All AA or better on --abyss-1. ---- */
+  --ink-1:#E8F6F5;   /* primary    15.70:1 */
+  --ink-2:#8FAFB8;   /* secondary   6.97:1 */
+  --ink-3:#6E8E9C;   /* tertiary    4.72:1 — the floor, never below */
+
+  /* ---- Type scale: 1.2 minor third, 15px base. ---- */
+  --t-xs:10.5px; --t-sm:12px;  --t-md:13.5px;
+  --t-base:15px; --t-lg:18px;  --t-xl:22px;  --t-2xl:27px;
+
+  /* ---- Spacing: 4px base, 8px rhythm. ---- */
+  --s-1:4px; --s-2:8px; --s-3:12px; --s-4:16px;
+  --s-5:24px; --s-6:32px; --s-7:48px;
+
+  --r-sm:8px; --r-md:14px; --r-lg:22px; --r-full:999px;
+
+  /* ---- Motion: two durations, one easing. ---- */
+  --dur-fast:150ms; --dur-base:240ms;
+  --ease:cubic-bezier(.4,0,.2,1);
+
+  --sans:"Segoe UI Variable Display","Segoe UI",Inter,system-ui,sans-serif;
+  --mono:"Cascadia Code","SF Mono",ui-monospace,Consolas,monospace;
+
+  /* Prose measure — 68ch keeps lines inside the 45–75ch readability band. */
+  --measure:68ch;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:var(--sans);font-size:var(--t-base);line-height:1.6;
+  background:var(--abyss-0);color:var(--ink-1);
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1080px;margin:0 auto;padding:var(--s-6) var(--s-5) var(--s-7)}
+
+/* Skip link — first tab stop on every page. */
+.skip{position:absolute;left:-9999px;top:var(--s-2);z-index:99;
+  padding:var(--s-2) var(--s-4);border-radius:var(--r-sm);
+  background:var(--glow-cyan);color:#04141a;font-weight:600;text-decoration:none}
+.skip:focus{left:var(--s-2)}
+
+h1{font-size:var(--t-2xl);font-weight:660;letter-spacing:-.2px;margin-bottom:var(--s-2)}
+.lede{color:var(--ink-2);max-width:var(--measure);font-size:var(--t-lg);line-height:1.65}
+h2{font-size:var(--t-xl);font-weight:620;margin:var(--s-7) 0 var(--s-2);
+  padding-bottom:var(--s-2);border-bottom:1px solid var(--abyss-3)}
+h3{font-size:var(--t-md);font-weight:700;letter-spacing:1.2px;text-transform:uppercase;
+  color:var(--glow-teal);margin:var(--s-5) 0 var(--s-3)}
+p{max-width:var(--measure);margin-bottom:var(--s-3);color:var(--ink-2)}
+p strong{color:var(--ink-1);font-weight:620}
+code{font-family:var(--mono);font-size:.9em;padding:1px 5px;border-radius:5px;
+  background:var(--abyss-2);color:var(--glow-cyan);border:1px solid var(--abyss-3)}
+
+.card{background:var(--abyss-1);border:1px solid var(--abyss-3);
+  border-radius:var(--r-lg);padding:var(--s-5);margin-bottom:var(--s-4)}
+
+/* ---------------- Colour swatch table with measured ratios ---------------- */
+.swatches{display:grid;gap:var(--s-2)}
+.sw{display:flex;align-items:center;gap:var(--s-4);padding:var(--s-3);
+  border-radius:var(--r-md);background:var(--abyss-1);border:1px solid var(--abyss-3)}
+.sw .chipcolor{width:44px;height:44px;flex:none;border-radius:var(--r-sm);
+  border:1px solid rgba(255,255,255,.14)}
+.sw .info{flex:1;min-width:0}
+.sw .nm{font-size:var(--t-md);font-weight:600}
+.sw .hex{font-family:var(--mono);font-size:var(--t-xs);color:var(--ink-3)}
+.sw .use{font-size:var(--t-sm);color:var(--ink-2);margin-top:2px}
+.ratio{font-family:var(--mono);font-size:var(--t-sm);font-weight:700;
+  padding:var(--s-1) var(--s-2);border-radius:var(--r-sm);white-space:nowrap}
+.ratio.aaa{background:rgba(168,245,200,.14);color:var(--glow-lume);
+  border:1px solid rgba(168,245,200,.35)}
+.ratio.aa{background:rgba(43,184,201,.14);color:var(--glow-teal);
+  border:1px solid rgba(43,184,201,.35)}
+.ratio.fail{background:rgba(255,122,92,.14);color:var(--alert);
+  border:1px solid rgba(255,122,92,.4)}
+
+/* ---------------- Principle blocks ---------------- */
+.principle{border-left:3px solid var(--glow-teal);padding-left:var(--s-4);
+  margin-bottom:var(--s-6)}
+.principle .num{font-family:var(--mono);font-size:var(--t-xs);color:var(--glow-teal);
+  letter-spacing:1px}
+.principle h4{font-size:var(--t-lg);font-weight:620;margin:2px 0 var(--s-2)}
+.why{font-size:var(--t-md);color:var(--ink-3);border-top:1px dashed var(--abyss-4);
+  padding-top:var(--s-2);margin-top:var(--s-3);max-width:var(--measure)}
+.why b{color:var(--glow-teal);text-transform:uppercase;font-size:var(--t-xs);
+  letter-spacing:1px;display:block;margin-bottom:3px}
+
+/* Do / Don't comparison */
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:var(--s-3);margin-top:var(--s-3)}
+@media(max-width:720px){.compare{grid-template-columns:1fr}}
+.pane{padding:var(--s-4);border-radius:var(--r-md);background:var(--abyss-1);
+  border:1px solid var(--abyss-3)}
+.pane.bad{border-color:rgba(255,122,92,.35)}
+.pane.good{border-color:rgba(168,245,200,.35)}
+.pane .tag{font-size:var(--t-xs);font-weight:700;letter-spacing:1.1px;
+  text-transform:uppercase;margin-bottom:var(--s-3);display:flex;align-items:center;gap:6px}
+.pane.bad .tag{color:var(--alert)}
+.pane.good .tag{color:var(--glow-lume)}
+
+/* ---------------- Components ---------------- */
+.row{display:flex;flex-wrap:wrap;gap:var(--s-3);align-items:center}
+.btn{font:inherit;font-size:var(--t-md);font-weight:600;cursor:pointer;
+  border-radius:11px;padding:11px 20px;border:1px solid transparent;
+  transition:transform var(--dur-fast) var(--ease),box-shadow var(--dur-fast) var(--ease);
+  display:inline-flex;align-items:center;gap:var(--s-2);min-height:44px}
+.btn-primary{color:#04141a;background:linear-gradient(135deg,var(--glow-cyan),var(--glow-teal));
+  box-shadow:0 6px 24px rgba(79,240,224,.26)}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 9px 30px rgba(79,240,224,.38)}
+.btn-ghost{color:var(--ink-2);background:var(--abyss-2);border-color:var(--abyss-3)}
+.btn-ghost:hover{color:var(--ink-1);border-color:var(--abyss-4)}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none}
+
+.badge{display:inline-flex;align-items:center;gap:6px;font-size:var(--t-sm);
+  font-weight:600;padding:6px 11px;border-radius:var(--r-full)}
+.b-verified{background:rgba(168,245,200,.13);color:var(--glow-lume);
+  border:1px solid rgba(168,245,200,.35)}
+.b-provisional{background:rgba(255,200,107,.11);color:var(--warn);
+  border:1px solid rgba(255,200,107,.34)}
+.b-disputed{background:rgba(255,122,92,.11);color:var(--alert);
+  border:1px solid rgba(255,122,92,.34)}
+.b-protocol{background:rgba(43,184,201,.12);color:var(--glow-teal);
+  border:1px solid rgba(43,184,201,.32)}
+.b-tradition{background:rgba(169,159,240,.12);color:var(--glow-violet);
+  border:1px solid rgba(169,159,240,.32)}
+
+/* Hazard tokens — shape + text + colour, never colour alone. */
+.hz{display:inline-flex;align-items:center;gap:7px;font-size:var(--t-sm);
+  font-weight:700;padding:6px 12px;border-radius:var(--r-sm);letter-spacing:.4px}
+.hz .glyph{font-size:11px;line-height:1}
+.hz-critical{background:rgba(255,122,92,.16);color:var(--alert);
+  border:1px solid rgba(255,122,92,.45)}
+.hz-high{background:rgba(255,200,107,.14);color:var(--warn);
+  border:1px solid rgba(255,200,107,.42)}
+.hz-medium{background:rgba(43,184,201,.13);color:var(--glow-teal);
+  border:1px solid rgba(43,184,201,.36)}
+.hz-low{background:rgba(168,245,200,.12);color:var(--glow-lume);
+  border:1px solid rgba(168,245,200,.34)}
+
+/* Citation chip — 24px min hit area, baseline-aligned (not superscript). */
+.cite{display:inline-flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:var(--t-xs);font-weight:700;
+  min-width:24px;height:20px;padding:0 6px;margin:0 2px;border-radius:6px;
+  cursor:pointer;background:rgba(79,240,224,.15);color:var(--glow-cyan);
+  border:1px solid rgba(79,240,224,.34);
+  transition:background var(--dur-fast) var(--ease);vertical-align:baseline;
+  position:relative}
+/* Invisible 44px target overlays the 24px visual — Fitts without visual bulk. */
+.cite::after{content:"";position:absolute;inset:-12px -10px;}
+.cite:hover,.cite:focus-visible{background:var(--glow-cyan);color:#04141a}
+
+input,textarea{width:100%;font:inherit;font-size:var(--t-base);color:var(--ink-1);
+  background:var(--abyss-0);border:1px solid var(--abyss-3);
+  border-radius:var(--r-md);padding:12px 15px;min-height:44px;
+  transition:border-color var(--dur-fast) var(--ease),box-shadow var(--dur-fast) var(--ease)}
+input::placeholder,textarea::placeholder{color:var(--ink-3)}
+input:focus,textarea:focus{outline:none;border-color:rgba(79,240,224,.55);
+  box-shadow:0 0 0 4px rgba(79,240,224,.1)}
+
+.meter{height:5px;border-radius:3px;background:var(--abyss-2);overflow:hidden;flex:1}
+.meter i{display:block;height:100%;border-radius:3px;
+  background:linear-gradient(90deg,var(--glow-teal),var(--glow-lume))}
+
+table{width:100%;border-collapse:collapse;font-size:var(--t-md);margin-top:var(--s-3)}
+th{text-align:left;font-size:var(--t-xs);letter-spacing:1px;text-transform:uppercase;
+  color:var(--glow-teal);padding:var(--s-2) var(--s-3);border-bottom:1px solid var(--abyss-3)}
+td{padding:var(--s-2) var(--s-3);border-bottom:1px solid rgba(15,44,66,.6);color:var(--ink-2)}
+td:first-child{color:var(--ink-1);font-weight:560}
+.scroller{overflow-x:auto}
+
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:var(--s-3)}
+
+/* Type specimen */
+.spec{display:flex;align-items:baseline;gap:var(--s-4);padding:var(--s-2) 0;
+  border-bottom:1px solid rgba(15,44,66,.5)}
+.spec .lbl{font-family:var(--mono);font-size:var(--t-xs);color:var(--ink-3);width:110px;flex:none}
+
+:focus-visible{outline:2px solid var(--glow-cyan);outline-offset:2px;border-radius:4px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+footer{margin-top:var(--s-7);padding-top:var(--s-4);border-top:1px solid var(--abyss-3);
+  color:var(--ink-3);font-size:var(--t-sm)}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="wrap">
+
+<header>
+  <h1>Design System &amp; UI/UX Principles</h1>
+  <p class="lede">The interface contract for the Pandora Knowledge Guardian. Every
+  colour pairing carries a measured WCAG 2.1 contrast ratio; every principle
+  states the reason it exists, not just the rule.</p>
+</header>
+
+<main id="main">
+
+<h2>1 · Foundations</h2>
+
+<h3>Colour — depth ramp</h3>
+<p>Surfaces only. No ramp value is ever used for text, which is what keeps the
+contrast table below predictable.</p>
+<div class="swatches">
+  <div class="sw"><span class="chipcolor" style="background:#04121C"></span>
+    <span class="info"><span class="nm">abyss</span> <span class="hex">#04121C</span>
+    <span class="use">Page floor — the deepest water</span></span></div>
+  <div class="sw"><span class="chipcolor" style="background:#0A2233"></span>
+    <span class="info"><span class="nm">deep current</span> <span class="hex">#0A2233</span>
+    <span class="use">Default panel surface — the contrast datum for all ink</span></span></div>
+  <div class="sw"><span class="chipcolor" style="background:#0E2C41"></span>
+    <span class="info"><span class="nm">deep-2</span> <span class="hex">#0E2C41</span>
+    <span class="use">Raised panel, input wells, inline code</span></span></div>
+  <div class="sw"><span class="chipcolor" style="background:#16394F"></span>
+    <span class="info"><span class="nm">line</span> <span class="hex">#16394F</span>
+    <span class="use">Hairlines and default borders</span></span></div>
+  <div class="sw"><span class="chipcolor" style="background:#1E4A65"></span>
+    <span class="info"><span class="nm">line-2</span> <span class="hex">#1E4A65</span>
+    <span class="use">Border hover, scrollbar thumb</span></span></div>
+</div>
+
+<h3>Colour — ink, measured on deep current #0A2233</h3>
+<div class="swatches">
+  <div class="sw"><span class="chipcolor" style="background:#E8F6F5"></span>
+    <span class="info"><span class="nm">foam</span> <span class="hex">#E8F6F5</span>
+    <span class="use">Body copy, headings, report prose</span></span>
+    <span class="ratio aaa">15.70:1 AAA</span></div>
+  <div class="sw"><span class="chipcolor" style="background:#8FAFB8"></span>
+    <span class="info"><span class="nm">mist</span> <span class="hex">#8FAFB8</span>
+    <span class="use">Secondary copy, excerpts, descriptions</span></span>
+    <span class="ratio aa">6.97:1 AA</span></div>
+  <div class="sw"><span class="chipcolor" style="background:#6E8E9C"></span>
+    <span class="info"><span class="nm">mist-dim</span> <span class="hex">#6E8E9C</span>
+    <span class="use">Metadata: page locators, chunk counts, scores.
+    This is the floor — nothing in the system goes below it.</span></span>
+    <span class="ratio aa">4.72:1 AA</span></div>
+  <div class="sw" style="opacity:.75"><span class="chipcolor" style="background:#4d7385"></span>
+    <span class="info"><span class="nm">tertiary (rejected)</span> <span class="hex">#4d7385</span>
+    <span class="use">The first mockup's tertiary ink. It carried real information —
+    relevance scores, page numbers — below the legibility floor.</span></span>
+    <span class="ratio fail">3.66:1 FAIL</span></div>
+</div>
+
+<h3>Colour — bioluminescence, one job each</h3>
+<p>Four accent hues, no more. A fifth would stop meaning anything: once a colour
+appears in two roles, the viewer must read the label anyway and the colour has
+become decoration.</p>
+<div class="swatches">
+  <div class="sw"><span class="chipcolor" style="background:#3EE8D0"></span>
+    <span class="info"><span class="nm">bioluminescent cyan</span> <span class="hex">#3EE8D0</span>
+    <span class="use">The system's own voice — active agent, citations, primary action, focus ring</span></span>
+    <span class="ratio aaa">10.59:1</span></div>
+  <div class="sw"><span class="chipcolor" style="background:#A8F5C8"></span>
+    <span class="info"><span class="nm">lume</span> <span class="hex">#A8F5C8</span>
+    <span class="use">Verified observation, documented protocol, completed stage</span></span>
+    <span class="ratio aaa">13.90:1</span></div>
+  <div class="sw"><span class="chipcolor" style="background:#F0A93E"></span>
+    <span class="info"><span class="nm">warning amber</span> <span class="hex">#F0A93E</span>
+    <span class="use">W2 advisory, provisional interpretation, partial result, withheld answer</span></span>
+    <span class="ratio aaa">8.10:1</span></div>
+  <div class="sw"><span class="chipcolor" style="background:#1FA9A0"></span>
+    <span class="info"><span class="nm">reef teal</span> <span class="hex">#1FA9A0</span>
+    <span class="use">Retrieval machinery — panel labels, relevance bars, idle map zones</span></span>
+    <span class="ratio aa">5.61:1</span></div>
+  <div class="sw"><span class="chipcolor" style="background:#9A8DF5"></span>
+    <span class="info"><span class="nm">spirit violet</span> <span class="hex">#9A8DF5</span>
+    <span class="use">Agentic accents — orchestrator badge, access-class notices.
+    <b style="color:#F0A93E">Corrected from the specified #7B6BF0, which measured
+    4.04:1 and failed AA while carrying readable labels.</b></span></span>
+    <span class="ratio aa">5.82:1</span></div>
+  <div class="sw"><span class="chipcolor" style="background:#F0644E"></span>
+    <span class="info"><span class="nm">coral alert</span> <span class="hex">#F0644E</span>
+    <span class="use">W3/W4 emergency, contradiction, disputed report</span></span>
+    <span class="ratio aa">5.15:1</span></div>
+  <div class="sw" style="opacity:.7"><span class="chipcolor" style="background:#7B6BF0"></span>
+    <span class="info"><span class="nm">spirit violet (rejected)</span> <span class="hex">#7B6BF0</span>
+    <span class="use">The value specified in SOLUTION.md §8.2. Visually close to the
+    correction, but below the 4.5:1 floor for text.</span></span>
+    <span class="ratio fail">4.04:1 FAIL</span></div>
+</div>
+
+<h3>Type scale — 1.2 minor third, 15px base</h3>
+<div class="card">
+  <div class="spec"><span class="lbl">2xl · 27px</span><span style="font-size:27px;font-weight:660">Grounded Response</span></div>
+  <div class="spec"><span class="lbl">xl · 22px</span><span style="font-size:22px;font-weight:620">Retrieved Sources</span></div>
+  <div class="spec"><span class="lbl">lg · 18px</span><span style="font-size:18px">Question input and lede text</span></div>
+  <div class="spec"><span class="lbl">base · 15px</span><span style="font-size:15px">Answer body copy, set to a 68ch measure</span></div>
+  <div class="spec"><span class="lbl">md · 13.5px</span><span style="font-size:13.5px">Buttons, source titles, table cells</span></div>
+  <div class="spec"><span class="lbl">sm · 12px</span><span style="font-size:12px">Excerpts, badges, secondary metadata</span></div>
+  <div class="spec"><span class="lbl">xs · 10.5px</span><span style="font-size:10.5px;font-family:var(--mono)">REC-ID · p.42 · 0.87 — monospace for anything scannable</span></div>
+</div>
+<p>Record identifiers, page numbers and scores are always monospace. Tabular
+figures let the eye compare a column of scores without re-reading each one.</p>
+
+<h3>Spacing, radius, motion</h3>
+<div class="grid2">
+  <div class="card"><h3 style="margin-top:0">Spacing · 4px base</h3>
+    <p style="font-family:var(--mono);font-size:var(--t-sm)">4 · 8 · 12 · 16 · 24 · 32 · 48</p>
+    <p style="font-size:var(--t-sm)">Component padding uses 12–24. Section rhythm uses 32–48.</p></div>
+  <div class="card"><h3 style="margin-top:0">Radius</h3>
+    <p style="font-family:var(--mono);font-size:var(--t-sm)">8 · 14 · 22 · full</p>
+    <p style="font-size:var(--t-sm)">Larger container, larger radius — nesting stays visually coherent.</p></div>
+  <div class="card"><h3 style="margin-top:0">Motion · 2 durations</h3>
+    <p style="font-family:var(--mono);font-size:var(--t-sm)">150ms feedback<br>240ms transition<br>cubic-bezier(.4,0,.2,1)</p>
+    <p style="font-size:var(--t-sm)">Anything above 300ms reads as lag during a live demo.</p></div>
+</div>
+
+<h2>2 · Principles</h2>
+
+<div class="principle">
+  <span class="num">PRINCIPLE 01</span>
+  <h4>Make the retrieval visible</h4>
+  <p>The three-column layout puts knowledge base, question and retrieved sources
+  on screen simultaneously. A pipeline stepper reports what actually ran:
+  decompose → hybrid search → dedupe → rerank → ground → verify.</p>
+  <div class="why"><b>Why</b>The product claim is "grounded, not guessed." A
+  single chat bubble is indistinguishable from a plain chatbot, and the rules
+  state a chatbot without retrieval does not qualify. Visible provenance is the
+  interface's core job, not a debug affordance.</div>
+</div>
+
+<div class="principle">
+  <span class="num">PRINCIPLE 02</span>
+  <h4>Never encode state in colour alone</h4>
+  <p>Every severity token pairs a distinct glyph, an explicit word and a colour.
+  Legible in greyscale, to a colour-blind viewer, and through a washed-out
+  projector.</p>
+  <div class="row" style="margin-top:var(--s-3)">
+    <span class="hz hz-critical"><span class="glyph">▲</span> CRITICAL</span>
+    <span class="hz hz-high"><span class="glyph">◆</span> HIGH</span>
+    <span class="hz hz-medium"><span class="glyph">■</span> MEDIUM</span>
+    <span class="hz hz-low"><span class="glyph">●</span> LOW</span>
+  </div>
+  <div class="why"><b>Why</b>This is not a generic accessibility nicety — the
+  corpus mandates it. §11.1: <em>"Do not use color alone for hazard levels; pair
+  it with words and shapes."</em> The knowledge base we are serving states the
+  rule, so the interface obeys it.</div>
+</div>
+
+<div class="principle">
+  <span class="num">PRINCIPLE 03</span>
+  <h4>Uncertainty is a designed state, not an error</h4>
+  <p>"Insufficient evidence" gets a full, composed screen: the withheld-answer
+  badge, the closest retrieved chunk, its score against the threshold, and three
+  recovery routes. It is styled in <code>warn</code>, never in
+  <code>alert</code> — declining to answer is correct behaviour, not a fault.</p>
+  <div class="why"><b>Why</b>Requirement 6 demands explicit uncertainty
+  handling, and 20 marks ride on grounded accuracy. A system that looks
+  embarrassed when it refuses teaches the user to distrust the refusal — which
+  is the one output most worth trusting.</div>
+</div>
+
+<div class="principle">
+  <span class="num">PRINCIPLE 04</span>
+  <h4>Separate documented protocol from inference</h4>
+  <p>Two visually distinct regions. Protocol claims carry a record ID and a
+  solid left rule; inference claims carry a dashed rule and the word
+  <em>inference</em>. Evidence-quality chips label the grade of each source.</p>
+  <div class="row" style="margin-top:var(--s-3)">
+    <span class="badge b-verified">✓ Verified observation</span>
+    <span class="badge b-protocol">§ Documented protocol</span>
+    <span class="badge b-tradition">◇ Community tradition</span>
+    <span class="badge b-provisional">~ Provisional interpretation</span>
+    <span class="badge b-disputed">! Disputed report</span>
+  </div>
+  <div class="why"><b>Why</b>§15.2 requires it: <em>"For recommendations,
+  separate documented protocol from model-generated inference."</em> Chapter 1
+  defines the five evidence grades and asks that RAG systems preserve the
+  labels, so they are metadata on every chunk rather than adjectives in prose.</div>
+</div>
+
+<div class="principle">
+  <span class="num">PRINCIPLE 05</span>
+  <h4>Bind every claim to a reachable source</h4>
+  <p>Citation chips are baseline-aligned, 24px wide, with an invisible 44px hit
+  target. Hover highlights the matching source card; click scrolls it into view
+  and holds the highlight.</p>
+  <p style="max-width:var(--measure)">Restrict drinking and shellfish harvest, then
+  sample at three depths <span class="cite" tabindex="0">1</span>. Fish movement
+  offshore is a documented avoidance signal
+  <span class="cite" tabindex="0">2</span>.</p>
+  <div class="why"><b>Why</b>Superscript chips at 10px violate Fitts's law and
+  shift line-height. Baseline alignment with an oversized invisible target keeps
+  the prose calm and the chip easy to hit — including on a trackpad, on stage,
+  under pressure.</div>
+</div>
+
+<div class="principle">
+  <span class="num">PRINCIPLE 06</span>
+  <h4>Progressive disclosure over dense dumps</h4>
+  <p>Answer first, then sources, then the raw chunk. Scores and match arms are
+  collapsed until asked for. The knowledge panel shows corpus structure —
+  15 chapters, 188 chunks — not a wall of filenames.</p>
+  <div class="why"><b>Why</b>A judge has three to five minutes. Miller's limit is
+  real: showing everything at once means nothing is read. The depth must exist
+  for the sceptic and stay out of the way for everyone else.</div>
+</div>
+
+<div class="principle">
+  <span class="num">PRINCIPLE 07</span>
+  <h4>Respect the reading measure</h4>
+  <p>Answer prose is capped at 68ch regardless of viewport. Excerpts clamp to
+  three lines with a reveal.</p>
+  <div class="compare">
+    <div class="pane bad"><div class="tag">✕ Unbounded</div>
+      <p style="max-width:none;font-size:var(--t-sm)">At 1400px the centre column
+      runs past 110 characters per line, and the eye loses its place on every
+      return sweep — the reader silently re-reads lines without noticing why the
+      text feels tiring, which is exactly the wrong feeling to induce in someone
+      evaluating whether your answer is trustworthy.</p></div>
+    <div class="pane good"><div class="tag">✓ 68ch measure</div>
+      <p style="max-width:44ch;font-size:var(--t-sm)">At 68 characters the return
+      sweep is short enough that the eye tracks reliably. Comfortable prose reads
+      as competent prose.</p></div>
+  </div>
+  <div class="why"><b>Why</b>45–75 characters is the long-established
+  readability band. The answer is the product; it has to be pleasant to read.</div>
+</div>
+
+<div class="principle">
+  <span class="num">PRINCIPLE 08</span>
+  <h4>Theme through restraint</h4>
+  <p>Bioluminescence is carried by three cheap effects: two drifting radial light
+  shafts, twelve rising spores, and glow confined to interactive and verified
+  elements. Animation pauses when the tab is hidden and stops entirely under
+  <code>prefers-reduced-motion</code>.</p>
+  <div class="why"><b>Why</b>The original mockup ran 26 spores plus two 60vw
+  <code>blur(90px)</code> gradients, compositing continuously. That is
+  comfortable on a dev laptop and risky on unknown projector hardware. Dropped
+  frames during the demo cost more than the extra particles ever earn.</div>
+</div>
+
+<div class="principle">
+  <span class="num">PRINCIPLE 09</span>
+  <h4>Keyboard and screen reader are first-class</h4>
+  <p>Skip link is the first tab stop. All controls reach 44px minimum. The
+  pipeline stepper is an <code>aria-live="polite"</code> region so progress is
+  announced. Role and filter groups use real <code>aria-pressed</code> state.
+  Focus ring is a 2px cyan outline with 2px offset, never removed.</p>
+  <div class="why"><b>Why</b>The corpus asks for symbols and audio for people
+  with limited literacy, and for confirmed understanding of emergency messages.
+  A tool for emergency response that only works with a mouse and working eyes
+  contradicts its own content.</div>
+</div>
+
+<div class="principle">
+  <span class="num">PRINCIPLE 10</span>
+  <h4>Every control must change something real</h4>
+  <p>The Guardian / Researcher / Healer / Citizen switch applies an access-class
+  filter to retrieval, per POL-005. A Citizen asking for clinical dosing gets a
+  withheld-source notice, not a silently identical answer.</p>
+  <div class="why"><b>Why</b>A decorative control is worse than a missing one. A
+  judge who clicks a persona, sees no change, and realises it is theatre will
+  discount everything else on screen — including the parts that are real.</div>
+</div>
+
+<h2>3 · Components</h2>
+
+<h3>Buttons — 44px minimum target</h3>
+<div class="card"><div class="row">
+  <button class="btn btn-primary">Retrieve &amp; Answer</button>
+  <button class="btn btn-ghost">Clear session</button>
+  <button class="btn btn-ghost" disabled>Indexing…</button>
+</div></div>
+
+<h3>Inputs</h3>
+<div class="card">
+  <label for="demo-q" style="display:block;font-size:var(--t-xs);letter-spacing:1px;
+    text-transform:uppercase;color:var(--ink-3);margin-bottom:var(--s-2)">Question</label>
+  <input id="demo-q" placeholder="What immediate actions follow a yellow plume at Obsidian Reach?">
+  <p style="font-size:var(--t-sm);margin:var(--s-2) 0 0">Focus ring is a 4px cyan
+  wash plus a border shift — visible without moving layout.</p>
+</div>
+
+<h3>Confidence meter</h3>
+<div class="card">
+  <div class="row"><span style="font-family:var(--mono);font-size:var(--t-sm);
+    color:var(--glow-teal);font-weight:700">0.87</span>
+    <span class="meter" style="max-width:220px"><i style="width:87%"></i></span>
+    <span class="badge b-verified">✓ Fully grounded</span></div>
+  <p style="font-size:var(--t-sm);margin-top:var(--s-3)">The number is always
+  present next to the bar. A bar alone is a shape, not a value.</p>
+</div>
+
+<h3>Contrast obligations</h3>
+<div class="scroller"><table>
+  <thead><tr><th>Element</th><th>Pair</th><th>Ratio</th><th>Requirement</th></tr></thead>
+  <tbody>
+    <tr><td>Report body</td><td>foam on deep current</td><td>15.70:1</td><td>AAA ✓</td></tr>
+    <tr><td>Verified-evidence chip</td><td>lume on deep current</td><td>13.90:1</td><td>AAA ✓</td></tr>
+    <tr><td>Citation chip, agent label</td><td>cyan on deep current</td><td>10.59:1</td><td>AAA ✓</td></tr>
+    <tr><td>W2 advisory, inference rule</td><td>amber on deep current</td><td>8.10:1</td><td>AAA ✓</td></tr>
+    <tr><td>Source excerpt</td><td>mist on deep current</td><td>6.97:1</td><td>AA ✓</td></tr>
+    <tr><td>Panel label, relevance bar</td><td>reef teal on deep current</td><td>5.61:1</td><td>AA ✓</td></tr>
+    <tr><td>Orchestrator badge</td><td>violet #9A8DF5 on deep current</td><td>5.82:1</td><td>AA ✓</td></tr>
+    <tr><td>W3 emergency, contradiction</td><td>coral on deep current</td><td>5.15:1</td><td>AA ✓</td></tr>
+    <tr><td>Page locator, score</td><td>mist-dim on deep current</td><td>4.72:1</td><td>AA ✓ (floor)</td></tr>
+    <tr><td>Primary button</td><td>#04141a on cyan</td><td>8.9:1</td><td>AAA ✓</td></tr>
+    <tr><td>Focus ring</td><td>cyan on abyss</td><td>11.7:1</td><td>Non-text AA ✓</td></tr>
+  </tbody>
+</table></div>
+
+</main>
+
+<footer>
+  Pandora Knowledge Guardian · design system reference ·
+  ratios computed from WCAG 2.1 relative luminance against <code>--abyss-1</code>
+</footer>
+</div>
+</body>
+</html>
