@@ -5,6 +5,12 @@
 
 > **Status:** Source of truth. Design/spec only — no code.
 > Every other artifact (README, architecture diagram, implementation, pitch deck) derives from this file.
+>
+> **Reading the § references.** A bare `§` is a section of **this file**. Sections of the knowledge
+> corpus are written as **"corpus §x.y"** or named in full. The two schemes collide — *corpus §4.5* is
+> the Water Incident Classification, *§4.5 here* is Source References — so the qualifier is load-bearing.
+> Stack conventions (folders, naming, casing, the two-service split) live in **`CLAUDE.md`**; wire
+> shapes live in **`docs/API_CONTRACT.md`**. Where this file and those disagree, they are a bug — say so.
 > **Scoring target:** 100/100 — with the 45 marks in RAG Core + Grounding treated as non-negotiable.
 > **Build discipline:** the [Bankable Build Order](#10-bankable-build-order--fallback-plan) is binding. Layer 1 banks 45 marks on its own and ships before anything else is written.
 
@@ -105,7 +111,7 @@ No human connects those six records under time pressure. A guardian standing on 
 
 That distinction is the whole product. A chatbot returns a paragraph and a list of links. A command center returns **a Situation Report** — a live, structured, operational document that a guardian can act on without reading twice: what the priority is, which species are at risk, what might have caused it, what to do right now, what the evidence is, and how much to trust it.
 
-Underneath, it is a rigorous RAG system. It ingests the Pandora corpus (plus any PDF/TXT/CSV/DOCX a user uploads) into a **record-aware** index, retrieves via **hybrid search + semantic reranking**, and passes every claim through **GroundingGate** — a validator implementing the corpus's own eight Retrieval Grounding Rules. Every claim carries an inline citation to a real record ID (`INC-005`, `FAU-003`, `WS-03`). Every source card shows its excerpt, page, relevance score, and the corpus's own evidence-quality label.
+Underneath, it is a rigorous RAG system. It ingests the Pandora corpus (plus any PDF/TXT/CSV/DOCX a user uploads) into a **record-aware** index, retrieves via **hybrid search + LLM reranking**, and passes every claim through **GroundingGate** — a validator implementing the corpus's own eight Retrieval Grounding Rules. Every claim carries an inline citation to a real record ID (`INC-005`, `FAU-003`, `WS-03`). Every source card shows its excerpt, page, relevance score, and the corpus's own evidence-quality label.
 
 On top of that core, an **orchestrator** rewrites the query, classifies emergency priority against the corpus's own W1–W4 scale, and dispatches **three fixed specialist agents in parallel** — each owning one section of the report and filling it live on screen. A stylized Pandora map lights the affected region by priority. A role toggle re-renders the same evidence for Researcher, Citizen, or Guardian. And when the evidence is thin, the report does not fabricate — it prints **"Insufficient Evidence — Recommend Field Investigation"** and says what field data would resolve it.
 
@@ -136,6 +142,23 @@ The SITREP is the product's single output contract. Every query produces one. It
 4. **The report is the same object in every mode.** Single-agent (Layer 2) and three-agent parallel (Layer 5) produce the *identical* SITREP structure — only the fill mechanism differs. This is what makes the degradation ladder invisible to a judge.
 
 **Why the report format itself scores.** The 20-mark *Real-World Problem Solving* criterion asks that "recommendations are practical and clearly explained." A prose paragraph about coral damage is not practical. A report with a priority class, a species list, ranked hypotheses, an ordered action list, and a next-review time is something an incident lead can execute from. The format *is* the real-world value.
+
+#### The report crosses two services — so its contract is frozen first
+
+The SITREP is **assembled in the agent service** (`agent/`, Lakshitha) but reaches the browser
+**through the gateway** (`backend/`, Manujaya), and is **rendered by the frontend** (`frontend/`,
+Nipuna). Three people build against this one object simultaneously, which has two consequences worth
+stating as rules rather than discovering at integration:
+
+1. **The §7.1 event schema is frozen in the first 30 minutes and only ever extended.** New step types
+   are additive; none is ever removed or renamed, and an unknown `step_type` must be ignored by the
+   client rather than crash it. This is what lets Nipuna build the whole parallel-assembly animation
+   against a **mock SSE stream** before the orchestrator exists.
+2. **The gateway forwards events unbuffered.** It adds `document_name` and persists the trace, but it
+   must never aggregate the stream and return it whole — that silently converts progressive assembly
+   into a single late render, and Wow feature 1 disappears without any error to explain why.
+
+Full wire shapes: `docs/API_CONTRACT.md` §1.1 (the report) and §1.2 (the event schema).
 
 ---
 
@@ -168,7 +191,7 @@ flowchart TD
     C["3 · Orchestrator<br/>rewrite → classify priority → route"] --> D
     C --> M["3a · 🔴 Priority banner<br/>W1–W4, cited"]
     C --> N["3b · Map lights affected REG-* zone"]
-    D["4 · Hybrid retrieval + rerank<br/>BM25 + vector → semantic ranker"] --> E
+    D["4 · Hybrid retrieval + rerank<br/>BM25 + vector → RRF → LLM reranker"] --> E
     E["5 · Parallel section assembly"] --> E1 & E2 & E3
     E1["🐋 Marine-Life<br/>→ Affected Species"] --> F
     E2["🌊 Investigator<br/>→ Likely Causes"] --> F
@@ -188,7 +211,7 @@ flowchart TD
 1. **Access.** The full Pandora corpus ships **pre-indexed** — the app is useful the second it loads, with zero setup. Judges never wait on an upload. Uploading additional documents is supported and demoed, but is never on the critical path.
 2. **Describe.** Free-text. A guardian describes a situation in plain language, not a keyword query — *"the water near Awa Reef has turned turquoise and the fish are leaving."*
 3. **Orchestrate.** Query rewritten and expanded, classified by use case and by W1–W4 priority, routed. **Two things render immediately, before any generation completes:** the priority banner (3a) and the map zone (3b). This matters for perceived speed — the screen is never blank and never spinning.
-4. **Retrieve.** Hybrid BM25 + vector, RRF fusion, semantic rerank, metadata filters.
+4. **Retrieve.** Hybrid BM25 + vector, RRF fusion, LLM rerank, metadata filters.
 5. **Assemble in parallel.** Three specialists each fill their owned SITREP section concurrently, generating **only** from retrieved context, emitting a citation marker per claim. Sections stream in as they complete — the report visibly builds rather than appearing all at once.
 6. **Validate.** GroundingGate checks each section against the eight corpus rules. One retry maximum, per section.
 7. **Report renders.** Progressive: each section appears the moment it passes validation.
@@ -323,9 +346,13 @@ Batched at 64 chunks per request with retry-with-backoff on 429.
 | `m` | 4 | Default; ample for ~220 vectors |
 | `efConstruction` | 400 | Build-time quality; indexing is cheap here |
 | `efSearch` | 500 | Favour recall — our corpus is tiny, latency is not the constraint |
-| Semantic config | enabled on `title` + `content` | Powers the L2 reranker (§4.3) |
+| Semantic config | **not available** | We are on the **free F0 tier, which has no semantic reranker** — that is Basic-tier and above. Reranking is done with a batched `gpt-4o-mini` call instead (§4.3). |
 
-Azure AI Search is chosen over Chroma/FAISS for one decisive reason: it provides **native hybrid search and a built-in semantic reranker**. Those are two of the brief's bonus features, obtained as managed configuration rather than build time. In a 5-hour window, buying two rubric features with a config block instead of an afternoon is the correct trade.
+> ⚠️ **F0 has no built-in semantic ranker, so nothing may be architected around it.** This is a real
+> constraint, not a caveat to note and forget. The rerank stage is **ours**, and it is the primary path
+> — see §4.3. Do not write code that assumes an `@search.rerankerScore` will come back.
+
+Azure AI Search is still chosen over Chroma/FAISS for one decisive reason: **native hybrid search as managed configuration rather than build time.** BM25 + vector + fusion is one of the brief's bonus features obtained with a config block instead of an afternoon, and on F0 we lose only the reranker — which costs us one extra LLM call, not a day of work. In a 5-hour window that is still the correct trade.
 
 ### 4.3 Semantic Retrieval
 
@@ -348,20 +375,36 @@ Conversely, a question like *"why are the animals leaving?"* shares no keywords 
 | 3 | **BM25 keyword leg** — `k = 30` | 30 candidates |
 | 4 | **Vector leg** — `k = 30`, cosine, `efSearch = 500` | 30 candidates |
 | 5 | **RRF fusion** — reciprocal rank fusion across both legs and both query variants | ~40 deduplicated candidates |
-| 6 | **Semantic reranking** — Azure AI Search semantic ranker (L2 cross-attention) | Reordered, scored `0–4` |
+| 6 | **LLM reranking** — one batched `gpt-4o-mini` call scores every candidate jointly against the query | Reordered, scored `0–10` |
 | 7 | **Top-k selection** — take top **6**, or top **8** for comparison queries | Final context |
-| 8 | **Score normalization** — rerank score mapped to a `0–100` relevance percentage | Shown on every source card |
+| 8 | **Score normalization** — `rerank_score / 10` → a `0.0–1.0` `relevance_score`, shown as a percentage | Shown on every source card |
+
+#### The reranker is ours, and it is the primary path
+
+**F0 has no semantic ranker**, so stage 6 is a single batched call: all ~40 candidates and the query
+go into one `gpt-4o-mini` request, which returns an integer `0–10` per candidate. One call, ~600 ms,
+`rerank_mode: "llm"`.
+
+Three reasons this is a good trade rather than a compromise:
+- **It's one LLM call inside a budget of 8.** Cheap in both latency and quota.
+- **An integer 0–10 is a scale a model emits reliably**, unlike a float, and it maps cleanly to the
+  `relevance_score` the brief requires on every source card.
+- **It is still a genuine joint query-chunk scoring stage** — which is where reranking's value comes
+  from, not from any particular vendor's implementation.
+
+*Degraded path:* if reranking is unavailable entirely, retrieval falls through to raw RRF fusion order
+(`rerank_mode: "none"`). Quality drops; nothing breaks.
 
 #### Why these numbers
 
 - **`k = 30` per leg.** Deliberately over-retrieve. The reranker is the precision instrument; the retrievers only need recall. On a 220-chunk corpus, 30 candidates is ~14% of the index — near-certain to contain every relevant record, at negligible latency.
 - **Top 6 into context.** Records average ~1,100 characters, so 6 chunks ≈ 6.6k characters ≈ 1.7k tokens. That leaves generous headroom in `gpt-4o-mini`'s window for the system prompt, conversation, and output — while staying small enough to avoid "lost in the middle" degradation. Six is also the practical ceiling for source cards a judge can actually scan on screen.
 - **Top 8 for comparisons.** A compare query legitimately needs both subjects covered (e.g. `INC-001` *and* `INC-005`, plus their supporting evidence). Six risks starving one side.
-- **Rerank threshold `1.8` of 4.0.** Below this, the top result is not genuinely on-topic → triggers the insufficient-evidence path (§4.6). Calibrated against known-good and known-absent questions during build.
+- **Rerank threshold `4.5` of 10.** Below this, the top result is not genuinely on-topic → triggers the insufficient-evidence path (§4.6). Calibrated against all 7 brief questions plus all 3 corpus §15.1 questions, and against known-absent questions, before freeze.
 
 #### How reranking and query rewriting improve relevance
 
-**Reranking** is the highest-value retrieval upgrade available. Bi-encoder embedding search compresses a whole chunk into one vector before it ever sees the query — cheap and lossy. The semantic ranker scores query and chunk *jointly*, catching relevance that vector distance misses. Concretely: for *"what should we do if shellfish are dying near the black-sand coast?"*, vector search surfaces several generic water-quality sections; the reranker promotes `INC-005 Vent Plume Release` to the top because it jointly matches *shellfish* + *dying* + *coast* + *immediate actions*.
+**Reranking** is the highest-value retrieval upgrade available. Bi-encoder embedding search compresses a whole chunk into one vector before it ever sees the query — cheap and lossy. Scoring query and chunk *jointly* catches relevance that vector distance misses. Concretely: for *"what should we do if shellfish are dying near the black-sand coast?"*, vector search surfaces several generic water-quality sections; the reranker promotes `INC-005 Vent Plume Release` to the top because it jointly matches *shellfish* + *dying* + *coast* + *immediate actions*.
 
 **Query rewriting** repairs three specific failure modes in this corpus:
 1. **Vocabulary gap** — a citizen says *"the water looks weird and blue-green"*; the corpus says *"water turns bright turquoise"*. The rewriter emits both.
@@ -464,7 +507,7 @@ Model self-assessment of uncertainty is unreliable; a rule is not. Any of:
 
 | Trigger | Threshold |
 |---|---|
-| Weak retrieval | Top rerank score `< 1.8 / 4.0` |
+| Weak retrieval | Top rerank score `< 4.5 / 10` |
 | No supported claims | GroundingGate groundedness `= 0` |
 | Post-retry failure | Retry exhausted, zero claims survive |
 | Sub-agent timeout with no partial result | 8 s elapsed, nothing returned |
@@ -483,7 +526,7 @@ Always present, always **states its reason**. A bare number is not explainable; 
 
 | Level | Condition | Example reason string |
 |---|---|---|
-| **High** | Groundedness ≥ 90%, top rerank ≥ 3.0, ≥ 3 sources, no conflicts | *"High — 5 sources, all verified observations, no conflicts"* |
+| **High** | Groundedness ≥ 90%, top rerank ≥ 7.5 / 10, ≥ 3 sources, no conflicts | *"High — 5 sources, all verified observations, no conflicts"* |
 | **Moderate** | Groundedness ≥ 70%, or conflicts present | *"Moderate — 3 sources, 1 unresolved conflict, chain of custody incomplete"* |
 | **Low** | Groundedness ≥ 40%, or sources are provisional/disputed only | *"Low — 2 sources, both provisional interpretation"* |
 | **Insufficient** | Any trigger above | *"Insufficient — no record scored above the relevance threshold"* |
@@ -668,7 +711,7 @@ Total orchestration budget stays at 25 s with comfortable headroom. Adding the t
 | Feature | Primary rubric target | Why it earns marks |
 |---|---|---|
 | **Hybrid search (BM25 + vector, RRF)** | RAG **25** | Correctness requirement, not a nicety — record IDs and invented proper nouns need exact match (§4.3) |
-| **Semantic reranking** | RAG **25** | Highest-value precision upgrade; joint query-chunk scoring |
+| **LLM reranking** | RAG **25** | Highest-value precision upgrade; joint query-chunk scoring. Ours, because F0 has no semantic ranker (§4.3). |
 | **Record-aware chunking** | RAG **25** | Our biggest differentiator; prevents the cross-record merge the corpus explicitly prohibits |
 | **Query rewriting & expansion** | RAG **25** | Closes vocabulary gap, resolves coreference, promotes IDs to filters |
 | **Metadata filtering** | RAG **25** | Region/type/date/severity narrowing before search |
@@ -747,7 +790,7 @@ Every step emitted to the client over Server-Sent Events as it happens:
 | `map.zone_lit` | Map zone ignites | *"REG-01 Luminous Shelf → 🔴"* |
 | `route.decided` | Mode, which specialists, and **why** | *"Incident indicators detected → sitrep mode → dispatching 3 specialists in parallel"* |
 | `retrieval.started` | Per specialist: filters, k | *"BM25 + vector, k=30, filter: record_type=incident"* |
-| `retrieval.completed` | Candidates found, reranked, kept | *"38 candidates → reranked → top 8 · best score 3.71"* |
+| `retrieval.completed` | Candidates found, reranked, kept | *"38 candidates → reranked → top 8 · best score 9.4"* |
 | `agent.thinking` | Specialist active, live elapsed | *"🌊 Incident Investigator — analysing 8 sources… 1.8 s"* |
 | **`section.filling`** | **A SITREP section begins streaming, badged with its owning agent** | *"🐋 Affected Species — filling…"* |
 | **`section.completed`** | **Section done: claim count + source count** | *"🐋 Affected Species — 3 species, 4 claims, 4 sources · 2.6 s"* |
@@ -921,101 +964,122 @@ This is a correctness requirement, not an optimization. If flipping Guardian →
 
 ## 9. Data Model
 
-**Split of responsibilities:** Azure AI Search owns vectors and search-time metadata. PostgreSQL (EF Core) owns durable application state, audit, and traces. No duplication of chunk *content* as source of truth — Search is authoritative for retrieval; Postgres stores the chunk reference and metadata for traceability.
+**Split of responsibilities:** Azure AI Search owns vectors and search-time metadata. PostgreSQL (SQLAlchemy 2.0 + Alembic) owns durable application state, audit, and traces. No duplication of chunk *content* as source of truth — Search is authoritative for retrieval; Postgres stores the chunk reference and metadata for traceability.
 
-### 9.1 PostgreSQL (EF Core)
+### 9.1 PostgreSQL — SQLAlchemy 2.0 + Alembic
 
-**`Documents`**
+**Everything is `snake_case`, tables plural**, per `CLAUDE.md`. Python, Pydantic, SQLAlchemy, Postgres,
+and our JSON contract all use `snake_case` natively — one convention, zero configuration, and no
+translation layer anywhere between the database and the browser.
+
+**Corpus record IDs are the one exception to any casing rule.** `INC-005` and `FAU-014` are stored
+verbatim as they appear in the corpus, because they are citation anchors — a re-cased record ID is a
+broken citation.
+
+**`documents`**
 | Column | Type | Notes |
 |---|---|---|
-| `Id` | uuid PK | |
-| `FileName` | text | Displayed on source cards |
-| `ContentType` | text | pdf / txt / csv / docx |
-| `SizeBytes` | bigint | |
-| `PageCount` | int | |
-| `IsPreloaded` | bool | True for the Pandora corpus |
-| `IngestStatus` | enum | Pending / Extracting / Chunking / Embedding / Indexed / Failed |
-| `ChunkCount` | int | |
-| `UploadedByUserId` | uuid FK → Users | Nullable |
-| `CreatedAt` | timestamptz | |
+| `id` | uuid PK | |
+| `file_name` | text | Displayed on source cards |
+| `content_type` | text | pdf / txt / csv / docx |
+| `size_bytes` | bigint | |
+| `page_count` | int | |
+| `is_preloaded` | bool | True for the Pandora corpus — **and it is not deletable** |
+| `ingest_status` | enum | `pending` / `extracting` / `chunking` / `embedding` / `indexed` / `failed` |
+| `chunk_count` | int | |
+| `record_count` | int | Corpus-style records detected; `0` ⇒ narrative chunking |
+| `chunking_mode` | enum | `record_aware` / `narrative` |
+| `error_message` | text | Nullable |
+| `uploaded_by_user_id` | uuid FK → `users` | Nullable |
+| `created_at` | timestamptz | |
+| `indexed_at` | timestamptz | Nullable |
 
-**`Chunks`** — metadata mirror for traceability and UI; vector lives only in Search.
+**`chunks`** — metadata mirror for traceability and UI; the vector lives only in Search.
 | Column | Type | Notes |
 |---|---|---|
-| `Id` | uuid PK | Matches Search `chunk_id` |
-| `DocumentId` | uuid FK | |
-| `RecordId` | text | `INC-005` — indexed |
-| `RecordType` | enum | incident / fauna / flora / policy / region / settlement / health / accommodation / knowledge_card / monitoring / field_note / narrative |
-| `Title` | text | |
-| `Chapter`, `Section` | text | |
-| `Page` | int | |
-| `RegionId` | text | `REG-05`, nullable |
-| `EvidenceQuality` | enum | 5-value corpus taxonomy |
-| `RiskLevel` | enum | Low / Medium / High / Critical, nullable |
-| `RecordDate` | date | Nullable — for `WS-*`, `SV-*`, `FN-*` |
-| `FieldName` | text | Nullable |
-| `Content` | text | |
-| `TokenCount` | int | |
+| `id` | uuid PK | Matches Search `chunk_id` |
+| `document_id` | uuid FK | |
+| `record_id` | text | `INC-005` — indexed |
+| `record_type` | enum | `incident` / `fauna` / `flora` / `policy` / `region` / `settlement` / `health` / `accommodation` / `knowledge_card` / `monitoring` / `field_note` / `narrative` |
+| `title` | text | |
+| `chapter`, `section` | text | |
+| `page` | int | |
+| `region_id` | text | `REG-05`, nullable |
+| `evidence_quality` | enum | `verified_observation` / `community_tradition` / `provisional_interpretation` / `modeled_estimate` / `disputed_report` |
+| `risk_level` | enum | `low` / `medium` / `high` / `critical`, nullable |
+| `record_date` | date | Nullable — for `WS-*`, `SV-*`, `FN-*` |
+| `field_name` | text | Nullable |
+| `content` | text | |
+| `token_count` | int | |
 
-**`Conversations`** — `Id`, `UserId`, `RoleLens`, `Title`, `CreatedAt`.
+**`conversations`** — `id`, `user_id`, `role_lens`, `title`, `created_at`.
 
-**`Queries`** — one row per question.
-`Id`, `ConversationId`, `RawQuestion`, `RewrittenQuestion`, `UseCase`, `SeverityClass` (W1–W4), `QueryShape`, `AnswerText`, `GroundednessScore`, `ConfidenceScore`, `ConfidenceReason`, `WasInsufficient`, `HadConflict`, `TotalLatencyMs`, `LlmCallCount`, `CreatedAt`.
+**`queries`** — one row per question.
+`id`, `conversation_id`, `raw_question`, `rewritten_question`, `use_case`, `severity_class` (`W1`–`W4`), `query_shape`, `groundedness_score`, `confidence_level`, `confidence_reason`, `was_insufficient`, `had_conflict`, `total_latency_ms`, `llm_call_count`, `created_at`.
 
-**`SituationReports`** — one per query; the Command Center's output object.
+**`situation_reports`** — one per query; the Command Center's output object.
 | Column | Type | Notes |
 |---|---|---|
-| `Id` | uuid PK | |
-| `QueryId` | uuid FK | 1:1 with `Queries` |
-| `PriorityClass` | enum | `W1` / `W2` / `W3` / `W4` / `Informational` |
-| `PriorityReason` | text | Human-readable, e.g. *"fish deaths and severe oxygen loss reported"* |
-| `PriorityCitation` | text | Record/section the classification is grounded in — `§4.5 p.12` |
-| `AffectedRegionIds` | text[] | `REG-01`, `REG-05` — **drives the map** (§8.5) |
-| `AssemblyMode` | enum | `Sitrep` / `Focused` / `Compare` / `SingleAgentFallback` — records which path produced it |
-| `ConfidenceLevel` | enum | High / Moderate / Low / Insufficient |
-| `ConfidenceReason` | text | The stated reason shown on the meter |
-| `WasPartial` | bool | True if any section timed out |
+| `id` | uuid PK | |
+| `query_id` | uuid FK | 1:1 with `queries` |
+| `priority_class` | enum | `w1` / `w2` / `w3` / `w4` / `informational` |
+| `priority_reason` | text | Human-readable, e.g. *"fish deaths and severe oxygen loss reported"* |
+| `priority_citation` | text | Record/section the classification is grounded in — `§4.5` |
+| `priority_page` | int | Nullable |
+| `affected_region_ids` | text[] | `REG-01`, `REG-05` — **drives the map** (§8.5) |
+| `assembly_mode` | enum | `sitrep` / `focused` / `compare` / `single_agent_fallback` — records which path produced it |
+| `confidence_level` | enum | `high` / `moderate` / `low` / `insufficient` |
+| `confidence_reason` | text | The stated reason shown on the meter |
+| `was_partial` | bool | True if any section timed out |
 
-**`ReportSections`** — one row per SITREP section; the unit of independent success or failure.
+**`report_sections`** — one row per report section; the unit of independent success or failure.
 | Column | Type | Notes |
 |---|---|---|
-| `Id` | uuid PK | |
-| `SituationReportId` | uuid FK | |
-| `SectionType` | enum | `Priority` / `AffectedSpecies` / `LikelyCauses` / `RecommendedActions` / `Sources` / `Confidence` |
-| `OwningAgent` | enum | `Orchestrator` / `MarineLifeProtector` / `IncidentInvestigator` / `EmergencyResponder` |
-| `Status` | enum | `Filled` / `Empty` / `TimedOut` / `NotApplicable` |
-| `EmptyReason` | text | Nullable — *"cause not established, 3 records conflict"* |
-| `Content` | text | Rendered markdown for this section |
-| `ClaimCount` | int | Factual claims made |
-| `SupportedClaimCount` | int | Claims that passed GroundingGate — section-level groundedness |
-| `DurationMs` | int | Fill time; powers the trace |
-| `DisplayOrder` | int | Fixed section order per §2.1 |
+| `id` | uuid PK | |
+| `situation_report_id` | uuid FK | |
+| `section_type` | enum | `priority` / `affected_species` / `likely_causes` / `recommended_actions` / `sources` / `confidence` |
+| `owning_agent` | enum | `orchestrator` / `marine_life_protector` / `incident_investigator` / `emergency_responder` |
+| `status` | enum | `filled` / `empty` / `timed_out` / `not_applicable` |
+| `empty_reason` | text | Nullable — *"cause not established, 3 records conflict"* |
+| `content` | text | Rendered markdown for this section |
+| `claim_count` | int | Factual claims made |
+| `supported_claim_count` | int | Claims that passed GroundingGate — section-level groundedness |
+| `duration_ms` | int | Fill time; powers the trace |
+| `display_order` | int | Fixed section order per §2.1 |
 
 > **Why sections are rows, not JSON on the report.** Independent status per section is the whole point of §2.1 — a section must be able to time out without touching its siblings, and the trace must be able to stream `section.completed` events individually. Modelling them as rows makes partial reports a first-class, queryable state rather than a parsing exercise.
 
-**Role toggle stores nothing new.** It re-renders `ReportSections.Content` client-side against the frozen `Citations` set — no additional persistence, no re-query (§8.6).
+**Role toggle stores nothing new.** It re-renders `report_sections.content` client-side against the frozen `citations` set — no additional persistence, no re-query (§8.6).
 
-**`Citations`** — the evidence trail; one row per source used in an answer.
-`Id`, `QueryId`, `SituationReportId`, `SectionType`, `ChunkId`, `RecordId`, `RelevanceScore`, `RerankScore`, `Excerpt`, `DisplayOrder`, `WasCitedInline`.
+**`citations`** — the evidence trail; one row per source used in an answer.
+`id`, `query_id`, `situation_report_id`, `section_type`, `chunk_id`, `record_id`, `marker`, `relevance_score`, `rerank_score`, `excerpt`, `display_order`, `was_cited_inline`.
 
-*(`SectionType` added so the Sources section can show which report section each citation supports, and so clicking a map zone can filter citations by region via `Chunks.RegionId`.)*
+*(`section_type` is present so the Sources section can show which report section each citation supports, and so clicking a map zone can filter citations by region via `chunks.region_id`.)*
 
-**`AgentRuns`** — one per specialist invocation.
-`Id`, `QueryId`, `AgentName`, `Status` (Completed / TimedOut / Failed / Retried), `AttemptNumber`, `RetrievedCount`, `ClaimCount`, `DurationMs`, `StartedAt`.
+**`agent_runs`** — one per specialist invocation.
+`id`, `query_id`, `agent_name`, `status` (`completed` / `timed_out` / `failed` / `retried`), `attempt_number`, `retrieved_count`, `claim_count`, `duration_ms`, `started_at`.
 
-**`AgentSteps`** — the replayable trace.
-`Id`, `QueryId`, `AgentRunId` (nullable — orchestrator steps have none), `StepType` (matches §7.1), `Payload` (jsonb), `DurationMs`, `SequenceNumber`, `OccurredAt`.
+**`agent_steps`** — the replayable trace.
+`id`, `query_id`, `agent_run_id` (nullable — orchestrator steps have none), `step_type` (matches §7.1), `payload` (jsonb), `duration_ms`, `sequence_number`, `occurred_at`.
 
-**`GroundingChecks`** — per-rule audit.
-`Id`, `QueryId`, `RuleNumber` (1–8), `RuleName`, `Passed`, `Detail`.
+**`grounding_checks`** — per-rule audit.
+`id`, `query_id`, `rule_number` (1–8), `rule_name`, `passed`, `detail`.
 
-**`Conflicts`** — `Id`, `QueryId`, `RecordIdA`, `RecordIdB`, `ConflictNature`, `ReliabilityLimitation`.
+**`conflicts`** — `id`, `query_id`, `record_id_a`, `record_id_b`, `conflict_nature`, `reliability_limitation`.
 
-**`Users`** — `Id`, `SupabaseUserId`, `Email`, `DisplayName`, `Role` (Guardian / Researcher / Citizen), `CreatedAt`.
+**`users`** — `id`, `supabase_user_id`, `email`, `display_name`, `role_lens` (`guardian` / `researcher` / `citizen`), `created_at`.
+
+> **`role_lens` on `users` is a display preference, not an authorization boundary.** The role toggle
+> changes register, never access. There is no per-role data filtering anywhere in the system — that
+> would be a *different* feature, and it would break the frozen-evidence guarantee in §8.6.
+
+**All of this sits behind a repository protocol with an in-memory implementation as the demo default**
+(§12). Postgres is the production target; a connection-string mistake must not be able to take the app
+down on stage.
 
 ### 9.2 Azure AI Search index
 
-Single index `pandora-knowledge`, fields exactly as §4.2's metadata table, plus `content_vector` (1536-dim, HNSW, cosine) and a semantic configuration over `title` + `content`.
+Single index `pandora-knowledge`, fields exactly as §4.2's metadata table, plus `content_vector` (1536-dim, HNSW, cosine). **No semantic configuration** — F0 doesn't offer one; reranking is the LLM stage in §4.3.
 
 ### 9.3 Why the trace is persisted
 
@@ -1135,9 +1199,9 @@ Three *independent* flags (§8.5, §8.6, §7.2), deliberately not one. A broken 
 
 | Time | Layer | Milestone | Gate |
 |---|---|---|---|
-| **T+0:00 – 0:30** | 1 | Scaffold: .NET API + Next.js, Azure AI Search index created, Foundry connectivity verified. **API contract frozen.** | Both endpoints respond |
+| **T+0:00 – 0:30** | 1 | Scaffold: **FastAPI gateway (`backend/`) + FastAPI agent (`agent/`) + Next.js**, Azure AI Search index created, Foundry connectivity verified. **API contract frozen — including the SSE event schema.** | All three services respond |
 | **T+0:30 – 1:15** | 1 | Ingestion: PDF extraction, record-aware chunker, embedding, indexing. Corpus indexed. | **Manual verification: 10 sampled records — `INC-005`, `FAU-014`, `WS-03`, `FN-A`, `POL-001`, `KC-01` — each a clean, complete, unmerged chunk** |
-| **T+1:15 – 1:45** | 1 | Retrieval: hybrid + rerank + scores. Tested via API against all 7 brief questions. | Correct records in top-6 for all 7 |
+| **T+1:15 – 1:45** | 1 | Retrieval: hybrid + LLM rerank + scores. Tested via API against all 7 brief questions **and the 3 corpus §15.1 questions**. | Correct records in top-6 for all 10 |
 | **T+1:45 – 2:00** | 1 | Grounded generation + citations + source cards + insufficient-evidence path | **🔒 GATE: `v1-core-rag` tagged. 45 marks banked.** |
 | **T+2:00 – 2:40** | 2 | UI: theme, Command Center layout, question input, streaming, **SITREP six-section renderer**, inline citation chips, reset | **🔒 GATE: `v2-sitrep` tagged** |
 | **T+2:40 – 3:00** | 3 | Triage banner: W1–W4 classification + cited reason + 🔴/🟠/🟢 component | Banner renders before generation completes |
@@ -1235,8 +1299,8 @@ Plus the corpus's own §15.1 test questions — *immediate steps for water colou
 | Ingestion | PDF (primary) + TXT/CSV/DOCX; preloaded corpus; upload + delete |
 | Chunking | Two-tier record-aware + narrative + table-row |
 | Embeddings | `text-embedding-3-small`, batched |
-| Vector store | Azure AI Search, HNSW, hybrid + semantic ranker |
-| Retrieval | Query rewriting, metadata filters, RRF hybrid, rerank, scoring |
+| Vector store | Azure AI Search **F0**, HNSW, native hybrid search |
+| Retrieval | Query rewriting, metadata filters, RRF hybrid, **LLM rerank (0–10)**, scoring |
 | Generation | `gpt-4o-mini`, closed-book, per-claim citations |
 | Grounding | GroundingGate 8 rules, groundedness + confidence with reason |
 | Uncertainty | Three states: Grounded / Contested / Insufficient |
@@ -1268,15 +1332,18 @@ Plus the corpus's own §15.1 test questions — *immediate steps for water colou
 
 ### Explicitly de-risked off the critical path
 
-**A note on the stack.** Next.js + .NET/EF Core + Azure AI Foundry + Azure AI Search + Azure PostgreSQL + Supabase auth + Azure deployment is a lot of integration surface for five hours. It is a strong, defensible, production-shaped stack and we are keeping it — but two components are moved off the critical path so they can never block the demo:
+**A note on the stack.** Next.js + two Python FastAPI services + Azure AI Foundry + Azure AI Search + Azure PostgreSQL + Supabase auth + Azure deployment is a lot of integration surface for five hours. It is a strong, defensible, production-shaped stack and we are keeping it — but three components are moved off the critical path so they can never block the demo:
 
 | Component | Treatment |
 |---|---|
-| **Supabase auth** | Not on the critical path. Role selection ships as a **client-side role lens** (Guardian/Researcher/Citizen) — which is what the rubric actually rewards, and it needs no auth. Supabase is wired only if the build is green and ahead of schedule. A login wall between a judge and the demo is pure downside. |
-| **Azure PostgreSQL** | Behind an `IKnowledgeRepository` interface with an **in-memory implementation as the default for the demo**. Postgres is the production target and will be wired if time permits, but a database outage or connection-string mistake must not be able to take down the app on stage. |
+| **Supabase auth** | **In scope** — the 7-route site is the committed deliverable, so `/login` and `/signup` are real and the guard in `app/app/layout.tsx` works. But **a demo account is pre-seeded and nobody signs up on stage**, and auth is built in parallel with Layer 1 and **never gates it**. A login wall between a judge and the demo is pure downside. **Auth is also the designated release valve:** if the schedule slips, dropping it is the single largest recovery of time, because the role lens — which is what the rubric actually rewards — needs no auth at all. |
+| **Azure PostgreSQL** | Behind a **`KnowledgeRepository` protocol** (`typing.Protocol`) with an **in-memory implementation as the default for the demo**. Postgres is the production target and will be wired if time permits, but a database outage or connection-string mistake must not be able to take down the app on stage. |
 | **Azure deployment** | Deployed if green by T+4:30, but **the demo runs locally.** Conference Wi-Fi is a well-known way to lose a hackathon. GitHub repo is the deliverable; local is the demo. |
 
 **Azure AI Search is the one hard external dependency,** because retrieval genuinely requires it. It is provisioned and verified in the first 30 minutes, before anything depends on it.
+
+**The cut order, decided in advance so nobody has to decide it under pressure:**
+`/app/investigations` → `/app/incidents` → Layer 6 flags → Supabase auth. Never the RAG core.
 
 ---
 
@@ -1291,7 +1358,7 @@ We win on a different axis: **we read the corpus, and the corpus told us how it 
 | Their solution | Ours | Marks |
 |---|---|---|
 | Fixed 1000/200 splitting | Record-aware chunking on the corpus's own record boundaries | RAG **25** |
-| Vector-only search | Hybrid + semantic rerank + query rewriting + metadata filters | RAG **25** |
+| Vector-only search | Hybrid BM25 + vector + RRF + LLM rerank + query rewriting + metadata filters | RAG **25** |
 | "Sources" list at the bottom | Inline per-claim citation chips that spotlight their source on hover | Accuracy **20** + UX **15** |
 | "The cause was a plankton bloom" | *"No cause is confirmed — three records disagree, and `LAB-C`'s chain of custody is incomplete"* | **Accuracy 20** |
 | Trust-me grounding | GroundingGate — the corpus's own 8 published rules, ticking green on screen | Accuracy **20** |
@@ -1443,13 +1510,13 @@ The banner turns amber:
 | # | Requirement | Deliverable | Owner gate |
 |---|---|---|---|
 | 1 | Working RAG application | Running app; local demo primary, Azure deploy if green | T+4:30 |
-| 2 | GitHub repository | Public repo, clean history, `v1-baseline` and `v2-ui` tagged | Continuous |
-| 3 | README with setup + usage | Prereqs, env vars, `dotnet run` + `npm run dev`, corpus seeding, 7 sample questions, troubleshooting | T+4:45 |
+| 2 | GitHub repository | Public repo, clean history, **`v1-core-rag` · `v2-sitrep` · `v3-honest` · `v4-agentic` tagged** (matching §10.1) | Continuous |
+| 3 | README with setup + usage | Prereqs, env vars, **`uvicorn` ×2 (ports 5000 + 8000) + `npm run dev`**, `alembic upgrade head`, corpus seeding, 7 sample questions, troubleshooting | T+4:45 |
 | 4 | Architecture diagram | Mermaid diagram in README: ingestion pipeline → index → orchestrator → 3 specialists → GroundingGate → UI | T+4:40 |
 | 5 | Demonstration, 3+ questions | Coral damage · parallel compare · turquoise conflict · out-of-corpus refusal (**4 shown**) | Rehearsed T+4:45 |
-| 6 | Evidence of retrieved sources | Source cards visible on every answer; `Citations` table persists the trail; screenshots in README | Built-in |
+| 6 | Evidence of retrieved sources | Source cards visible on every answer; the `citations` table persists the trail; screenshots in README | Built-in |
 | 7 | 3–5 minute presentation | Narrative per §13.2, rehearsed twice against a timer | T+5:00 |
-| 8 | **Disclosure of prebuilt components** | *(Rules requirement — do not skip.)* README section listing: Azure AI Foundry (`gpt-4o-mini`, `text-embedding-3-small`), Azure AI Search (HNSW + semantic ranker), Semantic Kernel, EF Core, Next.js, and the provided corpus. All application logic — chunker, retrieval pipeline, orchestrator, specialists, GroundingGate, conflict detection, UI — written during the event. | T+4:45 |
+| 8 | **Disclosure of prebuilt components** | *(Rules requirement — do not skip.)* README section listing: Azure AI Foundry (`gpt-4o-mini`, `text-embedding-3-small`), Azure AI Search (HNSW + native hybrid query), **LangChain**, **SQLAlchemy + Alembic**, **sse-starlette**, **pypdf / python-docx**, FastAPI, Next.js, Supabase Auth, v0 (initial UI scaffold), and **the organisers' provided corpus**. All application logic — record-aware chunker, RRF fusion, LLM reranker, orchestrator, three specialists, GroundingGate, conflict detection, W1–W4 classifier, UI — written during the event. Full table in `docs/TECH_STACK.md`. | T+4:45 |
 | 9 | **Backup demo video** | Full 4-minute screen recording. **Recorded at T+3:20 against `v3-honest`, re-recorded at T+4:45 against final.** Two videos means even a total Layer-5 failure still has a complete, honest demo on file. | T+3:20 |
 
 ---
@@ -1460,17 +1527,17 @@ The banner turns amber:
 |---|---|---|---|
 | 1 | **Agent loop runaway** | 🔴 Critical | Hard cap of **1 retry**, enforced by a counter in orchestrator state — **not** by prompt instruction (a prompt can be ignored; a counter cannot). Max **8 LLM calls/query**, enforced at the dispatcher. Agent count **fixed at 3** — no dynamic spawning. 25 s total budget with a hard return regardless of agent state. **No recursion anywhere**: the call graph is a fixed-depth tree by construction — orchestrator → specialists → done. An agent cannot dispatch another agent. |
 | 2 | **Latency kills the demo** | 🔴 Critical | 8 s per-agent timeout, 25 s total. **Triage banner and map render before generation starts** (§3 step 3) — the screen has meaningful content in <500 ms, never a spinner. Sections stream individually as they complete. Three specialists run **concurrently**, so `sitrep` costs ~3 s wall clock, not ~9 s (§5.5). Demo questions pre-warmed; `DEMO_MODE` cache as the floor. |
-| 3 | **.NET ⇄ Next.js integration burns time** | 🟠 High | Contract agreed and **frozen in the first 30 minutes** (a Layer 1 gate): `POST /api/query` (SSE), `POST /api/documents`, `GET /api/documents`, `DELETE /api/documents/{id}`. The SSE event schema is the §7.1 trace table — fixed up front, so new step types (`section.filling` etc.) are additive and never breaking. Frontend built against a **mock SSE stream** from minute 0, so UI and backend proceed in parallel and integration is a URL swap. CORS configured immediately, not debugged at T+4:00. |
+| 3 | **Three-service integration burns time** | 🟠 High | Contract agreed and **frozen in the first 30 minutes** (a Layer 1 gate): `POST /api/v1/ask`, `GET /api/v1/ask/stream` (SSE), `POST/GET/DELETE /api/v1/documents`, plus the internal `/rag/ingest`, `/rag/query`, `/agent/sitrep`, `/health`. The SSE event schema is the §7.1 trace table — fixed up front, so new step types (`section.filling` etc.) are **additive and never breaking**. Frontend built against JSON fixtures **and a mock SSE stream** from minute 0, so UI and backend proceed in parallel and integration is a URL swap. CORS configured immediately, not debugged at T+4:00. **Extra hazard specific to our shape:** the SITREP is assembled in `agent/` but must be **SSE-proxied unbuffered through `backend/`** — `httpx.AsyncClient.stream()`, never `response.aread()`. A buffering gateway silently destroys the progressive-assembly demo. Integration checkpoint 3 exists solely to catch this. |
 | 4 | **Live demo failure** | 🔴 Critical | (a) Backup video recorded **twice** — T+3:20 against `v3-honest` and T+4:45 against final. (b) Demo runs **locally**, never on conference Wi-Fi. (c) `DEMO_MODE` serves cached responses for all four demo questions — instant, deterministic, zero API dependency. (d) Trace replay works offline. (e) **Ten feature flags** (§10.3) revert any unstable layer in seconds. (f) Five tagged commits — we can check out any earlier layer and demo it. |
-| 5 | **Azure AI Search provisioning fails/slow** | 🟠 High | Provisioned and smoke-tested in the first 30 min, before dependent work starts. Fallback: in-memory cosine search over 220 vectors — trivially fast at this scale — behind the same `IRetriever` interface. Costs hybrid + reranker, keeps the app alive. |
-| 6 | **Semantic ranker unavailable on tier** | 🟡 Medium | Fallback to LLM rerank: `gpt-4o-mini` scores 30 candidates in one batched call (~600 ms). Same interface, marginally slower, still a genuine rerank stage. |
+| 5 | **Azure AI Search provisioning fails/slow** | 🟠 High | Provisioned and smoke-tested in the first 30 min, before dependent work starts. Fallback: in-memory cosine search over 220 vectors — trivially fast at this scale — behind the same **`Retriever` protocol**. Costs hybrid search, keeps the app alive. |
+| 6 | **~~Semantic ranker unavailable~~ — already accounted for** | 🟡 Medium | **Not a risk; a known constraint.** F0 has no semantic ranker, so the **LLM reranker is the designed primary path** (§4.3): one batched `gpt-4o-mini` call, ~600 ms, scores `0–10`. The residual risk is that reranking fails *entirely* — in which case retrieval falls through to raw RRF fusion order (`rerank_mode: "none"`). Quality drops; nothing breaks. **The real trap here is someone writing code that expects `@search.rerankerScore` to come back.** |
 | 7 | **PDF extraction mangles the corpus** | 🟠 High | The highest-impact silent failure. Mitigated by an explicit **T+1:15 verification gate**: 10 named records manually inspected for clean boundaries. Chunker falls back to narrative mode if record-ID detection finds fewer than 50 records. |
 | 8 | **Model ignores citation format** | 🟡 Medium | Deterministic post-processing, not prompt trust: unparseable/unresolvable markers are stripped and the sentence marked unsupported. Low temperature (0.1) + few-shot citation examples in the system prompt. |
 | 9 | **Conflict detection misfires** | 🟡 Medium | Structural signals first (`disputed report` label, multiple field notes on one event) — deterministic and reliable. Semantic check is confirmatory only. Both known conflicts hard-verified before demo. `CONFLICT_DETECTION` flag disables it if noisy. |
-| 10 | **Over-abstention (refusing answerable questions)** | 🟡 Medium | Threshold `1.8/4.0` calibrated against all 7 brief questions + all 3 corpus §15.1 questions before freeze. Insufficient-evidence responses always show closest partial matches, so a false abstention still gives the judge something. |
+| 10 | **Over-abstention (refusing answerable questions)** | 🟡 Medium | Threshold `4.5/10` calibrated against all 7 brief questions + all 3 corpus §15.1 questions before freeze. Insufficient-evidence responses always show closest partial matches, so a false abstention still gives the judge something. |
 | 11 | **Scope creep past T+4:45** | 🟠 High | Hard code freeze at T+4:45. Last 15 minutes are rehearsal only. Any incomplete feature is flag-disabled, not finished. |
 | 12 | **Azure API rate limits / quota** | 🟡 Medium | Batched embeddings with backoff. Response cache keyed on normalized query — rehearsal runs cost nothing after the first. `DEMO_MODE` bypasses the API entirely. |
-| 13 | **Supabase/Postgres integration eats the buffer** | 🟡 Medium | Both explicitly off the critical path (§12). In-memory repository is the demo default. Neither can block a deliverable. |
+| 13 | **Supabase/Postgres integration eats the buffer** | 🟡 Medium | Neither is on the **critical path**, though auth is in scope (§12). Auth is built in parallel with Layer 1 and **cannot gate it**; a **demo account is pre-seeded** so no signup happens on stage; Postgres sits behind a repository protocol whose **in-memory implementation is the demo default**. If either starts eating the buffer, auth is the **designated release valve** — dropping it costs nothing the rubric rewards, because the role lens is presentation, not authorization. |
 | 14 | **Layer bleed — a later layer breaks an earlier one** | 🔴 Critical | The failure mode the Bankable Build Order exists to prevent. Three independent defences: (a) **feature flag per layer**, wired *before* the layer is built so a half-finished layer defaults off; (b) **git tag per layer** — any earlier layer is one checkout away; (c) **runtime degradation ladder** (§5.5) — Layer 5 failing falls through to Layer 2's identical report structure. **Enforcement rule: no layer may modify code owned by an earlier layer.** Layer 5 adds an orchestrator that *calls* Layer 1's retriever and generator; it never edits them. |
 | 15 | **Partial report reads as a bug** | 🟡 Medium | A blank section looks broken; a section that says *"🐋 Marine-Life Protector did not respond within 8 s — Affected Species unavailable"* looks rigorous. Every section has a **defined, visible empty state with a reason** (§2.1 rule 3). We rehearse the partial-report case deliberately so it can be narrated as designed behaviour rather than discovered live. |
 | 16 | **Role toggle shifts citations** | 🟠 High | Would visibly destroy the grounding story mid-demo. Prevented structurally: the toggle is a **client-side re-render over the frozen `Citations` set** — it has no code path to retrieval (§8.6). Verified before freeze by flipping all three roles on the turquoise question and diffing the cited record IDs — they must be identical. |
