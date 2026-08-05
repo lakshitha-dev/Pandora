@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pandora Knowledge Guardian — Evidence you can act on</title>
+<link rel="stylesheet" href="pandora.css">
+<style>
+  /* Route: /  ·  UI_SPEC.md §"/ — Landing Page", re-pointed at Pandora. */
+  .nav { display: flex; align-items: center; gap: var(--s-4); flex-wrap: wrap;
+    padding: var(--s-3) var(--s-4); margin-block-end: var(--s-6);
+    background: linear-gradient(180deg,
+      color-mix(in oklab, var(--deep-2) 82%, transparent),
+      color-mix(in oklab, var(--deep) 68%, transparent));
+    border: 1px solid var(--line); border-radius: var(--r-lg);
+    backdrop-filter: blur(14px); position: sticky; inset-block-start: var(--s-3);
+    z-index: 20; }
+  .brand { display: flex; align-items: center; gap: var(--s-3); margin-inline-end: auto; }
+  .sigil { display: grid; place-items: center; inline-size: 38px; aspect-ratio: 1;
+    border-radius: 11px; flex: none;
+    background: radial-gradient(circle at 32% 28%, #1d6b78, var(--deep));
+    border: 1px solid color-mix(in oklab, var(--cyan) 35%, transparent);
+    box-shadow: 0 0 18px color-mix(in oklab, var(--cyan) 20%, transparent); }
+  .brand b { font-size: var(--t-md); font-weight: 650; }
+  .brand span { display: block; font-size: 9.5px; letter-spacing: .9px;
+    text-transform: uppercase; color: var(--mist-dim); margin-block-start: 1px; }
+
+  .hero { padding-block: var(--s-7) var(--s-6); max-inline-size: 62ch; }
+  .hero h1 { font-size: clamp(1.7rem, 1.2rem + 2.4vw, 2.9rem); font-weight: 680;
+    letter-spacing: -.5px; line-height: 1.12; margin-block-end: var(--s-4); }
+  .hero h1 em { font-style: normal; color: var(--cyan); }
+  .hero .sub { font-size: var(--t-lg); color: var(--mist); line-height: 1.6;
+    margin-block-end: var(--s-5); }
+  .hero .who { font-size: var(--t-md); color: var(--mist-dim); margin-block-end: var(--s-5); }
+
+  section { margin-block: var(--s-7); }
+  .kicker { font-size: 9.5px; font-weight: 700; letter-spacing: 1.3px;
+    text-transform: uppercase; color: var(--teal); margin-block-end: var(--s-3); }
+  h2 { font-size: var(--t-xl); font-weight: 650; margin-block-end: var(--s-4);
+    max-inline-size: 46ch; }
+  .prose p { max-inline-size: var(--measure); color: var(--mist); margin-block-end: var(--s-3); }
+  .prose strong { color: var(--foam); }
+
+  .three { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--s-4); }
+  .item { padding: var(--s-5) var(--s-4); border-radius: var(--r-lg);
+    background: color-mix(in oklab, var(--deep) 55%, transparent);
+    border: 1px solid var(--line); }
+  .item.lead { border-color: color-mix(in oklab, var(--cyan) 40%, transparent);
+    background: color-mix(in oklab, var(--cyan) 5%, transparent);
+    box-shadow: 0 0 30px color-mix(in oklab, var(--cyan) 8%, transparent); }
+  .item .n { display: inline-grid; place-items: center; inline-size: 26px;
+    aspect-ratio: 1; border-radius: 8px; font-family: var(--mono);
+    font-size: var(--t-xs); font-weight: 700; margin-block-end: var(--s-3);
+    background: color-mix(in oklab, var(--hue, var(--teal)) 14%, transparent);
+    color: var(--hue, var(--teal));
+    border: 1px solid color-mix(in oklab, var(--hue, var(--teal)) 32%, transparent); }
+  .item.lead .n { --hue: var(--cyan); }
+  .item h3 { font-size: var(--t-md); font-weight: 650; margin-block-end: var(--s-2); }
+  .item p { font-size: var(--t-sm); color: var(--mist); line-height: 1.65; margin: 0; }
+
+  .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--s-3); counter-reset: s; }
+  .step { padding: var(--s-4); border-radius: var(--r-md);
+    background: color-mix(in oklab, var(--abyss) 45%, transparent);
+    border: 1px solid var(--line); position: relative; }
+  .step::before { counter-increment: s; content: counter(s);
+    font-family: var(--mono); font-size: var(--t-2xs); font-weight: 700;
+    color: var(--teal); display: block; margin-block-end: var(--s-2); }
+  .step b { display: block; font-size: var(--t-md); margin-block-end: 4px; }
+  .step span { font-size: var(--t-sm); color: var(--mist); line-height: 1.6; }
+
+  /* Proof — the highest-value region on the page (UI_SPEC) */
+  .proof { border-radius: var(--r-lg); overflow: hidden; border: 1px solid var(--line);
+    background: linear-gradient(180deg,
+      color-mix(in oklab, var(--deep-2) 70%, transparent),
+      color-mix(in oklab, var(--deep) 55%, transparent)); }
+  .proof__q { display: flex; align-items: flex-start; gap: var(--s-3);
+    padding: var(--s-4); border-block-end: 1px solid var(--line);
+    background: color-mix(in oklab, var(--violet) 6%, transparent); }
+  .proof__q .av { display: grid; place-items: center; inline-size: 28px;
+    aspect-ratio: 1; border-radius: 8px; flex: none; font-size: 13px;
+    background: color-mix(in oklab, var(--violet) 14%, transparent);
+    border: 1px solid color-mix(in oklab, var(--violet) 32%, transparent); }
+  .proof__q p { margin: 0; font-size: var(--t-base); color: var(--foam); }
+  .proof__body { padding: var(--s-4); }
+  .proof__body > * + * { margin-block-start: var(--s-3); }
+  .proof__body p { font-size: var(--t-md); line-height: 1.72; color: #D5E8EC;
+    max-inline-size: var(--measure); margin: 0; }
+  .verdict-line { padding: var(--s-3) var(--s-4); border-radius: var(--r-md);
+    background: color-mix(in oklab, var(--coral) 6%, transparent);
+    border-inline-start: 3px solid var(--coral);
+    font-size: var(--t-md); line-height: 1.62; color: var(--mist); }
+  .verdict-line b { display: block; font-size: 9.5px; letter-spacing: .9px;
+    text-transform: uppercase; color: var(--coral); margin-block-end: 4px; }
+  .proof__foot { display: flex; align-items: center; gap: var(--s-3);
+    flex-wrap: wrap; padding: var(--s-3) var(--s-4);
+    border-block-start: 1px solid var(--line);
+    font-size: var(--t-xs); color: var(--mist-dim); font-family: var(--mono); }
+
+  .close { text-align: center; padding: var(--s-7) var(--s-4);
+    border-radius: var(--r-lg); border: 1px solid var(--line);
+    background: radial-gradient(ellipse at 50% 0%,
+      color-mix(in oklab, var(--cyan) 8%, transparent), transparent 70%); }
+  .close h2 { margin-inline: auto; }
+  .close p { margin-inline: auto; max-inline-size: 52ch; }
+
+  footer { margin-block-start: var(--s-7); padding-block-start: var(--s-4);
+    border-block-start: 1px solid var(--line); font-size: var(--t-sm);
+    color: var(--mist-dim); display: flex; gap: var(--s-4); flex-wrap: wrap;
+    align-items: center; }
+  footer .ml-auto { margin-inline-start: auto; }
+</style>
+<script src="pandora.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="ambient" aria-hidden="true"></div>
+<div class="plankton" id="plankton" aria-hidden="true"></div>
+
+<div class="shell shell--narrow">
+
+<nav class="nav">
+  <div class="brand">
+    <div class="sigil" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#4ff0e0"
+        stroke-width="1.5" stroke-linecap="round">
+        <path d="M12 2v20M2 12h20"/><circle cx="12" cy="12" r="4.5" stroke-width="1.2"/>
+        <path d="M5.5 5.5l3 3M18.5 5.5l-3 3M5.5 18.5l3-3M18.5 18.5l-3-3" stroke-width="1"/>
+      </svg>
+    </div>
+    <div><b>Pandora Knowledge Guardian</b>
+      <span>Guardian Command Center</span></div>
+  </div>
+  <a class="tool" href="07-auth.html">Sign in</a>
+  <a class="btn btn--primary btn--sm" href="02-command-center.html">Open the console</a>
+</nav>
+
+<main id="main">
+
+<header class="hero">
+  <h1>Pandora's answers exist. They're just <em>scattered across 135 records</em> when someone needs them in the next ten minutes.</h1>
+  <p class="sub">Ask in plain language. Get an operational situation report where every
+  claim cites the record it came from — and where the system says
+  <b style="color:var(--foam)">"the cause is not established"</b> when that is the
+  truth.</p>
+  <p class="who">Built for Pandora's environmental guardians, healers, researchers
+  and community councils.</p>
+  <div class="row">
+    <a class="btn btn--primary" href="02-command-center.html">Open the console</a>
+    <a class="btn btn--ghost" href="03-answer-states.html">See how it handles uncertainty</a>
+  </div>
+</header>
+
+<section class="prose">
+  <p class="kicker">The problem</p>
+  <h2>Everything a guardian needs is written down. Nothing connects it.</h2>
+  <p>Handling a yellow plume at Obsidian Reach means pulling together an incident
+  playbook, a water-station reading, a severity scale, a species profile, a public
+  alert policy and a sampling checklist — six records that never reference each
+  other, sitting thirty pages apart.</p>
+  <p>Under time pressure nobody does that. And a general-purpose chatbot asked the
+  same question will invent a confident, fluent, <strong>fabricated</strong> protocol.
+  In an environmental emergency a plausible wrong answer is worse than no answer,
+  because it gets acted on.</p>
+</section>
+
+<section>
+  <p class="kicker">What it does</p>
+  <h2>Three things a search box cannot.</h2>
+  <div class="three">
+    <div class="item">
+      <span class="n">1</span>
+      <h3>Retrieves, then answers</h3>
+      <p>Hybrid keyword and semantic search over the corpus, chunked on record
+      boundaries so a species profile is never spliced into its neighbour. The
+      answer is assembled from what came back — never from the model's own
+      memory.</p>
+    </div>
+    <div class="item">
+      <span class="n">2</span>
+      <h3>Cites every claim</h3>
+      <p>Each sentence carries the record ID behind it — <code>INC-001</code>,
+      <code>WS-03</code>, <code>FAU-018</code> — with page, excerpt and relevance
+      score. Click a citation and you land on the source.</p>
+    </div>
+    <div class="item lead">
+      <span class="n">3</span>
+      <h3>Shows disagreement instead of resolving it</h3>
+      <p>When records conflict, it presents every position side by side, names the
+      reliability problem, and <strong>refuses to pick a winner</strong>. Naming a
+      cause without evidence misdirects a response and assigns blame. That refusal
+      is the feature.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <p class="kicker">How it works</p>
+  <h2>Three steps. The corpus ships already indexed.</h2>
+  <div class="steps">
+    <div class="step"><b>Ask</b>
+      <span>Describe the situation the way you'd say it out loud — "the water near
+      Awa Reef has turned turquoise and the fish are leaving."</span></div>
+    <div class="step"><b>It retrieves</b>
+      <span>Hybrid search pulls the relevant records; near-duplicates are dropped and
+      conflicting siblings are pulled in deliberately.</span></div>
+    <div class="step"><b>You get a situation report</b>
+      <span>Priority, affected species, likely causes, recommended actions, sources,
+      and a confidence figure that states its own reason.</span></div>
+  </div>
+</section>
+
+<section>
+  <p class="kicker">Proof</p>
+  <h2>A real question, and the answer it actually produces.</h2>
+  <div class="proof">
+    <div class="proof__q">
+      <span class="av" aria-hidden="true">🛡</span>
+      <p>"What caused the turquoise water at Awa Reef?"</p>
+    </div>
+    <div class="proof__body">
+      <div class="row" style="gap:var(--s-2)">
+        <span class="hz hz--w2"><span aria-hidden="true">◆</span> W2 ADVISORY</span>
+        <span class="badge is-disputed"><span aria-hidden="true">!</span>
+          Cause not established</span>
+      </div>
+      <p>INC-001 records the same two signs — water turning bright turquoise, fish
+      moving offshore — and lists four possible causes: mineral sediment, plankton
+      bloom, chemical release, light reflection. The record states plainly that these
+      are <b>hypotheses, not confirmed findings</b>
+      <span class="cite">INC-001</span>.</p>
+      <div class="verdict-line">
+        <b>Three records disagree</b>
+        FN-A attributes it to a plankton bloom after three calm hot days. FN-B reports
+        a damaged waste container at an upstream pigment workshop, but never confirmed
+        material entered the water. LAB-C found harmless carbonates — with an
+        <b style="display:inline;text-transform:none;letter-spacing:0;font-size:inherit;color:var(--foam)">incomplete
+        chain-of-custody form</b>, so it cannot break the tie.
+        <b style="display:inline;text-transform:none;letter-spacing:0;font-size:inherit;color:var(--foam)">
+        Recommended:</b> resample upstream and downstream at matched depths with
+        complete documentation, per checklist A.1 <span class="cite">A.1</span>.
+      </div>
+      <p>Restrict drinking water and suspend shellfish harvest now, on precaution —
+      not because a cause is known <span class="cite">§4.5</span>.</p>
+    </div>
+    <div class="proof__foot">
+      <span>8 sources · 11/11 claims cited · confidence 0.68 moderate</span>
+      <a class="ml-auto" href="03-answer-states.html"
+        style="color:var(--teal)">see all three answer states →</a>
+    </div>
+  </div>
+</section>
+
+<section class="close">
+  <h2>Evidence, or an honest "we don't know yet."</h2>
+  <p style="color:var(--mist);margin-block-end:var(--s-5)">Never a confident guess.</p>
+  <div class="row" style="justify-content:center">
+    <a class="btn btn--primary" href="02-command-center.html">Open the console</a>
+    <a class="btn btn--ghost" href="index.html">Browse all screens</a>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <span>Pandora Builderthon 2026 · Echoes of Pandora</span>
+  <span class="ml-auto"><a href="index.html">All screens</a> ·
+    <a href="../SOLUTION.md">Solution design</a></span>
+</footer>
+</div>
+
+</body>
+</html>

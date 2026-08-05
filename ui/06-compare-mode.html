@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pandora Knowledge Guardian — Compare Mode</title>
+<link rel="stylesheet" href="pandora.css">
+<style>
+  h1 { font-size: var(--t-2xl); font-weight: 660; margin-block-end: var(--s-2); }
+  h2 { font-size: var(--t-lg); font-weight: 640; margin-block: var(--s-6) var(--s-3); }
+  .lede { color: var(--mist); font-size: var(--t-lg); max-inline-size: var(--measure); }
+
+  /* Decomposition trace — proves both halves were retrieved independently */
+  .decomp { padding: var(--s-4); border-radius: var(--r-lg); margin-block-end: var(--s-5);
+    background: color-mix(in oklab, var(--violet) 6%, transparent);
+    border: 1px solid color-mix(in oklab, var(--violet) 28%, transparent); }
+  .decomp__h { display: flex; align-items: center; gap: var(--s-2);
+    font-size: 9.5px; font-weight: 700; letter-spacing: 1.1px;
+    text-transform: uppercase; color: var(--violet); margin-block-end: var(--s-3); }
+  .aspects { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-3); }
+  @media (max-width: 860px) { .aspects { grid-template-columns: 1fr; } }
+  .aspect { padding: var(--s-3); border-radius: var(--r-md);
+    background: color-mix(in oklab, var(--abyss) 45%, transparent);
+    border: 1px solid var(--line); }
+  .aspect .k { display: block; font-family: var(--mono); font-size: 9px;
+    letter-spacing: .6px; text-transform: uppercase; color: var(--violet);
+    margin-block-end: 5px; }
+  .aspect .q { font-size: var(--t-sm); color: var(--foam); line-height: 1.5; }
+  .aspect .r { margin-block-start: var(--s-2); padding-block-start: var(--s-2);
+    border-block-start: 1px dashed var(--line); font-family: var(--mono);
+    font-size: 9.5px; color: var(--mist-dim); }
+
+  /* Aligned comparison grid: same field labels down both sides */
+  .cmp { display: grid; grid-template-columns: 132px 1fr 1fr; gap: 0;
+    border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden;
+    background: color-mix(in oklab, var(--deep) 40%, transparent); }
+  @media (max-width: 900px) {
+    .cmp { grid-template-columns: 1fr; }
+    .cmp__field { border-block-start: 1px solid var(--line-2) !important;
+      background: var(--deep-2) !important; }
+  }
+  .cmp__head { padding: var(--s-3) var(--s-4);
+    border-block-end: 1px solid var(--line);
+    background: color-mix(in oklab, var(--hue, var(--teal)) 8%, transparent); }
+  .cmp__head .id { font-family: var(--mono); font-size: var(--t-2xs);
+    font-weight: 700; color: var(--hue); letter-spacing: .6px; }
+  .cmp__head .nm { font-size: var(--t-md); font-weight: 650; margin-block-start: 2px; }
+  .cmp__head .rg { font-size: var(--t-xs); color: var(--mist-dim);
+    font-family: var(--mono); margin-block-start: 2px; }
+  .col-a { --hue: var(--amber); }
+  .col-b { --hue: var(--coral); }
+
+  .cmp__field { padding: var(--s-3) var(--s-4); font-size: 9.5px; font-weight: 700;
+    letter-spacing: 1px; text-transform: uppercase; color: var(--teal);
+    border-block-start: 1px solid var(--line);
+    background: color-mix(in oklab, var(--abyss) 30%, transparent); }
+  .cmp__cell { padding: var(--s-3) var(--s-4); font-size: var(--t-sm);
+    line-height: 1.65; color: #D5E8EC;
+    border-block-start: 1px solid var(--line);
+    border-inline-start: 1px solid color-mix(in oklab, var(--line) 60%, transparent); }
+  .cmp__cell ul { padding-inline-start: var(--s-4); margin: 0; }
+  .cmp__cell li + li { margin-block-start: 4px; }
+  .cmp__cell li::marker { color: var(--teal); }
+  .cmp__cell.is-diff { background: color-mix(in oklab, var(--amber) 4%, transparent); }
+  .diffmark { display: inline-block; inline-size: 5px; aspect-ratio: 1;
+    border-radius: 50%; background: var(--amber); vertical-align: middle;
+    margin-inline-end: 5px; }
+
+  /* Shared protocol payoff panel */
+  .shared { margin-block-start: var(--s-5); padding: var(--s-4);
+    border-radius: var(--r-lg);
+    background: color-mix(in oklab, var(--lume) 5%, transparent);
+    border: 1px solid color-mix(in oklab, var(--lume) 26%, transparent); }
+  .shared__h { display: flex; align-items: center; gap: var(--s-2);
+    font-size: 9.5px; font-weight: 700; letter-spacing: 1.1px;
+    text-transform: uppercase; color: var(--lume); margin-block-end: var(--s-3); }
+  .shared ul { padding-inline-start: var(--s-5); font-size: var(--t-sm);
+    line-height: 1.7; color: var(--mist); }
+  .shared li::marker { color: var(--lume); }
+
+  .why { max-inline-size: var(--measure); margin-block-start: var(--s-5);
+    padding-block-start: var(--s-3); border-block-start: 1px dashed var(--line-2);
+    font-size: var(--t-md); color: var(--mist-dim); }
+  .why b { display: block; margin-block-end: 4px; font-size: 9.5px;
+    letter-spacing: 1px; text-transform: uppercase; color: var(--teal); }
+  .why + .why { border-block-start: 0; margin-block-start: var(--s-4);
+    padding-block-start: 0; }
+
+  footer { margin-block-start: var(--s-7); padding-block-start: var(--s-4);
+    border-block-start: 1px solid var(--line); font-size: var(--t-sm);
+    color: var(--mist-dim); }
+</style>
+<script src="pandora.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="ambient" aria-hidden="true"></div>
+
+<div class="shell">
+<header>
+  <h1>Compare Mode</h1>
+  <p class="lede">Two incidents retrieved independently, then aligned field by
+  field. The question: <i>"Compare the recommended responses for water
+  contamination and an underwater volcanic event."</i></p>
+</header>
+
+<main id="main">
+
+<div class="decomp">
+  <div class="decomp__h"><span aria-hidden="true">⑃</span>
+    Query decomposed — each half retrieved on its own</div>
+  <div class="aspects">
+    <div class="aspect">
+      <span class="k">Aspect 1</span>
+      <span class="q">recommended responses for water contamination</span>
+      <div class="r">BM25 + dense · 40 candidates → 6 kept · top INC-001 @ 1.00</div>
+    </div>
+    <div class="aspect">
+      <span class="k">Aspect 2</span>
+      <span class="q">recommended responses for an underwater volcanic event</span>
+      <div class="r">BM25 + dense · 40 candidates → 6 kept · top INC-005 @ 1.00</div>
+    </div>
+  </div>
+  <p class="t-sm mist" style="margin-block-start:var(--s-3)">
+    A single blended retrieval for this question returned five volcanic-side chunks
+    and lost INC-001 entirely — one embedding cannot sit near both poles at once.
+    Retrieving each aspect separately and interleaving the results
+    <b style="color:var(--foam)">guarantees neither side is starved</b>.</p>
+</div>
+
+<div class="cmp">
+  <!-- header row -->
+  <div class="cmp__field" style="border-block-start:0;background:transparent"></div>
+  <div class="cmp__head col-a" style="border-inline-start:1px solid var(--line)">
+    <span class="id">INC-001</span>
+    <div class="nm">Turquoise Water Event</div>
+    <div class="rg">REG-01 Luminous Shelf · p.40</div>
+  </div>
+  <div class="cmp__head col-b" style="border-inline-start:1px solid var(--line)">
+    <span class="id">INC-005</span>
+    <div class="nm">Vent Plume Release</div>
+    <div class="rg">REG-05 Obsidian Reach · p.42</div>
+  </div>
+
+  <!-- stated risk -->
+  <div class="cmp__field">Stated risk</div>
+  <div class="cmp__cell is-diff">
+    <span class="hz hz--w2"><span aria-hidden="true">◆</span> HIGH</span>
+    <p style="margin-block-start:var(--s-2)">Classifies as <b>W2 Advisory</b> —
+    localised fish avoidance, no illness or mortality reported
+    <span class="cite">§4.5</span></p>
+  </div>
+  <div class="cmp__cell is-diff">
+    <span class="hz hz--w3"><span aria-hidden="true">▲</span> CRITICAL</span>
+    <p style="margin-block-start:var(--s-2)">Classifies as <b>W3 Emergency</b> —
+    dead shellfish is a mortality indicator <span class="cite">§4.5</span></p>
+  </div>
+
+  <!-- observed signs -->
+  <div class="cmp__field">Observed signs</div>
+  <div class="cmp__cell">
+    <ul><li>Water turns bright turquoise</li>
+      <li>Fish move offshore</li></ul>
+    <p class="t-xs dim" style="margin-block-start:var(--s-2)">
+      WS-01 · 2026-06-02 · DO 5.4 mg/L, mild green tint
+      <span class="cite">WS-01</span></p>
+  </div>
+  <div class="cmp__cell">
+    <ul><li>Yellow plume</li>
+      <li><b>Dead shellfish</b></li></ul>
+    <p class="t-xs dim" style="margin-block-start:var(--s-2)">
+      WS-03 · 2026-06-14 · 34.2 °C, DO 3.8 mg/L, pH 7.62
+      <span class="cite">WS-03</span></p>
+  </div>
+
+  <!-- hypotheses -->
+  <div class="cmp__field">Plausible causes</div>
+  <div class="cmp__cell">
+    <ul><li>Mineral sediment</li><li>Plankton bloom</li>
+      <li>Chemical release</li><li>Light reflection</li></ul>
+    <p class="t-xs" style="color:var(--amber);margin-block-start:var(--s-2)">
+      4 hypotheses · none confirmed <span class="cite">INC-001</span></p>
+  </div>
+  <div class="cmp__cell">
+    <ul><li>Natural vent pulse</li><li>Underwater eruption</li>
+      <li>Disturbed sediment</li></ul>
+    <p class="t-xs" style="color:var(--amber);margin-block-start:var(--s-2)">
+      3 hypotheses · none confirmed <span class="cite">INC-005</span></p>
+  </div>
+
+  <!-- THE divergence -->
+  <div class="cmp__field">Immediate actions</div>
+  <div class="cmp__cell is-diff">
+    <ul>
+      <li><span class="diffmark" aria-hidden="true"></span><b>Restrict drinking
+        water</b> and shellfish harvest</li>
+      <li><span class="diffmark" aria-hidden="true"></span><b>Sample at three
+        depths</b></li>
+      <li><span class="diffmark" aria-hidden="true"></span>Inspect <b>upstream and
+        wind direction</b></li>
+    </ul>
+    <p class="t-xs dim" style="margin-block-start:var(--s-2)">
+      Investigate in place — no evacuation <span class="cite">INC-001</span></p>
+  </div>
+  <div class="cmp__cell is-diff">
+    <ul>
+      <li><span class="diffmark" aria-hidden="true"></span><b>Evacuate
+        downwind / cross-current</b></li>
+      <li><span class="diffmark" aria-hidden="true"></span><b>Gas monitoring</b></li>
+      <li><span class="diffmark" aria-hidden="true"></span>Close seafood harvest</li>
+    </ul>
+    <p class="t-xs" style="color:var(--coral);margin-block-start:var(--s-2)">
+      People move first, then measure <span class="cite">INC-005</span></p>
+  </div>
+
+  <!-- regional hazards -->
+  <div class="cmp__field">Regional hazards</div>
+  <div class="cmp__cell">Cyclones, coral heat stress, harmful blooms
+    <span class="cite">REG-01</span></div>
+  <div class="cmp__cell"><b>Toxic gases</b>, hot springs, ashfall, underwater
+    eruptions <span class="cite">REG-05</span></div>
+
+  <!-- species -->
+  <div class="cmp__field">Species at risk</div>
+  <div class="cmp__cell">
+    <ul><li>FAU-001 Tideglass Grazer — turbidity</li>
+      <li>FAU-026 Ironjaw Shellfish — toxin accumulation</li></ul>
+  </div>
+  <div class="cmp__cell">
+    <ul><li>FAU-018 Ventplume Shrimp — vent food-web base</li>
+      <li>FAU-026 Ironjaw Shellfish — toxin accumulation</li></ul>
+  </div>
+
+  <!-- clinical -->
+  <div class="cmp__field">Clinical pathway</div>
+  <div class="cmp__cell">
+    <span class="badge is-disputed"><span aria-hidden="true">🔒</span>
+      Healer-limited</span>
+    <p style="margin-block-start:var(--s-2)" class="t-xs dim">MED-002 Bloom
+    Inhalation Syndrome withheld at Guardian clearance under POL-005</p>
+  </div>
+  <div class="cmp__cell">
+    <span class="badge is-disputed"><span aria-hidden="true">🔒</span>
+      Healer-limited</span>
+    <p style="margin-block-start:var(--s-2)" class="t-xs dim">Gas-exposure
+    protocol withheld at Guardian clearance under POL-005</p>
+  </div>
+</div>
+
+<div class="shared">
+  <div class="shared__h"><span aria-hidden="true">≡</span>
+    Common to both — retrieved once as a shared protocol, not twice</div>
+  <ul>
+    <li>Protect responders with habitat-specific equipment; establish an exclusion
+      boundary; record who entered the site; preserve samples under documented
+      chain-of-custody <span class="cite">shared</span></li>
+    <li>Minimum incident dataset: date and time, exact location, observer identity
+      or anonymous code, weather, photographs, symptoms or animal behaviour,
+      water/soil readings, nearby activities, actions already taken, source
+      reliability, next review time <span class="cite">shared</span></li>
+    <li>Public communication states what is known, what is not known, what people
+      should do, which areas are affected, when the next update comes, and how to
+      report new evidence — <b>avoid blame until investigation is complete</b>
+      <span class="cite">shared</span></li>
+  </ul>
+  <p class="t-sm mist" style="margin-block-start:var(--s-3)">
+    This text is byte-identical across all ten INC records. Storing it once —
+    rather than ten times — is what stopped a query for "restoration priorities"
+    from returning ten indistinguishable near-duplicates.</p>
+</div>
+
+<div class="why"><b>The operational difference, in one line</b>Contamination says
+<em>restrict and sample</em>. A vent plume says <em>evacuate, then monitor gas</em>.
+One investigates in place; the other moves people before measuring anything. That
+inversion is the answer to the question, and it is only visible because both
+records reached the context window.</div>
+
+<div class="why"><b>Why this is a retrieval win, not a formatting trick</b>The
+aligned table is presentation. The substance is that two disjoint retrievals ran
+and were interleaved, so the volcanic half could not crowd out the contamination
+half. Before decomposition this exact question returned five volcanic chunks and
+zero INC-001 — it answered one side well and the other not at all. That is the
+failure the multiple-document-comparison use case is testing for.</div>
+
+<div class="why"><b>Both sides withhold the same clinical detail</b>Access
+clearance applies per role, not per aspect, so a Guardian sees the same
+healer-limited notice on both columns. Consistency here matters: if clearance
+leaked on one side of a comparison, the comparison itself would be misleading.</div>
+
+</main>
+
+<footer>
+  Compare mode · SOLUTION.md §5.4 <code>compare</code> routing · built on
+  <code>pandora.css</code> ·
+  <a href="01-design-system.html">design system</a> ·
+  <a href="02-command-center.html">command center</a> ·
+  <a href="03-answer-states.html">answer states</a> ·
+  <a href="04-lifecycle.html">lifecycle</a> ·
+  <a href="05-role-views.html">role views</a>
+</footer>
+</div>
+
+</body>
+</html>

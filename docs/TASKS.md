@@ -213,29 +213,32 @@ Nothing else starts cleanly until these are done. Four of them block all three o
 
 ## ⚙️ Manujaya (P3) — Backend gateway · `backend/`
 
+> Built on branch `backend`. Everything below is on it. Run it with
+> `cd backend && python run.py` → `http://localhost:5000/docs`.
+> `AGENT_STUB_MODE=true` + `AUTH_DISABLED=true` in `.env` make it useful before
+> Azure, Supabase, or `agent/` exist — see `backend/README.md`.
+
 | Task | Owner | Status | Blockers |
 |---|---|---|---|
-| 🔴 **Stub every §1 endpoint returning the exact contract payloads — unblocks Nipuna in 30 minutes.** A FastAPI stub returning a dict is ~3 lines. **Stub the SSE endpoint by replaying a fixture event list.** | Manujaya | todo | API contract frozen |
-| 🔴 CORS for `localhost:3000` + the Static Web App origin — configure now, don't debug it at hour four | Manujaya | todo | Scaffold |
-| 🟡 FastAPI scaffold: `app/{api,core,db,schemas,services}/`, `requirements.txt`, Uvicorn entrypoint | Manujaya | todo | Folder structure |
-| 🟡 Pydantic `Settings` class + feature flags — validated at startup, fails loudly on a missing key. **No scattered `os.getenv()`.** | Manujaya | todo | Scaffold |
-| 🟡 Pydantic schemas mirroring every §1 shape — `situation_report`, `sections[]`, `citations[]`, `conflicts[]`, the SSE event union | Manujaya | todo | API contract frozen |
-| 🟡 SQLAlchemy 2.0 models, **all `snake_case`**: `documents`, `chunks`, `conversations`, `queries`, `situation_reports`, `report_sections`, `citations`, `agent_runs`, `agent_steps`, `grounding_checks`, `conflicts`, `users` | Manujaya | todo | Scaffold |
-| 🟡 **Repository protocol with an in-memory implementation as the demo default** — a connection-string mistake must not be able to take the app down on stage | Manujaya | todo | Models |
-| 🟡 Alembic init + first migration, applied to Azure PostgreSQL | Manujaya | todo | Models + Postgres provisioned |
-| 🟡 Supabase JWT validation dependency (`python-jose`) — signature + expiry, extract user ID. **Also accept the token as an `access_token` query param on the SSE endpoint only** (`EventSource` can't set headers). | Manujaya | todo | Supabase JWT secret |
-| 🟡 `httpx` agent client — `X-Internal-Key`, **30 s** query / **60 s** ingest timeouts | Manujaya | todo | Lakshitha's stubs |
-| 🔥🔴 **SSE passthrough — forward agent events to the browser UNBUFFERED.** No aggregation, no waiting for completion. Buffering defeats the entire purpose of the endpoint. | Manujaya | todo | Agent client |
-| 🟡 Tee SSE events into `agent_steps` as they pass through, for replay | Manujaya | todo | SSE passthrough |
-| 🔥 `POST /api/v1/ask` — call `/agent/sitrep`, **join `document_name` from Postgres onto each citation**, persist report + sections + citations + grounding checks, assemble the response | Manujaya | todo | Agent client |
-| 🟡 `POST /api/v1/documents` — validate type + size, persist, return `202`, dispatch to `/rag/ingest` async | Manujaya | todo | Models + agent client |
-| 🟡 `GET/DELETE /api/v1/documents` — **delete must remove the Postgres row AND the AI Search vectors**; **`403 corpus_document_immutable` on the preloaded corpus** | Manujaya | todo | Models |
-| 🟢 `GET /api/v1/situation-reports` + `/{answer_id}` with the persisted trace, for `/app/investigations` | Manujaya | todo | Models |
-| 🟢 `GET /api/v1/incidents` — metadata projection, no LLM call | Manujaya | todo | Models |
-| 🟡 Standard error envelope on every non-2xx via an exception handler + the documented `code` values | Manujaya | todo | Scaffold |
-| 🔥 **`422 corpus_not_indexed` guard before any LLM call** — checks agent `/health.corpus_indexed`. No wasted tokens, and no answering from pretrained knowledge. | Manujaya | todo | Agent client |
-| 🟡 `GET /health` for the Azure App Service probe | Manujaya | todo | Scaffold |
-| 🟢 Request/response logging for demo debugging | Manujaya | todo | Core endpoints |
+| 🔴 **Stub every §1 endpoint returning the exact contract payloads — unblocks Nipuna in 30 minutes.** A FastAPI stub returning a dict is ~3 lines. | Manujaya | done | — |
+| 🔴 CORS for `localhost:3000` + the Static Web App origin — configure now, don't debug it at 2am | Manujaya | done | SWA origin to be appended to `CORS_ORIGINS` once Malindu provisions it |
+| 🟡 FastAPI scaffold: `app/{api,core,db,schemas,services}/`, `requirements.txt`, Uvicorn entrypoint | Manujaya | done | — |
+| 🟡 Pydantic `Settings` class reading env vars — validated at startup, fails loudly on a missing key. **No scattered `os.getenv()`.** | Manujaya | done | — |
+| 🟡 Pydantic schemas mirroring every §1 request/response shape | Manujaya | done | — |
+| 🟡 SQLAlchemy 2.0 models: `documents`, `answers`, `agent_actions`, `conversations` | Manujaya | done | — |
+| 🟡 Alembic init + first migration, applied to Azure PostgreSQL | Manujaya | doing | Migration `0001` written and verified against the Postgres dialect; **not yet applied — Postgres not provisioned** |
+| 🟡 Supabase JWT validation dependency (`python-jose`) — signature + expiry, extract user ID | Manujaya | doing | Code done; unverified against a real token — needs `SUPABASE_JWT_SECRET` |
+| 🟡 `httpx` agent client — `X-Internal-Key`, **30 s** query / **60 s** ingest timeouts | Manujaya | done | Wired; live call untested until Lakshitha's stubs are up |
+| 🟡 `POST /api/v1/documents` — validate type + size, persist, return `202`, dispatch to `/rag/ingest` async | Manujaya | done | — |
+| 🟡 `GET/DELETE /api/v1/documents` — **delete must remove Postgres row AND AI Search vectors** | Manujaya | doing | **Part 2 has no delete endpoint.** Proposed `DELETE /rag/documents/{id}` — needs Lakshitha + a contract edit. Gateway calls it and logs when it's absent. |
+| 🔥 `POST /api/v1/ask` — orchestrate `/rag/query` → `/agent/run`, join `document_name` from Postgres, assemble the response | Manujaya | done | — |
+| 🔥 `POST` + `PATCH /api/v1/agent-actions` — persist, approve/reject/complete, set `resolved_at` | Manujaya | done | — |
+| 🟡 `GET /api/v1/agent-actions` with status/type filters and paging | Manujaya | done | — |
+| 🟡 Standard error envelope on every non-2xx via an exception handler + the documented `code` values | Manujaya | done | — |
+| 🟡 `GET /health` for the Azure App Service probe | Manujaya | done | — |
+| 🟢 `422 no_documents_indexed` guard before any LLM call | Manujaya | done | — |
+| 🟢 Request/response logging for demo debugging | Manujaya | done | — |
+| 🟢 21 contract tests (SQLite + stub agent, no network) + `ruff` clean | Manujaya | done | — |
 
 ---
 
