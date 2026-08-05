@@ -375,7 +375,7 @@ Conversely, a question like *"why are the animals leaving?"* shares no keywords 
 | 3 | **BM25 keyword leg** — `k = 30` | 30 candidates |
 | 4 | **Vector leg** — `k = 30`, cosine, `efSearch = 500` | 30 candidates |
 | 5 | **RRF fusion** — reciprocal rank fusion across both legs and both query variants | ~40 deduplicated candidates |
-| 6 | **LLM reranking** — one batched `gpt-4o-mini` call scores every candidate jointly against the query | Reordered, scored `0–10` |
+| 6 | ~~**LLM reranking** — one batched call scores every candidate jointly~~ → **metadata pre-filtering by `record_type`** (see the correction below) | Precision without the call |
 | 7 | **Top-k selection** — take top **6**, or top **8** for comparison queries | Final context |
 | 8 | **Score normalization** — `rerank_score / 10` → a `0.0–1.0` `relevance_score`, shown as a percentage | Shown on every source card |
 
@@ -384,6 +384,20 @@ Conversely, a question like *"why are the animals leaving?"* shares no keywords 
 **F0 has no semantic ranker**, so stage 6 is a single batched call: all ~40 candidates and the query
 go into one `gpt-4o-mini` request, which returns an integer `0–10` per candidate. One call, ~600 ms,
 `rerank_mode: "llm"`.
+
+> **BUILD CORRECTION — the reranker is built, measured, and OFF (`rerank_mode: "none"`).** The
+> ~600 ms estimate assumed `gpt-4o-mini`. On `gpt-5-mini` the same call measured **~25 s** — more
+> than the entire original orchestration budget — and it made results *worse*, demoting the correct
+> `FAU-*` records below a weaker match. Reasoning models are not good at cheap bulk scoring.
+>
+> **What replaced it: metadata pre-filtering by `record_type`.** Filtering one gate question's
+> retrieval to `["fauna","flora"]` took its top-6 from **0/6 to 6/6 relevant, in 3 s**. Sections
+> carry a type profile (`section_fill.SECTION_PROFILES`); plain questions get a type *hint* inferred
+> from question vocabulary by a free deterministic keyword map, and retrieval widens straight back
+> out if a narrowed pass starves — so a wrong guess costs one extra search, never an answer.
+>
+> The reranker stays in the codebase behind `rerank=True` and becomes attractive again the moment a
+> non-reasoning deployment exists. The stage-6 *interface* is unchanged; only its implementation is.
 
 Three reasons this is a good trade rather than a compromise:
 - **It's one LLM call inside a budget of 8.** Cheap in both latency and quota.
@@ -413,9 +427,11 @@ Three reasons this is a good trade rather than a compromise:
 
 ### 4.4 Grounded Generation
 
-**Model:** `gpt-4o-mini` via Azure AI Foundry. Temperature `0.1`. `top_p 0.9`.
+**Model:** ~~`gpt-4o-mini`, temperature `0.1`, `top_p 0.9`~~ → **`gpt-5-mini` via Azure AI Foundry, default sampling, `max_completion_tokens: 16000`.**
 
 Low temperature is a grounding decision, not a style one: sampling diversity is precisely the mechanism by which a model drifts from its context into pretrained priors.
+
+> **BUILD CORRECTION.** `gpt-4o-mini` is not deployed on this resource; `gpt-5-mini` is the only chat deployment, and it is a *reasoning* model that **rejects any temperature but its default with HTTP 400**. The argument above still holds — we simply cannot act on it, and we do not need to. Grounding here never rested on sampling: `GroundingGate` (§4.5) is deterministic post-processing that strips unresolvable markers and marks unsupported sentences *after* generation. Reasoning tokens also consume the completion budget, so a 4 000-token cap returned `finish_reason: length` with **empty content** — hence 16 000. All of this is contained in `agent/app/core/llm.py` behind `IS_REASONING_MODEL`.
 
 #### The generation contract
 
@@ -1176,7 +1192,7 @@ The agentic layer (§5). Three fixed specialists, each owning a SITREP section, 
 |---|---|
 | Agent count | **Fixed at 3.** Never dynamic. |
 | Refinement loop | **Hard-capped at 1 retry**, enforced by a counter in orchestrator state — not by prompt instruction |
-| Timeout | **8 s per agent call**, no exceptions |
+| Timeout | ~~8 s~~ → **75 s per agent call, 180 s total**, no exceptions. Env-tunable (`AGENT_TIMEOUT_SECONDS`, `ORCHESTRATION_BUDGET_SECONDS`). **Measured on `gpt-5-mini`: 36 s / 37 s / 52 s** for the three sections; at 8 s every specialist times out and the parallel path never runs. The *structure* is untouched — fixed caps, enforced by counters. |
 | Partial results | A timed-out section renders its honest empty state; **the report still ships** |
 | **Degradation** | **Any agent failure → falls back to Layer 2 single-agent generation.** Same six sections, filled sequentially. A judge cannot tell. |
 
@@ -1526,11 +1542,11 @@ The banner turns amber:
 | # | Risk | Severity | Mitigation |
 |---|---|---|---|
 | 1 | **Agent loop runaway** | 🔴 Critical | Hard cap of **1 retry**, enforced by a counter in orchestrator state — **not** by prompt instruction (a prompt can be ignored; a counter cannot). Max **8 LLM calls/query**, enforced at the dispatcher. Agent count **fixed at 3** — no dynamic spawning. 25 s total budget with a hard return regardless of agent state. **No recursion anywhere**: the call graph is a fixed-depth tree by construction — orchestrator → specialists → done. An agent cannot dispatch another agent. |
-| 2 | **Latency kills the demo** | 🔴 Critical | 8 s per-agent timeout, 25 s total. **Triage banner and map render before generation starts** (§3 step 3) — the screen has meaningful content in <500 ms, never a spinner. Sections stream individually as they complete. Three specialists run **concurrently**, so `sitrep` costs ~3 s wall clock, not ~9 s (§5.5). Demo questions pre-warmed; `DEMO_MODE` cache as the floor. |
+| 2 | **Latency kills the demo** | 🔴 Critical | **⚠️ THIS RISK LANDED.** `gpt-5-mini` is a reasoning model and a SITREP costs **~65 s wall clock**, not ~3 s. Everything below still applies and is now load-bearing rather than precautionary — **the concurrency is what saves it**: the three sections measured 36 s / 37 s / 52 s but total latency was 64 s, the slowest specialist rather than the 125 s sum. Timeouts raised to 75 s per agent / 180 s total to match measurement. **`docs/API_CONTRACT.md`'s 30 s gateway timeout on `/agent/sitrep` is now wrong and must be raised — Manujaya's call, needs a 👍 before the contract file is edited.** Pre-warming and `DEMO_MODE` caching are no longer optional. Original mitigations: 8 s per-agent timeout, 25 s total. **Triage banner and map render before generation starts** (§3 step 3) — the screen has meaningful content in <500 ms, never a spinner. Sections stream individually as they complete. Three specialists run **concurrently**, so `sitrep` costs ~3 s wall clock, not ~9 s (§5.5). Demo questions pre-warmed; `DEMO_MODE` cache as the floor. |
 | 3 | **Three-service integration burns time** | 🟠 High | Contract agreed and **frozen in the first 30 minutes** (a Layer 1 gate): `POST /api/v1/ask`, `GET /api/v1/ask/stream` (SSE), `POST/GET/DELETE /api/v1/documents`, plus the internal `/rag/ingest`, `/rag/query`, `/agent/sitrep`, `/health`. The SSE event schema is the §7.1 trace table — fixed up front, so new step types (`section.filling` etc.) are **additive and never breaking**. Frontend built against JSON fixtures **and a mock SSE stream** from minute 0, so UI and backend proceed in parallel and integration is a URL swap. CORS configured immediately, not debugged at T+4:00. **Extra hazard specific to our shape:** the SITREP is assembled in `agent/` but must be **SSE-proxied unbuffered through `backend/`** — `httpx.AsyncClient.stream()`, never `response.aread()`. A buffering gateway silently destroys the progressive-assembly demo. Integration checkpoint 3 exists solely to catch this. |
 | 4 | **Live demo failure** | 🔴 Critical | (a) Backup video recorded **twice** — T+3:20 against `v3-honest` and T+4:45 against final. (b) Demo runs **locally**, never on conference Wi-Fi. (c) `DEMO_MODE` serves cached responses for all four demo questions — instant, deterministic, zero API dependency. (d) Trace replay works offline. (e) **Ten feature flags** (§10.3) revert any unstable layer in seconds. (f) Five tagged commits — we can check out any earlier layer and demo it. |
 | 5 | **Azure AI Search provisioning fails/slow** | 🟠 High | Provisioned and smoke-tested in the first 30 min, before dependent work starts. Fallback: in-memory cosine search over 220 vectors — trivially fast at this scale — behind the same **`Retriever` protocol**. Costs hybrid search, keeps the app alive. |
-| 6 | **~~Semantic ranker unavailable~~ — already accounted for** | 🟡 Medium | **Not a risk; a known constraint.** F0 has no semantic ranker, so the **LLM reranker is the designed primary path** (§4.3): one batched `gpt-4o-mini` call, ~600 ms, scores `0–10`. The residual risk is that reranking fails *entirely* — in which case retrieval falls through to raw RRF fusion order (`rerank_mode: "none"`). Quality drops; nothing breaks. **The real trap here is someone writing code that expects `@search.rerankerScore` to come back.** |
+| 6 | **~~Semantic ranker unavailable~~ — already accounted for** | 🟡 Medium | **Not a risk; a known constraint.** F0 has no semantic ranker, so the LLM reranker was the designed primary path (§4.3). **BUILD CORRECTION: it is built, measured, and switched off** — ~25 s on `gpt-5-mini` and it *demoted* correct records. We now run permanently on what was the fallback (`rerank_mode: "none"`, raw RRF order), with **metadata pre-filtering by `record_type`** supplying the precision instead: 0/6 → 6/6 relevant on one gate question, in 3 s. Quality went **up**, not down. **The real trap here is someone writing code that expects `@search.rerankerScore` to come back.** |
 | 7 | **PDF extraction mangles the corpus** | 🟠 High | The highest-impact silent failure. Mitigated by an explicit **T+1:15 verification gate**: 10 named records manually inspected for clean boundaries. Chunker falls back to narrative mode if record-ID detection finds fewer than 50 records. |
 | 8 | **Model ignores citation format** | 🟡 Medium | Deterministic post-processing, not prompt trust: unparseable/unresolvable markers are stripped and the sentence marked unsupported. Low temperature (0.1) + few-shot citation examples in the system prompt. |
 | 9 | **Conflict detection misfires** | 🟡 Medium | Structural signals first (`disputed report` label, multiple field notes on one event) — deterministic and reliable. Semantic check is confirmatory only. Both known conflicts hard-verified before demo. `CONFLICT_DETECTION` flag disables it if noisy. |

@@ -84,11 +84,16 @@
 | Model | Role | Why |
 |---|---|---|
 | **`text-embedding-3-small`** | Embeddings (1536-d) | ~5× cheaper and ~2× faster to index than `-3-large`. On ~220 short, distinctive, jargon-heavy records the recall difference is negligible — while the indexing-speed difference is very real inside a 5-hour window. **Re-indexing the whole corpus must stay under ~60 s so we can iterate on chunking.** |
-| **`gpt-4o-mini`** | Generation · reranking · classification · conflict checking | Fast, cheap, strong at grounded extraction — and **shares a client, endpoint, and key with the embedding model**. Temperature `0.1` for generation, `0` for the orchestrator. |
+| **`gpt-5-mini`** *(deployed)* | Generation · classification · conflict checking | The only chat deployment that exists on `pandora-nsbm` — `gpt-4o-mini` was planned but never deployed. Strong at grounded extraction, and **shares a client, endpoint, and key with the embedding model**. A *reasoning* model: `max_completion_tokens` (16000), and **temperature is not settable**. |
 
-**Low temperature is a grounding decision, not a style one.** Sampling diversity is precisely the
-mechanism by which a model drifts from its retrieved context into pretrained priors — which on a
-*fictional* corpus means inventing plausible Earth marine biology.
+**Temperature is not available to us, and it doesn't cost us grounding.** The plan was `0.1` for
+generation and `0` for the orchestrator, on the sound reasoning that sampling diversity is the
+mechanism by which a model drifts from retrieved context into pretrained priors — which on a
+*fictional* corpus means inventing plausible Earth marine biology. `gpt-5-mini` rejects any
+temperature but its default with **HTTP 400**. Grounding is unaffected because it was never
+resting on sampling in the first place: **`GroundingGate` is deterministic post-processing** that
+strips unresolvable citation markers and marks unsupported sentences after generation. A prompt
+can be ignored and a temperature can't be set; a validator runs regardless.
 
 **What gets embedded:** the provenance header + record title + chunk content. Embedding the title and
 record ID alongside the body measurably improves retrieval on entity-named queries (*"what should we

@@ -21,7 +21,7 @@ Ecosystem"* — theme: **Avatar: The Way of Water** · **5-hour build**
 |---|---|---|
 | Frontend | Next.js (scaffolded with v0), TypeScript — **7 routes, public + authenticated** | **Nipuna** (P2) |
 | Backend (gateway) | **Python + FastAPI** · SQLAlchemy 2.0 · Alembic · Pydantic v2 | **Manujaya** (P3) |
-| RAG + Agent | **Python + FastAPI + LangChain** · `text-embedding-3-small` · `gpt-4o-mini`, via Azure AI Foundry | **Lakshitha** (P1) |
+| RAG + Agent | **Python + FastAPI + LangChain** · `text-embedding-3-small` · **`gpt-5-mini`** (a *reasoning* model — `gpt-4o-mini` is not deployed; see the `[LAYER 1]` row in `docs/PROJECT.md`), via Azure AI Foundry | **Lakshitha** (P1) |
 | Vector store | Azure AI Search (free **F0** tier → API keys, no managed identity, **no semantic reranker**) | P1 / P4 |
 | App database | Azure Database for PostgreSQL — documents, chunks, situation reports, traces | P3 |
 | Auth | Supabase Auth (only piece outside Azure) | P3 |

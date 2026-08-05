@@ -76,7 +76,7 @@ Nothing else starts cleanly until these are done. Four of them block all three o
 | 🔒 **VERIFICATION GATE T+1:15 — manually inspect 10 records** (`INC-005`, `FAU-014`, `WS-03`, `FN-A`, `LAB-C`, `POL-001`, `KC-01`, `REG-05`, `MED-003`, `SV-101`): each must be one clean, complete, unmerged chunk | Lakshitha | todo | Corpus seeded |
 | 🟡 Wire real `/rag/ingest` behind the stub, incl. `record_count` + `chunking_mode` and the **<50-records → narrative fallback** | Lakshitha | todo | Pipeline |
 | 🟡 Hybrid retrieval — BM25 `k=30` + vector `k=30`, **RRF fusion** across both legs and both query variants | Lakshitha | todo | Index populated |
-| 🔥🟡 **LLM reranker — the PRIMARY path.** Batched `gpt-4o-mini` call scoring all candidates `0–10` in one request. **F0 has no semantic ranker; do not architect around it.** | Lakshitha | todo | Retrieval |
+| 🔥🟡 ~~**LLM reranker — the PRIMARY path.**~~ **Built, then switched OFF by measurement** (`rerank=False`). On `gpt-5-mini` it cost **~25 s/query and demoted the correct records**. **Metadata filtering by `record_types` is the precision path instead** — 0/6 → 6/6 relevant in 3 s. F0 still has no semantic ranker; don't architect around that either. See the `[LAYER 1]` row in `docs/PROJECT.md`. | Lakshitha | done | Retrieval |
 | 🟡 Top-k selection (6, or 8 for compare) + score normalization to `relevance_score` `0.0–1.0` | Lakshitha | todo | Reranker |
 | 🟡 Query rewriting — vocabulary expansion, last-turn coreference, **explicit record-ID → filter promotion**, 2 variants | Lakshitha | todo | Retrieval |
 | 🟡 Metadata pre-filters — `record_type` / `region_id` / `record_date` | Lakshitha | todo | Retrieval |
@@ -118,17 +118,17 @@ Nothing else starts cleanly until these are done. Four of them block all three o
 
 | Task | Owner | Status | Blockers |
 |---|---|---|---|
-| 🟡 **Orchestrator** (`gpt-4o-mini`, temp 0): rewrite → classify → filter hints → route | Lakshitha | todo | Layer 4 green |
-| 🔥🟡 **Three fixed specialists**, each owning one section: 🐋 Marine-Life Protector (Affected Species) · 🌊 Incident Investigator (Likely Causes + conflicts) · 🚨 Emergency Responder (Recommended Actions) | Lakshitha | todo | Orchestrator |
-| 🟡 Per-specialist retrieval focus and record-type boosts | Lakshitha | todo | Specialists |
-| 🟡 Specialist guardrails: species isolation · no confirmed cause without explicit confirmation · `MED-*` red flags + fictional-material disclaimer | Lakshitha | todo | Specialists |
-| 🟡 Emergency Responder emits the corpus's **verbatim `KC-01` public-communication template** | Lakshitha | todo | Specialists |
-| 🟡 Routing: `sitrep` (3 parallel) / `focused` (1) / `compare` (2 disjoint sub-queries → synthesis) | Lakshitha | todo | Specialists |
-| 🔥🔴 **Concurrent dispatch** — `asyncio.gather`, not sequential. Wall clock = slowest agent, not the sum. | Lakshitha | todo | Specialists |
-| 🔥🟡 **Hard limits enforced by counters in orchestrator state, NOT by prompt:** 3 specialists max · 1 retry · 8 s per agent · 25 s total budget · **≤8 LLM calls/query** | Lakshitha | todo | Dispatch |
-| 🔥🟡 **Degradation ladder rung 3** — any specialist failure falls back to Layer 2 single-agent fill over already-retrieved chunks. **Identical output structure.** | Lakshitha | todo | Dispatch |
-| 🟡 Partial results — a timed-out section renders `timed_out` + reason naming its agent; **the report still ships** | Lakshitha | todo | Dispatch |
-| 🔥🟡 **SSE emitter** (`sse-starlette`) — every §1.2 event type, monotonic `sequence_number`, `answer.completed` carrying the full response body | Lakshitha | todo | Orchestrator |
+| 🟡 **Orchestrator** (`gpt-4o-mini`, temp 0): rewrite → classify → filter hints → route | Lakshitha | done | Layer 4 green |
+| 🔥🟡 **Three fixed specialists**, each owning one section: 🐋 Marine-Life Protector (Affected Species) · 🌊 Incident Investigator (Likely Causes + conflicts) · 🚨 Emergency Responder (Recommended Actions) | Lakshitha | done | Orchestrator |
+| 🟡 Per-specialist retrieval focus and record-type boosts | Lakshitha | done | Specialists |
+| 🟡 Specialist guardrails: species isolation · no confirmed cause without explicit confirmation · `MED-*` red flags + fictional-material disclaimer | Lakshitha | done | Specialists |
+| 🟡 Emergency Responder emits the corpus's **verbatim `KC-01` public-communication template** | Lakshitha | done | Specialists |
+| 🟡 Routing: `sitrep` (3 parallel) / `focused` (1) / `compare` (2 disjoint sub-queries → synthesis) | Lakshitha | done | Specialists |
+| 🔥🔴 **Concurrent dispatch** — `asyncio.gather`, not sequential. Wall clock = slowest agent, not the sum. | Lakshitha | done | Specialists |
+| 🔥🟡 **Hard limits enforced by counters in orchestrator state, NOT by prompt:** 3 specialists max · 1 retry · **75 s per agent · 180 s total budget** (raised from 8 s/25 s — `gpt-5-mini` measures 36–52 s per section) · **≤8 LLM calls/query** | Lakshitha | done | Dispatch |
+| 🔥🟡 **Degradation ladder rung 3** — any specialist failure falls back to Layer 2 single-agent fill over already-retrieved chunks. **Identical output structure.** | Lakshitha | done | Dispatch |
+| 🟡 Partial results — a timed-out section renders `timed_out` + reason naming its agent; **the report still ships** | Lakshitha | done | Dispatch |
+| 🔥🟡 **SSE emitter** (`sse-starlette`) — every §1.2 event type, monotonic `sequence_number`, `answer.completed` carrying the full response body | Lakshitha | done | Orchestrator |
 | 🟢 `DEMO_MODE` response cache for the four demo questions — zero API dependency | Lakshitha | todo | Query path working |
 | 🟢 Response cache keyed on normalized query, so rehearsal runs cost nothing after the first | Lakshitha | todo | Query path working |
 
