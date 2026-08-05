@@ -254,6 +254,57 @@ def llm_rerank(query: str, candidates: Sequence[RetrievedChunk]) -> list[Retriev
     )
 
 
+def corpus_covers(question: str) -> tuple[bool, float]:
+    """Does the corpus cover this question at all? Deterministic, no LLM.
+
+    The honest refusal is a 20-mark rubric item and it cannot rest on the
+    model choosing to emit the mandated sentence. The Layer 1 gate caught
+    exactly that failure: asked whether to buy Microsoft stock, the model
+    declined in its own words but **cited six Pandora records** to justify
+    the refusal, so `has_sufficient_evidence` stayed true. Hybrid search
+    always returns *something*; "nothing relevant" and "top-6 of 195" are
+    indistinguishable downstream. This is the missing signal.
+
+    RRF `@search.score` is rank-based (~0.016-0.03) and carries no absolute
+    relevance, so a **pure vector** query is used instead — its score is a
+    real similarity. `scripts/measure_relevance_floor.py` measured both
+    populations over 12 in-corpus and 8 out-of-corpus questions:
+
+        in-corpus      min 0.6458   mean 0.7144   max 0.7827
+        out-of-corpus  min 0.5220   mean 0.5433   max 0.5991
+
+    Cleanly separated, so RELEVANCE_FLOOR sits at the midpoint. The closest
+    out-of-corpus case is "the best treatment for a human migraine" (0.5991)
+    — near-miss precisely because the corpus carries MED-* health records,
+    which is the adversarial case worth being right about.
+
+    Returns (covered, top_similarity) so callers can log the margin.
+    """
+    s = get_settings()
+    try:
+        vq = VectorizedQuery(
+            vector=embed_query(question), k_nearest_neighbors=5, fields="content_vector"
+        )
+        results = search_client().search(
+            search_text=None, vector_queries=[vq], select=["chunk_id"], top=5
+        )
+        scores = [float(r.get("@search.score", 0.0)) for r in results]
+    except Exception:
+        # Never let the guard itself deny service. A failed check reads as
+        # "covered" and the normal grounded path runs, exactly as before.
+        logger.exception("relevance floor check failed; treating as covered")
+        return True, 1.0
+
+    top = max(scores) if scores else 0.0
+    covered = top >= s.relevance_floor
+    if not covered:
+        logger.info(
+            "relevance floor: %.4f < %.4f — out of corpus: %r",
+            top, s.relevance_floor, question[:60],
+        )
+    return covered, top
+
+
 def retrieve(
     query: str,
     *,

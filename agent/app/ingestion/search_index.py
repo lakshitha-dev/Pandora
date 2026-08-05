@@ -186,6 +186,74 @@ def upload(documents: Iterable[dict], batch_size: int = 100) -> int:
     return total
 
 
+def _escape(value: str) -> str:
+    """OData string literals escape a single quote by doubling it."""
+    return value.replace("'", "''")
+
+
+def list_by_record_type(
+    record_type: str,
+    *,
+    risk_level: str | None = None,
+    region_id: str | None = None,
+    limit: int = 50,
+    offset: int = 0,
+    select: Sequence[str] | None = None,
+) -> tuple[list[dict], int]:
+    """Filtered metadata listing — no vector query, no LLM call.
+
+    API_CONTRACT §1.6 is explicit that the incident register is a projection
+    of metadata the index already holds. `record_type`, `risk_level`, and
+    `region_id` are all filterable on the index, so this is a pure filter with
+    `search_text="*"` rather than a retrieval call, and it needs no reseed.
+
+    Returns `(rows, total)` — `total` is the unpaged count, for the pager.
+    """
+    clauses = [f"record_type eq '{_escape(record_type)}'"]
+    if risk_level:
+        clauses.append(f"risk_level eq '{_escape(risk_level)}'")
+    if region_id:
+        clauses.append(f"region_id eq '{_escape(region_id)}'")
+
+    results = search_client().search(
+        search_text="*",
+        filter=" and ".join(clauses),
+        select=list(select) if select else None,
+        include_total_count=True,
+        skip=offset,
+        top=limit,
+    )
+    rows = [dict(r) for r in results]
+    total = results.get_count() or 0
+    return rows, total
+
+
+def delete_by_document_id(document_id: str) -> int:
+    """Remove every chunk belonging to a document. Returns the count deleted.
+
+    Deletion crosses two stores. Orphaned vectors mean the assistant cites
+    documents the user already deleted, so the gateway calls this on delete.
+    """
+    client = search_client()
+    deleted = 0
+    while True:
+        results = client.search(
+            search_text="*",
+            filter=f"document_id eq '{_escape(document_id)}'",
+            select=["chunk_id"],
+            top=1000,
+        )
+        keys = [{"chunk_id": r["chunk_id"]} for r in results]
+        if not keys:
+            break
+        client.delete_documents(documents=keys)
+        deleted += len(keys)
+        if len(keys) < 1000:
+            break
+    logger.info("deleted %d chunk(s) for document %s", deleted, document_id)
+    return deleted
+
+
 def document_count() -> int:
     """How many documents are currently in the index."""
     try:

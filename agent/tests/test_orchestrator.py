@@ -280,16 +280,32 @@ def test_verified_records_are_not_a_conflict():
 # ── the honesty flip (§4.6) ──────────────────────────────────────────────
 
 
-def test_insufficient_evidence_text_carries_the_briefs_mandated_sentence():
+def test_insufficient_evidence_carries_the_briefs_mandated_sentence_verbatim():
     from app.chains.generation import INSUFFICIENT_EVIDENCE_MESSAGE
 
-    text = orchestrator._insufficient_evidence_text(
+    evidence = orchestrator._insufficient_evidence(
         ["fauna", "flora"], [make_chunk("FAU-001", "some species record")]
     )
-    assert text.startswith(INSUFFICIENT_EVIDENCE_MESSAGE), "the wording is non-negotiable"
-    assert "Searched:" in text, "a refusal must say what was searched"
-    assert "FAU-001" in text, "closest partial matches turn a refusal into a next step"
-    assert "field investigation" in text
+    # Exact equality, not `in`: the brief mandates this sentence and the 20-mark
+    # Accuracy criterion turns on it. Reworded or templated-over is a failure.
+    assert evidence.message == INSUFFICIENT_EVIDENCE_MESSAGE
+    assert evidence.banner, "the actionable headline occupies its own slot"
+    assert "fauna" in evidence.searched_scope, "a refusal must say what was searched"
+    assert [m.record_id for m in evidence.closest_matches] == ["FAU-001"], (
+        "closest partial matches turn a refusal into a next step"
+    )
+    assert "investigation" in evidence.what_would_resolve
+
+
+def test_insufficient_evidence_text_renders_the_structured_object():
+    """The prose form is only fallback content for an otherwise empty section."""
+    evidence = orchestrator._insufficient_evidence(
+        ["fauna"], [make_chunk("FAU-001", "some species record")]
+    )
+    text = orchestrator._insufficient_evidence_text(evidence)
+    assert text.startswith(evidence.message), "the wording is non-negotiable"
+    assert "Searched:" in text
+    assert "FAU-001" in text
 
 
 def assemble_with(results, emitter=None):

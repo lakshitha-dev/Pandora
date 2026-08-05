@@ -39,16 +39,18 @@ from app.agents.specialists import (
 from app.agents.trace import TraceEmitter
 from app.chains.generation import INSUFFICIENT_EVIDENCE_MESSAGE
 from app.chains.grounding_gate import GateResult
-from app.chains.retrieval import RetrievedChunk
+from app.chains.retrieval import RetrievedChunk, corpus_covers
 from app.core.config import get_settings
 from app.core.llm import LLMError, chat
 from app.models.schemas import (
     SECTION_DISPLAY_ORDER,
     Citation,
+    ClosestMatch,
     Conflict,
     ConflictPosition,
     Grounding,
     GroundingRuleResult,
+    InsufficientEvidence,
     ReportSection,
     SectionStatus,
     SectionType,
@@ -364,7 +366,17 @@ def _merge_grounding(gates: Sequence[GateResult]) -> Grounding:
         if not per:
             continue
         failed = [r for r in per if not r.passed]
-        merged_rules.append(failed[0] if failed else per[0])
+        if failed:
+            merged_rules.append(failed[0])
+            continue
+        # All three specialists passed, but they did not all *evaluate* the
+        # rule — a rule is "not engaged" when that section retrieved nothing it
+        # applies to. Taking per[0] blindly printed "no conflicting records
+        # retrieved" for rule 7 directly above a CONTESTED EVIDENCE panel
+        # listing SEC-1 vs FN-A, because only the investigator's section had
+        # engaged it. Report the section that actually exercised the rule.
+        engaged = [r for r in per if "not engaged" not in r.detail]
+        merged_rules.append(engaged[0] if engaged else per[0])
 
     return Grounding(
         groundedness=round(sum(g.groundedness for g in gates) / len(gates)),
@@ -436,16 +448,48 @@ def _confidence(
     return "insufficient", "no record scored above the relevance threshold"
 
 
-def _insufficient_evidence_text(
+_WHAT_WOULD_RESOLVE = (
+    "Field investigation and additional properly documented sampling. "
+    "See Appendix A — investigation checklists."
+)
+
+
+def _insufficient_evidence(
     record_types_searched: Sequence[str], all_chunks: Sequence[RetrievedChunk]
-) -> str:
+) -> InsufficientEvidence:
+    """The honesty flip, structured for §1.4.
+
+    Built from retrieval facts rather than prose so the gateway never has to
+    parse a sentence back apart: `message` stays the mandated string verbatim
+    and everything else travels in its own field.
+    """
     scope = ", ".join(sorted(set(record_types_searched))) or "the full Pandora knowledge base"
-    lines = [INSUFFICIENT_EVIDENCE_MESSAGE, "", f"Searched: {scope}."]
     top = sorted(all_chunks, key=lambda c: c.normalised_score, reverse=True)[:3]
-    if top:
-        closest = "; ".join(f"{c.citation_id} (score {c.normalised_score:.2f})" for c in top)
+    return InsufficientEvidence(
+        message=INSUFFICIENT_EVIDENCE_MESSAGE,
+        searched_scope=f"record types: {scope}",
+        closest_matches=[
+            ClosestMatch(
+                record_id=c.citation_id,
+                title=c.title,
+                relevance_score=round(c.normalised_score, 3),
+                page=c.page,
+            )
+            for c in top
+        ],
+        what_would_resolve=_WHAT_WOULD_RESOLVE,
+    )
+
+
+def _insufficient_evidence_text(evidence: InsufficientEvidence) -> str:
+    """Prose rendering, used only as fallback content for an empty section."""
+    lines = [evidence.message, "", f"Searched: {evidence.searched_scope}."]
+    if evidence.closest_matches:
+        closest = "; ".join(
+            f"{m.record_id} (score {m.relevance_score:.2f})" for m in evidence.closest_matches
+        )
         lines.append(f"Closest partial matches, below the confidence threshold: {closest}.")
-    lines.append("Recommend field investigation and additional properly documented sampling to resolve this.")
+    lines.append(evidence.what_would_resolve)
     return "\n".join(lines)
 
 
@@ -486,6 +530,11 @@ def _insufficient_response(
     req: SitrepRequest, budget: Budget, started: float, *, reason: str
 ) -> SitrepResponse:
     """Rung 4 — retrieval or classification itself failed. The honesty flip."""
+    evidence = InsufficientEvidence(
+        message=INSUFFICIENT_EVIDENCE_MESSAGE,
+        searched_scope="the corpus could not be searched",
+        what_would_resolve=_WHAT_WOULD_RESOLVE,
+    )
     text = f"{INSUFFICIENT_EVIDENCE_MESSAGE}\n\n{reason}"
     sections = [
         ReportSection(
@@ -508,7 +557,7 @@ def _insufficient_response(
         ),
         grounding=Grounding(groundedness=0, rules=[], unsupported_sentences=[]),
         has_sufficient_evidence=False,
-        insufficient_evidence=text,
+        insufficient_evidence=evidence,
         llm_call_count=budget.llm_calls,
         duration_ms=int((time.perf_counter() - started) * 1000),
     )
@@ -517,6 +566,23 @@ def _insufficient_response(
 async def _run(
     req: SitrepRequest, emitter: TraceEmitter, budget: Budget, settings, started: float
 ) -> SitrepResponse:
+    # Deterministic relevance floor, before classification so an out-of-corpus
+    # question costs one embedding instead of a classification plus three
+    # specialists. Checked once here for the whole question — never per-section,
+    # which would let two specialists refuse while a third confabulates.
+    covered, similarity = await asyncio.to_thread(corpus_covers, req.question)
+    if not covered:
+        emitter.emit(trace.ROUTE_DECIDED, mode="refusal", specialists=[])
+        return _insufficient_response(
+            req, budget, started,
+            reason=(
+                "The Pandora knowledge base was searched and no record was a close enough "
+                f"match to ground an answer (best match {similarity:.2f}, floor "
+                f"{settings.relevance_floor:.2f}). Nothing here is inferred from outside "
+                "the corpus."
+            ),
+        )
+
     scale_chunks = await asyncio.to_thread(routing.retrieve_severity_scale)
     classification = await asyncio.to_thread(
         routing.classify,
@@ -647,9 +713,10 @@ def _assemble(
     )
 
     record_types_searched = sorted({rt for r in results for rt in r.profile.record_types})
-    insufficient_text = None
+    insufficient = None
     if not sufficient:
-        insufficient_text = _insufficient_evidence_text(record_types_searched, all_chunks)
+        insufficient = _insufficient_evidence(record_types_searched, all_chunks)
+        insufficient_text = _insufficient_evidence_text(insufficient)
         confidence_level, confidence_reason = "insufficient", "the corpus does not cover this question"
         for s in sections:
             if s.status == SectionStatus.EMPTY and not s.content:
@@ -681,7 +748,7 @@ def _assemble(
         grounding=grounding,
         conflicts=conflicts,
         has_sufficient_evidence=sufficient,
-        insufficient_evidence=insufficient_text,
+        insufficient_evidence=insufficient,
         llm_call_count=budget.llm_calls,
         duration_ms=int((time.perf_counter() - started) * 1000),
         top_rerank_score=round(top_score_10, 2),

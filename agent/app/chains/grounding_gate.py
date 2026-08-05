@@ -42,6 +42,11 @@ _CONFLICT_TERMS = (
 )
 _INFERENCE_MARKERS = ("model inference", "inference:", "**inference")
 
+# A lowercase bracketed slot — "[time]", "[channel]", "[date]" — marks a line as
+# corpus template text awaiting substitution. Citation markers are uppercase
+# (CITATION_PATTERN), so the two never collide.
+_PLACEHOLDER = re.compile(r"\[(?:[a-z][a-z /_-]{1,24})\]")
+
 
 @dataclass
 class GateResult:
@@ -89,22 +94,53 @@ def _split_claims(answer: str) -> tuple[list[str], list[str]]:
         would fail rule 1 for a perfectly grounded answer.
         """
         out: list[str] = []
+        in_template = False
         for line in text.splitlines():
             s = line.strip()
             if not s:
+                in_template = False   # a blank line ends a quoted block
                 continue
             # Structural markdown: headings, table rows, rules, bare bullets.
             if s.startswith(("#", "|", "---", "***", "===")):
                 continue
+
+            # The corpus supplies fill-in-the-blank templates (KC-01's public
+            # communication draft). When the model reproduces one, its lines are
+            # quoted corpus text with placeholders — "At [time] in Awa Reef, we
+            # observed..." / "Avoid entering restricted areas." Those are not
+            # the model asserting anything, so requiring a citation on each one
+            # fails rule 1 for an answer that followed the corpus exactly.
+            if _PLACEHOLDER.search(s):
+                in_template = True
+                continue
+            if in_template:
+                # Stay in the block until it closes or a real cited claim resumes.
+                if s.endswith('"') or CITATION_PATTERN.search(s):
+                    in_template = False
+                    if not CITATION_PATTERN.search(s):
+                        continue
+                else:
+                    continue
+            if s.startswith(('"', "'")) and not CITATION_PATTERN.search(s):
+                in_template = True
+                continue
+
             # Strip list markers so the claim itself is what gets checked.
             s = re.sub(r"^[-*+]\s+", "", s)
             s = re.sub(r"^\d+[.)]\s+", "", s)
             s = s.strip()
             if len(s) < 25:
                 continue
+            # A label introducing the block beneath it ("Observed facts
+            # (documented):", "Immediate actions - ordered:") is structure, not
+            # a claim. A trailing colon is the reliable tell, so it is enough on
+            # its own — the earlier length test let these through because they
+            # *do* end in punctuation.
+            if s.endswith(":") and not CITATION_PATTERN.search(s):
+                continue
             # A short line with no sentence-ending punctuation and no verb-ish
             # lowercase run is a heading, not a claim.
-            if len(s) < 90 and not s.endswith((".", "!", "?", ":")) and "[" not in s:
+            if len(s) < 90 and not s.endswith((".", "!", "?")) and "[" not in s:
                 continue
             # A bolded label line ("**Documentation**") is structure.
             if re.fullmatch(r"\*\*[^*]{,80}\*\*:?", s):

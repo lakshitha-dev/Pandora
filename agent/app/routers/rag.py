@@ -14,16 +14,23 @@ from __future__ import annotations
 import logging
 import time
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 
 from app.chains.generation import INSUFFICIENT_EVIDENCE_MESSAGE
 from app.chains.section_fill import fill_section, rewrite_with_history
 from app.core.llm import LLMError, embed_texts
 from app.ingestion.extract import UnsupportedFileType, chunk_uploaded, extract_text
-from app.ingestion.search_index import chunk_to_document, upload
+from app.ingestion.search_index import (
+    chunk_to_document,
+    delete_by_document_id,
+    list_by_record_type,
+    upload,
+)
 from app.models.schemas import (
     Citation,
     Grounding,
+    Incident,
+    IncidentListResponse,
     IngestRequest,
     IngestResponse,
     QueryRequest,
@@ -139,7 +146,10 @@ def query(req: QueryRequest) -> QueryResponse:
         all_chunks.extend(result.chunks)
         if result.answer:
             answers.append(result.answer)
-            gates.append(result.gate)
+            # A refused section has an answer but no gate — there is nothing
+            # to validate when nothing was retrieved. Only real gates merge.
+            if result.gate is not None:
+                gates.append(result.gate)
 
     # ── merge evidence across sections ───────────────────────────────────
     cited_ids: list[str] = []
@@ -166,7 +176,13 @@ def query(req: QueryRequest) -> QueryResponse:
         for number in range(1, 9):
             per = [g.rules[number - 1] for g in gates]
             failed = [r for r in per if not r.passed]
-            merged_rules.append(failed[0] if failed else per[0])
+            if failed:
+                merged_rules.append(failed[0])
+                continue
+            # Prefer a section that actually evaluated the rule over one that
+            # reported "not engaged" — see the note in orchestrator._merge_grounding.
+            engaged = [r for r in per if "not engaged" not in r.detail]
+            merged_rules.append(engaged[0] if engaged else per[0])
         grounding = Grounding(
             groundedness=round(sum(g.groundedness for g in gates) / len(gates)),
             rules=merged_rules,
@@ -206,3 +222,119 @@ def query(req: QueryRequest) -> QueryResponse:
         rerank_mode="none",
         duration_ms=int((time.perf_counter() - started) * 1000),
     )
+
+
+# ─────────────────────────────────────────────────────────────────────────
+# GET /rag/incidents — the incident register (API_CONTRACT §1.6)
+# ─────────────────────────────────────────────────────────────────────────
+
+_INCIDENT_FIELDS = [
+    "record_id",
+    "title",
+    "region_id",
+    "risk_level",
+    "chapter",
+    "page",
+    "content",
+    "evidence_quality",
+]
+
+# The index carries region_id but not the region's display name, so it is
+# resolved from the region records themselves. The corpus is pre-indexed and
+# immutable during a run, so one lookup per process is enough.
+_region_names: dict[str, str] | None = None
+
+
+def _region_name_map() -> dict[str, str]:
+    global _region_names
+    if _region_names is None:
+        try:
+            rows, _ = list_by_record_type(
+                "region", limit=100, select=["record_id", "region_id", "title"]
+            )
+        except Exception:  # noqa: BLE001 - a missing name must not fail the listing
+            logger.warning("region name lookup failed", exc_info=True)
+            return {}
+        _region_names = {
+            (r.get("region_id") or r.get("record_id") or ""): (r.get("title") or "")
+            for r in rows
+        }
+        _region_names.pop("", None)
+    return _region_names
+
+
+def _summary_excerpt(content: str, limit: int = 240) -> str:
+    """First prose line of the record, headings and metadata brackets stripped."""
+    body = "\n".join(
+        ln for ln in (content or "").splitlines() if not ln.lstrip().startswith(("#", "["))
+    ).strip()
+    body = " ".join(body.split())
+    return body[:limit] + ("…" if len(body) > limit else "")
+
+
+@router.get("/rag/incidents", response_model=IncidentListResponse)
+def incidents(
+    risk_level: str | None = Query(default=None),
+    region_id: str | None = Query(default=None),
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+) -> IncidentListResponse:
+    """Filtered projection of incident metadata already in the index.
+
+    No retrieval work and no LLM call — §1.6 backs a register screen, not a
+    question. Selecting a row pre-fills the Command Center question box.
+    """
+    try:
+        rows, total = list_by_record_type(
+            "incident",
+            risk_level=risk_level,
+            region_id=region_id,
+            limit=limit,
+            offset=offset,
+            select=_INCIDENT_FIELDS,
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.exception("incident listing failed")
+        raise HTTPException(status_code=502, detail={
+            "error": {"code": "search_unavailable", "message": str(exc)[:300]}
+        }) from exc
+
+    names = _region_name_map()
+    incidents_out = [
+        Incident(
+            record_id=r.get("record_id") or "",
+            title=r.get("title") or "",
+            region_id=r.get("region_id") or None,
+            region_name=names.get(r.get("region_id") or ""),
+            risk_level=r.get("risk_level") or None,
+            chapter=r.get("chapter") or "",
+            page=r.get("page"),
+            summary_excerpt=_summary_excerpt(r.get("content") or ""),
+            evidence_quality=r.get("evidence_quality") or "",
+        )
+        for r in rows
+    ]
+    return IncidentListResponse(
+        incidents=incidents_out, total=total, limit=limit, offset=offset
+    )
+
+
+# ─────────────────────────────────────────────────────────────────────────
+# DELETE /rag/documents/{document_id}
+# ─────────────────────────────────────────────────────────────────────────
+
+
+@router.delete("/rag/documents/{document_id}", status_code=204)
+def delete_document(document_id: str) -> None:
+    """Drop a document's vectors so the gateway's delete doesn't orphan them.
+
+    Idempotent: deleting a document with no chunks is a 204, not a 404. The
+    gateway calls this before removing its own row, and a retry must not fail.
+    """
+    try:
+        delete_by_document_id(document_id)
+    except Exception as exc:  # noqa: BLE001
+        logger.exception("vector delete failed for %s", document_id)
+        raise HTTPException(status_code=502, detail={
+            "error": {"code": "search_unavailable", "message": str(exc)[:300]}
+        }) from exc

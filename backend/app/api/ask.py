@@ -17,10 +17,10 @@ router = APIRouter(tags=["ask"])
     "/ask",
     response_model=AskResponse,
     status_code=status.HTTP_200_OK,
-    summary="Ask a question of your documents",
+    summary="Ask a question and get a cited Situation Report",
     responses={
         401: {"model": ErrorEnvelope},
-        422: {"model": ErrorEnvelope, "description": "no_documents_indexed"},
+        422: {"model": ErrorEnvelope, "description": "corpus_not_indexed"},
         502: {"model": ErrorEnvelope, "description": "agent_service_unavailable"},
         504: {"model": ErrorEnvelope, "description": "agent_service_timeout"},
     },

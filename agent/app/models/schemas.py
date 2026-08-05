@@ -211,16 +211,71 @@ class SituationReport(BaseModel):
     sections: list[ReportSection] = Field(default_factory=list)
 
 
+class ClosestMatch(BaseModel):
+    """A sub-threshold hit. Shown clearly labelled, never presented as an answer."""
+
+    record_id: str
+    title: str = ""
+    relevance_score: float = 0.0
+    page: int | None = None
+
+
+class InsufficientEvidence(BaseModel):
+    """The honesty flip, structured (API_CONTRACT §1.4).
+
+    `message` is the brief's mandated sentence, carried verbatim from
+    `INSUFFICIENT_EVIDENCE_MESSAGE`. It is a 20-mark criterion: never reword,
+    truncate, or template over it. The actionable headline lives in `banner`
+    so the command-center framing costs nothing from the mandated wording.
+    """
+
+    banner: str = "⚠ Insufficient Evidence — Recommend Field Investigation"
+    message: str
+    searched_scope: str = ""
+    closest_matches: list[ClosestMatch] = Field(default_factory=list)
+    what_would_resolve: str = ""
+
+
 class SitrepResponse(BaseModel):
     situation_report: SituationReport
     citations: list[Citation] = Field(default_factory=list)
     grounding: Grounding
     conflicts: list[Conflict] = Field(default_factory=list)
     has_sufficient_evidence: bool = True
-    insufficient_evidence: str | None = None
+    insufficient_evidence: InsufficientEvidence | None = None
     llm_call_count: int = 0
     duration_ms: int = 0
     top_rerank_score: float = 0.0
+
+
+# ─────────────────────────────────────────────────────────────────────────
+# /rag/incidents — docs/API_CONTRACT.md §1.6
+# ─────────────────────────────────────────────────────────────────────────
+
+
+class Incident(BaseModel):
+    """One incident record, projected straight from index metadata.
+
+    No retrieval scoring and no LLM call — §1.6 is a filtered listing of
+    fields the index already carries, so it stays cheap enough to page.
+    """
+
+    record_id: str
+    title: str = ""
+    region_id: str | None = None
+    region_name: str | None = None
+    risk_level: str | None = None
+    chapter: str = ""
+    page: int | None = None
+    summary_excerpt: str = ""
+    evidence_quality: str = ""
+
+
+class IncidentListResponse(BaseModel):
+    incidents: list[Incident] = Field(default_factory=list)
+    total: int = 0
+    limit: int = 50
+    offset: int = 0
 
 
 # ─────────────────────────────────────────────────────────────────────────

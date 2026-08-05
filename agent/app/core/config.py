@@ -50,6 +50,12 @@ class Settings(BaseSettings):
     retrieval_candidate_k: int = 30
     retrieval_top_k: int = 6
     rerank_score_threshold: float = 0.45
+    # Pure-vector similarity below which the corpus is judged not to cover a
+    # question at all, triggering the brief's mandated refusal without an LLM
+    # call. Measured, not guessed — see chains.retrieval.corpus_covers and
+    # scripts/measure_relevance_floor.py. Re-measure after any change to the
+    # embedding model or the corpus.
+    relevance_floor: float = 0.622
 
     # ── Agentic layer ────────────────────────────────────────────────────
     # SOLUTION.md §5.5 specifies 8 s per specialist and a 25 s total budget,

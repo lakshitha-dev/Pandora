@@ -1,0 +1,100 @@
+<mxfile host="65bd71144e">
+    <diagram name="RAG + Agentic AI — Overview" id="overview">
+        <mxGraphModel dx="1649" dy="866" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1920" pageHeight="1080" background="#FFFFFF" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="title" value="Pandora Knowledge Guardian" style="text;html=1;fontSize=42;fontStyle=1;align=left;verticalAlign=middle;fontColor=#12232E;" parent="1" vertex="1">
+                    <mxGeometry x="70" y="34" width="1100" height="52" as="geometry"/>
+                </mxCell>
+                <mxCell id="subtitle" value="Retrieval-Augmented Generation  +  Agentic AI   —   three specialists assemble one cited Situation Report" style="text;html=1;fontSize=20;align=left;verticalAlign=middle;fontColor=#5A6B75;" parent="1" vertex="1">
+                    <mxGeometry x="70" y="88" width="1300" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="stack" value="Next.js  ·  FastAPI  ·  LangChain  ·  Azure AI Search  ·  gpt-5-mini" style="text;html=1;fontSize=16;align=right;verticalAlign=middle;fontColor=#9673a6;fontStyle=1" parent="1" vertex="1">
+                    <mxGeometry x="1250" y="88" width="600" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="q" value="Guardian describes&#xa;what they see&#xa;&#xa;&quot;the water near Awa Reef&#xa;turned turquoise&quot;" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=19;fontStyle=1;fillColor=#F2F5F7;strokeColor=#8A9BA8;strokeWidth=2;verticalAlign=middle;spacing=8;fontColor=#12232E;" parent="1" vertex="1">
+                    <mxGeometry x="70" y="160" width="400" height="130" as="geometry"/>
+                </mxCell>
+                <mxCell id="orch" value="⚙️   ORCHESTRATOR&#xa;&#xa;Rewrites the question  ·  Rates severity W1–W4 on the corpus&#39;s own scale  ·  Decides who works on it&#xa;It never writes report content — it decides, then checks the work" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=22;fontStyle=1;fillColor=#E6E0F0;strokeColor=#9673a6;strokeWidth=3;verticalAlign=middle;spacing=10;fontColor=#12232E;" parent="1" vertex="1">
+                    <mxGeometry x="540" y="160" width="1310" height="130" as="geometry"/>
+                </mxCell>
+                <mxCell id="parlabel" value="▼   ALL THREE RUN AT THE SAME TIME   —   three agents cost about as much time as one   ▼" style="text;html=1;fontSize=20;fontStyle=1;align=center;verticalAlign=middle;fontColor=#D79B00;" parent="1" vertex="1">
+                    <mxGeometry x="70" y="308" width="1780" height="32" as="geometry"/>
+                </mxCell>
+                <mxCell id="ag1" value="🐋   MARINE-LIFE PROTECTOR&#xa;&#xa;writes   Affected Species&#xa;&#xa;Never mixes two species —&#xa;each one from its own record" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=19;fontStyle=1;fillColor=#FFE6CC;strokeColor=#D79B00;strokeWidth=3;verticalAlign=middle;spacing=10;fontColor=#12232E;" parent="1" vertex="1">
+                    <mxGeometry x="70" y="356" width="566" height="180" as="geometry"/>
+                </mxCell>
+                <mxCell id="ag2" value="🌊   INCIDENT INVESTIGATOR&#xa;&#xa;writes   Likely Causes&#xa;&#xa;Never declares a cause&#xa;unless a record confirms it" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=19;fontStyle=1;fillColor=#FFE6CC;strokeColor=#D79B00;strokeWidth=3;verticalAlign=middle;spacing=10;fontColor=#12232E;" parent="1" vertex="1">
+                    <mxGeometry x="676" y="356" width="566" height="180" as="geometry"/>
+                </mxCell>
+                <mxCell id="ag3" value="🚨   EMERGENCY RESPONDER&#xa;&#xa;writes   Recommended Actions&#xa;&#xa;Health advice always carries&#xa;warnings + a fiction notice" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=19;fontStyle=1;fillColor=#FFE6CC;strokeColor=#D79B00;strokeWidth=3;verticalAlign=middle;spacing=10;fontColor=#12232E;" parent="1" vertex="1">
+                    <mxGeometry x="1282" y="356" width="566" height="180" as="geometry"/>
+                </mxCell>
+                <mxCell id="raglabel" value="every specialist calls the same RAG engine" style="text;html=1;fontSize=19;fontStyle=2;align=center;verticalAlign=middle;fontColor=#82B366;" parent="1" vertex="1">
+                    <mxGeometry x="70" y="556" width="1300" height="28" as="geometry"/>
+                </mxCell>
+                <mxCell id="rag" value="RAG ENGINE" style="swimlane;html=1;startSize=44;fontSize=22;fontStyle=1;fillColor=#EAF3E7;strokeColor=#82B366;strokeWidth=3;rounded=1;arcSize=3;fontColor=#12232E;" parent="1" vertex="1">
+                    <mxGeometry x="70" y="596" width="1300" height="200" as="geometry"/>
+                </mxCell>
+                <mxCell id="rag1" value="1 · SEARCH&#xa;&#xa;by keyword + by meaning,&#xa;fused automatically&#xa;&#xa;filtered to the record types&#xa;this agent cares about&#xa;→ keep the best 6" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=17;fillColor=#FFFFFF;strokeColor=#82B366;strokeWidth=2;verticalAlign=middle;spacing=8;fontColor=#12232E;" parent="rag" vertex="1">
+                    <mxGeometry x="24" y="56" width="400" height="126" as="geometry"/>
+                </mxCell>
+                <mxCell id="rag2" value="2 · WRITE&#xa;&#xa;CLOSED BOOK — only those&#xa;6 records, nothing the model&#xa;already &quot;knows&quot;&#xa;&#xa;every fact tagged with the&#xa;record ID it came from" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=17;fillColor=#FFFFFF;strokeColor=#82B366;strokeWidth=2;verticalAlign=middle;spacing=8;fontColor=#12232E;" parent="rag" vertex="1">
+                    <mxGeometry x="448" y="56" width="400" height="126" as="geometry"/>
+                </mxCell>
+                <mxCell id="rag3" value="3 · VERIFY&#xa;&#xa;The corpus&#39;s own 8 grounding&#xa;rules, checked IN CODE&#xa;&#xa;A prompt can be ignored.&#xa;A check cannot.&#xa;&quot;8/8 passed · 96% grounded&quot;" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=17;fillColor=#FBE4E3;strokeColor=#B85450;strokeWidth=2;verticalAlign=middle;spacing=8;fontColor=#12232E;" parent="rag" vertex="1">
+                    <mxGeometry x="872" y="56" width="404" height="126" as="geometry"/>
+                </mxCell>
+                <mxCell id="kb" value="KNOWLEDGE BASE&lt;br&gt;&lt;br&gt;Azure AI Search&lt;br&gt;&lt;br&gt;The Pandora corpus, cut so that&lt;br&gt;ONE RECORD = ONE CHUNK&lt;br&gt;— never split, never merged&lt;br&gt;&lt;br&gt;195 chunks  ·  149 records" style="shape=cylinder3;boundedLbl=1;backgroundOutline=1;size=16;whiteSpace=wrap;html=1;fontSize=17;fontStyle=1;fillColor=#E1D5E7;strokeColor=#9673A6;strokeWidth=3;verticalAlign=middle;spacing=8;fontColor=#12232E;" parent="1" vertex="1">
+                    <mxGeometry x="1420" y="596" width="430" height="200" as="geometry"/>
+                </mxCell>
+                <mxCell id="report" value="THE SITUATION REPORT&#xa;🔴 How urgent      🐋 Which species      🌊 What caused it      🚨 What to do      📚 Sources      📊 How confident — and why" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=22;fontStyle=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;strokeWidth=3;verticalAlign=middle;spacing=10;fontColor=#12232E;" parent="1" vertex="1">
+                    <mxGeometry x="70" y="836" width="1780" height="110" as="geometry"/>
+                </mxCell>
+                <mxCell id="b1" value="ONE RECORD = ONE CHUNK&#xa;Fixed-size splitting would blend two species — the exact error the corpus forbids" style="rounded=1;arcSize=10;whiteSpace=wrap;html=1;fontSize=15;fillColor=#FFF2CC;strokeColor=#D6B656;strokeWidth=2;verticalAlign=middle;spacing=6;fontColor=#12232E;" parent="1" vertex="1">
+                    <mxGeometry x="70" y="972" width="422" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="b2" value="CONFLICTS SHOWN, NOT RESOLVED&#xa;FN-A / FN-B / LAB-C side by side — no cause declared" style="rounded=1;arcSize=10;whiteSpace=wrap;html=1;fontSize=15;fillColor=#FFF2CC;strokeColor=#D6B656;strokeWidth=2;verticalAlign=middle;spacing=6;fontColor=#12232E;" parent="1" vertex="1">
+                    <mxGeometry x="522" y="972" width="422" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="b3" value="THE HONEST REFUSAL&#xa;Thin evidence prints the required sentence instead of a guess — decided by a rule" style="rounded=1;arcSize=10;whiteSpace=wrap;html=1;fontSize=15;fillColor=#FFF2CC;strokeColor=#D6B656;strokeWidth=2;verticalAlign=middle;spacing=6;fontColor=#12232E;" parent="1" vertex="1">
+                    <mxGeometry x="974" y="972" width="422" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="b4" value="HARD LIMITS, NOT PROMPTS&#xa;3 agents · 1 retry · ≤8 model calls · time-boxed — all counted in code" style="rounded=1;arcSize=10;whiteSpace=wrap;html=1;fontSize=15;fillColor=#FBE4E3;strokeColor=#B85450;strokeWidth=2;verticalAlign=middle;spacing=6;fontColor=#12232E;" parent="1" vertex="1">
+                    <mxGeometry x="1426" y="972" width="424" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=4;strokeColor=#5A6B75;endArrow=block;endFill=1;endSize=6;" parent="1" source="q" target="orch" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=4;strokeColor=#D79B00;endArrow=block;endFill=1;endSize=6;exitX=0.1;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="orch" target="ag1" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=4;strokeColor=#D79B00;endArrow=block;endFill=1;endSize=6;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="orch" target="ag2" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=4;strokeColor=#D79B00;endArrow=block;endFill=1;endSize=6;exitX=0.9;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="orch" target="ag3" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e5" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=3;strokeColor=#82B366;dashed=1;endArrow=block;endFill=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.15;entryY=0;entryDx=0;entryDy=0;" parent="1" source="ag1" target="rag" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e6" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=3;strokeColor=#82B366;dashed=1;endArrow=block;endFill=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="ag2" target="rag" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e7" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=3;strokeColor=#82B366;dashed=1;endArrow=block;endFill=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.85;entryY=0;entryDx=0;entryDy=0;" parent="1" source="ag3" target="rag" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e8" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=3;strokeColor=#9673A6;endArrow=block;endFill=1;startArrow=block;startFill=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="rag" target="kb" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e9" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=4;strokeColor=#6C8EBF;endArrow=block;endFill=1;endSize=6;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="rag" target="report" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="live" value="streamed live to the browser — three sections fill at once, out of order" style="text;html=1;fontSize=16;fontStyle=2;align=center;verticalAlign=middle;fontColor=#6C8EBF;" parent="1" vertex="1">
+                    <mxGeometry x="1000" y="800" width="850" height="28" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>
