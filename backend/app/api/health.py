@@ -20,6 +20,10 @@ class HealthResponse(BaseModel):
     database_reachable: bool
     agent_service_reachable: bool
     agent_service_status: str
+    # §2.4's single most important field, surfaced: false means no query can
+    # work, and /ask should say so rather than let the model answer from
+    # pretrained knowledge.
+    corpus_indexed: bool
     version: str
     mode: str
 
@@ -41,6 +45,7 @@ async def health(session: DbSession, agent: AgentDep, settings: SettingsDep) -> 
         database_reachable=database_reachable,
         agent_service_reachable=agent_reachable,
         agent_service_status=agent_health.status,
+        corpus_indexed=agent_health.corpus_indexed,
         version=settings.version,
         mode=settings.environment_mode,
     )

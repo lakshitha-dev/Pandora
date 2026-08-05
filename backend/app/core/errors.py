@@ -90,11 +90,25 @@ def action_already_resolved(action_id: Any) -> AppError:
     )
 
 
-def no_documents_indexed() -> AppError:
+def corpus_not_indexed() -> AppError:
+    """§2.4's `corpus_indexed: false`, surfaced. No query can work until it's true.
+
+    Said plainly rather than letting the model answer from pretrained knowledge —
+    Earth marine biology is a hallucination in this corpus even when it's true on Earth.
+    """
     return AppError(
         status.HTTP_422_UNPROCESSABLE_ENTITY,
-        "no_documents_indexed",
-        "No indexed documents to search. Upload a document before asking a question.",
+        "corpus_not_indexed",
+        "The Pandora knowledge corpus is not indexed yet. Seed it before asking a question.",
+    )
+
+
+def corpus_document_immutable() -> AppError:
+    """The preloaded corpus cannot be deleted. It's the demo."""
+    return AppError(
+        status.HTTP_403_FORBIDDEN,
+        "corpus_document_immutable",
+        "The preloaded Pandora corpus cannot be modified or deleted.",
     )
 
 

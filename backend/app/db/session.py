@@ -19,13 +19,16 @@ def get_engine() -> AsyncEngine:
     global _engine
     if _engine is None:
         settings = get_settings()
-        _engine = create_async_engine(
-            settings.postgres_connection_string,
-            echo=settings.db_echo,
-            pool_pre_ping=True,
-            pool_size=5,
-            max_overflow=10,
+        url = settings.postgres_connection_string
+        # SQLite runs on NullPool and rejects pool sizing outright. Postgres is
+        # what we deploy on, but a local SQLite run has to start rather than
+        # raise — it's the fallback if Postgres isn't reachable at demo time.
+        pool_options = (
+            {"pool_pre_ping": True, "pool_size": 5, "max_overflow": 10}
+            if url.startswith("postgresql")
+            else {}
         )
+        _engine = create_async_engine(url, echo=settings.db_echo, **pool_options)
     return _engine
 
 

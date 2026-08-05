@@ -1,17 +1,22 @@
 """`POST /api/v1/ask` — the core endpoint (API_CONTRACT §1.1)."""
 
-from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
 
-from app.schemas.common import ActionType, Citation, Confidence
+from app.schemas.common import Citation, RoleLens
+from app.schemas.situation_report import InsufficientEvidence, SituationReport
 
 
 class AskRequest(BaseModel):
     question: str = Field(min_length=1, max_length=2000)
     conversation_id: UUID | None = None
+    # null = the whole index, including the preloaded corpus.
     document_ids: list[UUID] | None = None
+    # Initial render only. The lens toggle re-renders client-side and never
+    # re-calls this endpoint, so the gateway records the caller's starting lens
+    # and nothing downstream branches on it.
+    role_lens: RoleLens | None = None
 
     @field_validator("question")
     @classmethod
@@ -22,21 +27,15 @@ class AskRequest(BaseModel):
         return stripped
 
 
-class SuggestedAction(BaseModel):
-    type: ActionType
-    title: str
-    rationale: str
-    payload: dict[str, Any]
-    supporting_citations: list[int] = Field(default_factory=list)
-
-
 class AskResponse(BaseModel):
     answer_id: UUID
     conversation_id: UUID
-    answer: str
-    citations: list[Citation]
-    # Null on most queries. The common path, not the edge case.
-    suggested_action: SuggestedAction | None = None
-    confidence: Confidence
-    has_sufficient_evidence: bool
-    latency_ms: int
+    # Always present. Every query produces a report — including a refusal.
+    situation_report: SituationReport
+    # Non-null only when `has_sufficient_evidence` is false.
+    insufficient_evidence: InsufficientEvidence | None = None
+    # Deduplicated union across all sections. May be empty on a refusal.
+    citations: list[Citation] = Field(default_factory=list)
+    has_sufficient_evidence: bool = True
+    llm_call_count: int = 0
+    latency_ms: int = 0

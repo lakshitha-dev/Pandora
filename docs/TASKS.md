@@ -226,19 +226,21 @@ Nothing else starts cleanly until these are done. Four of them block all three o
 | 🟡 Pydantic `Settings` class reading env vars — validated at startup, fails loudly on a missing key. **No scattered `os.getenv()`.** | Manujaya | done | — |
 | 🟡 Pydantic schemas mirroring every §1 request/response shape | Manujaya | done | — |
 | 🟡 SQLAlchemy 2.0 models: `documents`, `answers`, `agent_actions`, `conversations` | Manujaya | done | — |
-| 🟡 Alembic init + first migration, applied to Azure PostgreSQL | Manujaya | doing | Migration `0001` written and verified against the Postgres dialect; **not yet applied — Postgres not provisioned** |
+| 🟡 Alembic init + first migration, applied to Azure PostgreSQL | Manujaya | doing | `0001` + `0002` (answers hold a Situation Report) written against the Postgres dialect; **not yet applied — Postgres not provisioned.** An Azure **SQL Server** was provisioned instead; see the Decisions Log |
 | 🟡 Supabase JWT validation dependency (`python-jose`) — signature + expiry, extract user ID | Manujaya | doing | Code done; unverified against a real token — needs `SUPABASE_JWT_SECRET` |
 | 🟡 `httpx` agent client — `X-Internal-Key`, **30 s** query / **60 s** ingest timeouts | Manujaya | done | Wired; live call untested until Lakshitha's stubs are up |
 | 🟡 `POST /api/v1/documents` — validate type + size, persist, return `202`, dispatch to `/rag/ingest` async | Manujaya | done | — |
 | 🟡 `GET/DELETE /api/v1/documents` — **delete must remove Postgres row AND AI Search vectors** | Manujaya | doing | **Part 2 has no delete endpoint.** Proposed `DELETE /rag/documents/{id}` — needs Lakshitha + a contract edit. Gateway calls it and logs when it's absent. |
-| 🔥 `POST /api/v1/ask` — orchestrate `/rag/query` → `/agent/run`, join `document_name` from Postgres, assemble the response | Manujaya | done | — |
+| 🔥 `POST /api/v1/ask` — call `/agent/sitrep`, reshape to the §1.1 Situation Report, join `document_name` from Postgres | Manujaya | done | Re-pointed at the Pandora contract 2026-08-05; verified against `agent/`'s own Pydantic models |
 | 🔥 `POST` + `PATCH /api/v1/agent-actions` — persist, approve/reject/complete, set `resolved_at` | Manujaya | done | — |
 | 🟡 `GET /api/v1/agent-actions` with status/type filters and paging | Manujaya | done | — |
 | 🟡 Standard error envelope on every non-2xx via an exception handler + the documented `code` values | Manujaya | done | — |
 | 🟡 `GET /health` for the Azure App Service probe | Manujaya | done | — |
-| 🟢 `422 no_documents_indexed` guard before any LLM call | Manujaya | done | — |
+| 🟢 `422 corpus_not_indexed` guard before any LLM call | Manujaya | done | Counts the user's indexed documents; should move to §2.4's `corpus_indexed` once the corpus is seeded as a shared row |
 | 🟢 Request/response logging for demo debugging | Manujaya | done | — |
-| 🟢 21 contract tests (SQLite + stub agent, no network) + `ruff` clean | Manujaya | done | — |
+| 🟢 25 contract tests (SQLite + stub agent, no network) + `ruff` clean | Manujaya | done | — |
+| 🔥 `GET /api/v1/ask/stream` — SSE, forwarding `/agent/sitrep`'s trace unbuffered | Manujaya | done | Verified over a real socket: frames arrive ~120 ms apart, terminal `answer.completed` carries the whole §1.1 body. **Needs one thing from Lakshitha — see the Decisions Log.** |
+| 🟡 `GET /api/v1/situation-reports` (§1.5) + `GET /api/v1/incidents` (§1.6) | Manujaya | todo | `answers` already stores the filterable columns §1.5 needs |
 
 ---
 

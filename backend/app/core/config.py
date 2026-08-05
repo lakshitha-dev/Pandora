@@ -19,13 +19,13 @@ class Settings(BaseSettings):
     )
 
     # --- App ---
-    app_name: str = "SME Business Intelligence Assistant — Gateway"
+    app_name: str = "Pandora Knowledge Guardian — Gateway"
     version: str = "0.1.0"
     log_level: str = "INFO"
 
     # --- Database ---
     postgres_connection_string: str = (
-        "postgresql+psycopg://postgres:postgres@localhost:5432/sme_assistant"
+        "postgresql+psycopg://postgres:postgres@localhost:5432/pandora"
     )
     db_echo: bool = False
 
@@ -41,6 +41,9 @@ class Settings(BaseSettings):
     agent_service_url: str = "http://localhost:8000"
     agent_service_key: str = ""
     agent_stub_mode: bool = False
+    # Paces the stub trace so the parallel-fill animation is visible without the
+    # agent service. 0 replays instantly, which is what the tests want.
+    stub_stream_delay_ms: int = 0
     agent_query_timeout_seconds: float = 30.0
     agent_ingest_timeout_seconds: float = 60.0
     agent_health_timeout_seconds: float = 3.0

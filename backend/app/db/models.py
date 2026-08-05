@@ -20,7 +20,8 @@ from app.db.base import GUID, Base, JSONType, TimestampTZ, utcnow
 DOCUMENT_STATUSES = ("pending", "indexing", "indexed", "failed")
 ACTION_TYPES = ("flag_invoice", "draft_email", "create_task")
 ACTION_STATUSES = ("proposed", "approved", "rejected", "completed")
-CONFIDENCE_LEVELS = ("high", "medium", "low", "insufficient")
+CONFIDENCE_LEVELS = ("high", "moderate", "low", "insufficient")
+ROLE_LENSES = ("guardian", "researcher", "citizen")
 
 DocumentStatus = Enum(
     *DOCUMENT_STATUSES, name="document_status", native_enum=False, create_constraint=True
@@ -32,6 +33,7 @@ ActionStatus = Enum(
 ConfidenceLevel = Enum(
     *CONFIDENCE_LEVELS, name="confidence_level", native_enum=False, create_constraint=True
 )
+RoleLensType = Enum(*ROLE_LENSES, name="role_lens", native_enum=False, create_constraint=True)
 
 
 class Document(Base):
@@ -66,7 +68,13 @@ class Conversation(Base):
 
 
 class Answer(Base):
-    """One row per answered question. The audit trail behind every citation."""
+    """One answered question and the Situation Report it produced.
+
+    The report is stored as the §1.1 JSON the frontend received, verbatim — it is
+    the audit trail, so it must not drift as the schema evolves. The scalar
+    columns beside it are denormalised copies that let `/api/v1/situation-reports`
+    filter and sort (§1.5) without opening the JSON on every row.
+    """
 
     __tablename__ = "answers"
 
@@ -76,17 +84,47 @@ class Answer(Base):
     )
     user_id: Mapped[uuid.UUID] = mapped_column(GUID, nullable=False, index=True)
     question: Mapped[str] = mapped_column(Text, nullable=False)
-    answer: Mapped[str] = mapped_column(Text, nullable=False)
+    # The lens the question was asked under. Display-only — the report is the
+    # same under every lens; the frontend re-renders it client-side.
+    role_lens: Mapped[str] = mapped_column(RoleLensType, nullable=False, default="guardian")
+    situation_report: Mapped[dict[str, Any]] = mapped_column(
+        JSONType, nullable=False, default=dict
+    )
     # Citations as returned to the frontend, document_name already joined in.
     citations: Mapped[list[dict[str, Any]]] = mapped_column(
         JSONType, nullable=False, default=list
     )
+    # The §1.4 object. Non-null only when has_sufficient_evidence is false.
+    insufficient_evidence: Mapped[dict[str, Any] | None] = mapped_column(JSONType, nullable=True)
+    # The §1.2 trace in sequence_number order, as the browser saw it. Empty for
+    # a non-streamed answer. Replay is demo insurance: if the live network
+    # stalls, we replay a cached trace at full speed instead of standing in
+    # silence (§1.5).
+    agent_steps: Mapped[list[dict[str, Any]]] = mapped_column(
+        JSONType, nullable=False, default=list
+    )
+
     confidence: Mapped[str] = mapped_column(ConfidenceLevel, nullable=False)
+    groundedness: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    priority_class: Mapped[str] = mapped_column(String(20), nullable=False, default="informational")
+    assembly_mode: Mapped[str] = mapped_column(String(32), nullable=False, default="sitrep")
+    affected_region_ids: Mapped[list[str]] = mapped_column(
+        JSONType, nullable=False, default=list
+    )
+    citation_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    had_conflict: Mapped[bool] = mapped_column(nullable=False, default=False)
+    was_partial: Mapped[bool] = mapped_column(nullable=False, default=False)
     has_sufficient_evidence: Mapped[bool] = mapped_column(nullable=False, default=True)
+    llm_call_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     latency_ms: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     created_at: Mapped[datetime] = mapped_column(TimestampTZ, nullable=False, default=utcnow)
 
     conversation: Mapped[Conversation] = relationship(back_populates="answers")
+
+    __table_args__ = (
+        # §1.5 lists a user's past reports newest-first, optionally by priority.
+        Index("ix_answers_user_id_created_at", "user_id", "created_at"),
+    )
 
 
 class AgentAction(Base):

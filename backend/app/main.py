@@ -71,7 +71,7 @@ def create_app() -> FastAPI:
         title=settings.app_name,
         version=settings.version,
         description=(
-            "Gateway for the SME Business Intelligence Assistant. "
+            "Gateway for the Pandora Knowledge Guardian command center. "
             "Implements docs/API_CONTRACT.md Part 1. The browser talks only to this service."
         ),
         lifespan=lifespan,

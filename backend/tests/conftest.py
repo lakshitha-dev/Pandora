@@ -60,6 +60,21 @@ async def client(engine) -> AsyncGenerator[AsyncClient, None]:  # noqa: ANN001
             yield http_client
 
 
+@pytest.fixture(autouse=True)
+def _reset_sse_exit_event():  # noqa: ANN202
+    """sse-starlette caches a shutdown Event on the loop that first used it.
+
+    pytest-asyncio hands every test a fresh loop, so the second streaming test
+    would otherwise die with "bound to a different event loop". Clearing it
+    between tests is a harness concern only — under uvicorn there is one loop.
+    """
+    from sse_starlette.sse import AppStatus
+
+    AppStatus.should_exit_event = None
+    yield
+    AppStatus.should_exit_event = None
+
+
 @pytest.fixture
 def settings():  # noqa: ANN201
     return get_settings()
@@ -74,7 +89,11 @@ def user_id(settings):  # noqa: ANN001, ANN201
 
 @pytest_asyncio.fixture
 async def indexed_document(engine, user_id):  # noqa: ANN001, ANN201
-    """A document in `indexed` state, so /ask gets past the 422 guard."""
+    """The preloaded corpus, indexed — so /ask gets past the 422 guard.
+
+    The id is the one the stub agent cites in every §1.1 fixture, so
+    `document_name` actually joins.
+    """
     import uuid
 
     from app.db.base import utcnow
@@ -83,11 +102,11 @@ async def indexed_document(engine, user_id):  # noqa: ANN001, ANN201
     document = Document(
         id=uuid.UUID("1a2b3c4d-2222-4e5f-9a8b-7c6d5e4f3a2b"),
         user_id=user_id,
-        file_name="invoices-july-2026.pdf",
+        file_name="Pandora_RAG_Knowledge_2026.pdf",
         content_type="application/pdf",
-        size_bytes=284910,
-        page_count=12,
-        chunk_count=47,
+        size_bytes=1284910,
+        page_count=56,
+        chunk_count=221,
         status="indexed",
         uploaded_at=utcnow(),
         indexed_at=utcnow(),
